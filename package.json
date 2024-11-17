@@ -1,0 +1,60 @@
+{
+  "private": true,
+  "name": "isabelle",
+  "version": "1.0.0",
+  "description": "Isabelle est un BOT Discord à destination des élèves de TELECOM Nancy, et plus particulièrement aux étudiants de la promotion 2027 des FISA",
+  "author": "MAXOUXAX",
+  "packageManager": "npm@10.9.0",
+  "license": "AGPL-3.0-or-later",
+  "homepage": "https://github.com/MAXOUXAX/Isabelle",
+  "contributors": [
+    "MAXOUXAX <24844231+MAXOUXAX@users.noreply.github.com>"
+  ],
+  "bugs": {
+    "url": "https://github.com/MAXOUXAX/Isabelle/issues"
+  },
+  "maintainers": [
+    {
+      "name": "MAXOUXAX",
+      "email": "24844231+MAXOUXAX@users.noreply.github.com",
+      "url": "https://github.com/MAXOUXAX"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MAXOUXAX/Isabelle.git"
+  },
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsup src/index.ts --minify --tsconfig tsconfig.json",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "prettier": "prettier --ignore-path .gitignore --write \"./src/**/*.+(js|ts|json)\"",
+    "prettier:fix": "prettier --write src",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{js,ts}": ["eslint --fix", "prettier -w"]
+  },
+  "dependencies": {
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.14.0",
+    "@types/eslint__js": "^8.42.3",
+    "@typescript-eslint/eslint-plugin": "^8.8.1",
+    "@typescript-eslint/parser": "^8.8.1",
+    "eslint": "^9.14.0",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
+    "prettier": "^3.3.3",
+    "tsup": "^8.3.0",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.14.0"
+  }
+}
