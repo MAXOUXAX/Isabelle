@@ -3,6 +3,8 @@
 
 # -- Start of template
 
+.idea
+
 # Logs
 logs
 *.log

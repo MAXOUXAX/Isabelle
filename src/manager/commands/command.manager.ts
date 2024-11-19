@@ -28,9 +28,7 @@ export class CommandManager {
     try {
       console.log('Started refreshing global application (/) commands.');
 
-      const commands = Array.from(this.commands.values())
-        .flat()
-        .map((command) => command.commandData);
+      const commands = this.getIsabelleCommandsAsSlashBuilderArray();
 
       await this.rest.put(
         Routes.applicationCommands(config.DISCORD_CLIENT_ID),
@@ -63,6 +61,12 @@ export class CommandManager {
     } catch (error) {
       console.error(error);
     }
+  }
+
+  getIsabelleCommandsAsSlashBuilderArray(): SlashCommandBuilder[] {
+    return Array.from(this.commands.values())
+      .flat()
+      .map((command) => command.commandData);
   }
 }
 
