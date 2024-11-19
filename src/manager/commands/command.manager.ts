@@ -64,6 +64,12 @@ export class CommandManager {
       console.error(error);
     }
   }
+
+  getIsabelleCommandsAsSlashBuilderArray(): SlashCommandBuilder[] {
+    return Array.from(this.commands.values())
+      .flat()
+      .map((command) => command.commandData);
+  }
 }
 
 export const commandManager = new CommandManager();

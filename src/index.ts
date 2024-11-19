@@ -18,6 +18,8 @@ export const client = new Client({
   ],
 });
 
+const MODULES: IsabelleModule[] = [new CoreModule(), new HotPotato()];
+
 client.once('ready', () => {
   console.log('Discord bot is ready! 🤖');
   registerModules();
@@ -69,8 +71,6 @@ client.on('interactionCreate', (interaction) => {
 
 await client.login(config.DISCORD_TOKEN);
 
-const MODULES: IsabelleModule[] = [new CoreModule(), new HotPotato()];
-
 function registerModules() {
   for (const module of MODULES) {
     console.log(`[Modules] Initializing module ${module.name}`);
@@ -79,4 +79,19 @@ function registerModules() {
     interactionManager.registerInteractionHandlers(module.interactionHandlers);
     console.log(`[Modules] Module ${module.name} initialized.`);
   }
+
+  commandManager
+    .deployCommandsForGuild(
+      config.DISCORD_GUILD_ID,
+      commandManager.getIsabelleCommandsAsSlashBuilderArray(),
+    )
+    .then(() => {
+      console.log('Successfully deployed commands for the guild.');
+    })
+    .catch((error: unknown) => {
+      console.error(
+        'An error occurred while deploying commands for the guild.',
+        error,
+      );
+    });
 }
