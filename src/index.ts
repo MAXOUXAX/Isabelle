@@ -1,5 +1,6 @@
 import { commandManager } from '@/manager/commands/command.manager.js';
 import { CoreModule } from '@/modules/core/core.module.js';
+import { RussianRoulette } from '@/modules/russian-roulette/russian-roulette.module.js';
 import { Client, GatewayIntentBits } from 'discord.js';
 import { config } from './config.js';
 import { interactionManager } from './manager/interaction.manager.js';
@@ -18,7 +19,11 @@ export const client = new Client({
   ],
 });
 
-const MODULES: IsabelleModule[] = [new CoreModule(), new HotPotato()];
+const MODULES: IsabelleModule[] = [
+  new CoreModule(),
+  new HotPotato(),
+  new RussianRoulette(),
+];
 
 client.once('ready', () => {
   console.log('Discord bot is ready! 🤖');
