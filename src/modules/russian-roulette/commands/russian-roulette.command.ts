@@ -78,20 +78,27 @@ export class RussianRouletteCommand implements IsabelleCommand {
   }
 }
 
-const POURCENTAGES = {
+const PERCENTAGES = {
   kill_other: 0.1,
   is_killing: 0.1,
   kill_self: 0.1,
 };
 
+let numberOfGamesSinceLastKill = 0;
+
 function howIsGonnaBeKilled(user: string, guild: Guild) {
-  const isSelfKilling = Math.random() > POURCENTAGES.kill_other;
+  const isSelfKilling = Math.random() > PERCENTAGES.kill_other;
+  const isKillingMapped = increasePercentageWithLog(
+    PERCENTAGES.is_killing,
+    0.7,
+  );
   if (isSelfKilling) {
-    if (Math.random() < POURCENTAGES.kill_self) {
+    if (Math.random() < isKillingMapped) {
+      numberOfGamesSinceLastKill = 0;
       return user;
     }
   } else {
-    if (Math.random() < POURCENTAGES.is_killing) {
+    if (Math.random() < isKillingMapped) {
       return (
         guild.members.cache.filter((member) => member.kickable).random()?.id ??
         user
@@ -100,4 +107,27 @@ function howIsGonnaBeKilled(user: string, guild: Guild) {
   }
 
   return null;
+}
+
+function increasePercentageWithLog(
+  maxPercentage: number,
+  percentage: number,
+): number {
+  return Math.min(
+    maxPercentage,
+    percentage +
+      mapNumber(Math.log(numberOfGamesSinceLastKill + 1), 0, 4, 0, 1),
+  );
+}
+
+function mapNumber(
+  number: number,
+  in_min: number,
+  in_max: number,
+  out_min: number,
+  out_max: number,
+) {
+  return (
+    ((number - in_min) * (out_max - out_min)) / (in_max - in_min) + out_min
+  );
 }
