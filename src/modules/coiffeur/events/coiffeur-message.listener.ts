@@ -1,52 +1,24 @@
 import { Message } from 'discord.js';
+import {
+  WHAT,
+  WHAT_ANSWER,
+  WHY,
+  WHY_ANWSER,
+} from '@/modules/coiffeur/coiffeur-constants.js';
 
 export async function coiffeurMessageListener(message: Message): Promise<void> {
   if (message.author.bot) return;
 
-  const pourquoi = [
-    'pourquoi',
-    'pourkoi',
-    'pourkwa',
-    'pour quoi',
-    'pour koi',
-    'pour kwa',
-  ];
-  const quoi = ['quoi', 'koi', 'kwa'];
-
-  const quoiResponse = [
-    'feur',
-    'feur!',
-    'feur.',
-    'feur?',
-    'feur...',
-    'feur!',
-    'coubeh!',
-    'coubeh',
-    'coubeh!',
-    'coubeh.',
-    'coubeh?',
-    'coubeh...',
-  ];
-  const pourquoiResponse = [
-    'Pour feur!',
-    'Pour feur.',
-    'Pour feur?',
-    'Pour feur...',
-    'Parce que feur!',
-    'Parce que feur.',
-    'Parce que feur?',
-    'Parce que feur...',
-  ];
-
   const content = message.content.toLowerCase();
+  const shouldReply = Math.random() > 0.66;
 
-  if (pourquoi.some((p) => content.includes(p))) {
+  if (WHY.some((p) => content.includes(p)) && shouldReply) {
     await message.reply(
-      pourquoiResponse[Math.floor(Math.random() * pourquoiResponse.length)],
+      WHY_ANWSER[Math.floor(Math.random() * WHY_ANWSER.length)],
     );
-  } else if (quoi.some((q) => content.includes(q))) {
+  } else if (WHAT.some((q) => content.includes(q)) && shouldReply) {
     await message.reply(
-      quoiResponse[Math.floor(Math.random() * quoiResponse.length)],
+      WHAT_ANSWER[Math.floor(Math.random() * WHAT_ANSWER.length)],
     );
   }
 }
