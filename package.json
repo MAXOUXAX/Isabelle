@@ -24,11 +24,11 @@
     "type": "git",
     "url": "https://github.com/MAXOUXAX/Isabelle.git"
   },
-  "main": "src/index.js",
+  "exports": "./src/index.js",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "start": "node dist/index.js",
+    "dev": "cross-env NODE_ENV=development tsx watch src/index.ts",
+    "start": "cross-env NODE_ENV=production node dist/index.js",
     "build": "tsup src/index.ts --minify --tsconfig tsconfig.json",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -37,7 +37,10 @@
     "prepare": "husky"
   },
   "lint-staged": {
-    "*.{js,ts}": ["eslint --fix", "prettier -w"]
+    "*.{js,ts}": [
+      "eslint --fix",
+      "prettier -w"
+    ]
   },
   "dependencies": {
     "discord.js": "^14.16.3",
@@ -48,6 +51,7 @@
     "@types/eslint__js": "^8.42.3",
     "@typescript-eslint/eslint-plugin": "^8.8.1",
     "@typescript-eslint/parser": "^8.8.1",
+    "cross-env": "^7.0.3",
     "eslint": "^9.14.0",
     "husky": "^9.1.6",
     "lint-staged": "^15.2.10",
