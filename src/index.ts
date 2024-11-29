@@ -135,3 +135,24 @@ function registerModules() {
     console.log(`[Modules] Module ${module.name} initialized.`);
   }
 }
+
+client.on('guildCreate', async (guild) => {
+  if (process.env.NODE_ENV === 'development') {
+    const { size } = client.guilds.cache;
+
+    if (size > 1) {
+      console.error(
+        '[DEVELOPMENT] Isabelle is already connected to a guild. To avoid any errors, the program will not deploy commands for the new guild.',
+      );
+      return;
+    }
+
+    console.log(
+      `[DEVELOPMENT] New guild joined: ${guild.name} (id: ${guild.id}). Deploying commands for this guild...`,
+    );
+    await commandManager.deployCommandsForGuild(guild.id);
+    console.log(
+      `[DEVELOPMENT] Commands deployed for the ${guild.name} server!`,
+    );
+  }
+});
