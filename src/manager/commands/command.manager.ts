@@ -1,7 +1,7 @@
 import { config } from '@/config.js';
 import { IsabelleCommand } from '@/manager/commands/command.interface.js';
 import { IsabelleModule } from '@/modules/bot-module.js';
-import { REST, Routes, SlashCommandBuilder } from 'discord.js';
+import { REST, Routes } from 'discord.js';
 
 export class CommandManager {
   private commands = new Map<IsabelleModule, IsabelleCommand[]>();
@@ -24,13 +24,19 @@ export class CommandManager {
     return undefined;
   }
 
+  getFlatCommandsArray() {
+    return Array.from(this.commands.values())
+      .flat()
+      .map((command) => command.commandData);
+  }
+
   async deployCommandsGlobally() {
     try {
-      console.log('Started refreshing global application (/) commands.');
+      console.log(
+        'Registering global application commands (/) via REST API...',
+      );
 
-      const commands = Array.from(this.commands.values())
-        .flat()
-        .map((command) => command.commandData);
+      const commands = this.getFlatCommandsArray();
 
       await this.rest.put(
         Routes.applicationCommands(config.DISCORD_CLIENT_ID),
@@ -39,18 +45,21 @@ export class CommandManager {
         },
       );
 
-      console.log('Successfully reloaded global application (/) commands.');
+      console.log(
+        'Successfully registered global application commands (/) via REST API.',
+      );
     } catch (error) {
       console.error(error);
     }
   }
 
-  async deployCommandsForGuild(
-    guildId: string,
-    commands: SlashCommandBuilder[],
-  ) {
+  async deployCommandsForGuild(guildId: string) {
     try {
-      console.log('Started refreshing application (/) commands.');
+      console.log(
+        `Started registering application commands  (/) for guild ${guildId}.`,
+      );
+
+      const commands = this.getFlatCommandsArray();
 
       await this.rest.put(
         Routes.applicationGuildCommands(config.DISCORD_CLIENT_ID, guildId),
@@ -59,7 +68,9 @@ export class CommandManager {
         },
       );
 
-      console.log('Successfully reloaded application (/) commands.');
+      console.log(
+        'Successfully registered application commands (/) for guild via REST API.',
+      );
     } catch (error) {
       console.error(error);
     }

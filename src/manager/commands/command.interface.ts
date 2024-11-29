@@ -1,7 +1,11 @@
-import { CommandInteraction, SlashCommandBuilder } from 'discord.js';
+import {
+  CommandInteraction,
+  SlashCommandBuilder,
+  SlashCommandSubcommandsOnlyBuilder,
+} from 'discord.js';
 
 export interface IsabelleCommand {
-  commandData: SlashCommandBuilder;
+  commandData: SlashCommandBuilder | SlashCommandSubcommandsOnlyBuilder;
 
   executeCommand(interaction: CommandInteraction): void | Promise<void>;
 }
