@@ -1,6 +1,6 @@
 import { commandManager } from '@/manager/commands/command.manager.js';
 import { CoreModule } from '@/modules/core/core.module.js';
-import { Client, GatewayIntentBits } from 'discord.js';
+import { ActivityType, Client, Events, GatewayIntentBits } from 'discord.js';
 import { config } from './config.js';
 import { interactionManager } from './manager/interaction.manager.js';
 import { IsabelleModule } from './modules/bot-module.js';
@@ -18,23 +18,71 @@ export const client = new Client({
   ],
 });
 
-client.once('ready', () => {
-  console.log('Discord bot is ready! 🤖');
-  registerModules();
-});
+client.once(Events.ClientReady, () => {
+  async function handler() {
+    console.log("Connected to Discord's Gateway! 🎉");
 
-client.on('guildCreate', (guild) => {
-  console.log(`New guild joined: ${guild.name} (${guild.id})`);
+    console.log('Registering modules...');
+    registerModules();
 
-  // Only deploy ocmmands for the guild if we're in development mode
-  if (process.env.NODE_ENV !== 'development') {
-    return;
+    console.log('Deploying global commands...');
+    await commandManager.deployCommandsGlobally();
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[DEVELOPMENT] Isabelle is running in development mode.');
+
+      if (client.guilds.cache.size > 1) {
+        console.error(
+          '[DEVELOPMENT] Isabelle is connected to multiple servers while in development mode. To avoid any errors, the program will now terminate.',
+        );
+        console.error(
+          'Namely, the following servers: ',
+          client.guilds.cache.map((guild) => guild.name).join(', '),
+        );
+        return process.exit(1);
+      }
+
+      const developmentGuild = client.guilds.cache.first();
+      if (!developmentGuild) {
+        console.log(
+          '[DEVELOPMENT] No guild found. Invite Isabelle to a server to continue.',
+        );
+        return;
+      }
+
+      console.log(
+        `[DEVELOPMENT] Isabelle is connected to the ${developmentGuild.name} development server.`,
+      );
+
+      client.user?.setActivity({
+        name: 'se développer elle même',
+        type: ActivityType.Playing,
+        url: 'https://github.com/MAXOUXAX/Isabelle',
+      });
+
+      console.log('[DEVELOPMENT] Deploying commands for this single guild...');
+
+      void commandManager
+        .deployCommandsForGuild(developmentGuild.id)
+        .then(() => {
+          console.log(
+            `[DEVELOPMENT] Commands deployed for the ${developmentGuild.name} server!`,
+          );
+        });
+    }
+
+    console.log('Isabelle is ready to serve! 🚀');
   }
 
-  console.log('[DEVELOPMENT] Deploying commands for the new guild.');
+  handler().catch((error: unknown) => {
+    console.error(
+      'An error occurred while starting Isabelle:',
+      error as string,
+    );
+  });
 });
 
-client.on('interactionCreate', (interaction) => {
+client.on(Events.InteractionCreate, (interaction) => {
   if (!interaction.isCommand()) {
     return void interactionManager.handleInteraction(interaction);
   }
@@ -80,3 +128,23 @@ function registerModules() {
     console.log(`[Modules] Module ${module.name} initialized.`);
   }
 }
+
+client.on(Events.GuildCreate, (guild) => {
+  if (process.env.NODE_ENV === 'development') {
+    if (client.guilds.cache.size > 1) {
+      console.error(
+        '[DEVELOPMENT] Isabelle is already connected to a guild. To avoid any errors, the program will not deploy commands for the new guild.',
+      );
+      return;
+    }
+
+    console.log(
+      `[DEVELOPMENT] New guild joined: ${guild.name} (id: ${guild.id}). Deploying commands for this guild...`,
+    );
+    void commandManager.deployCommandsForGuild(guild.id).then(() => {
+      console.log(
+        `[DEVELOPMENT] Commands deployed for the ${guild.name} server!`,
+      );
+    });
+  }
+});
