@@ -59,8 +59,7 @@ export class SutomCommand implements IsabelleCommand {
         case WordState.GAME_FINISHED:
           await interaction
             .reply(
-              `${game.renderHistory()}\nLa partie est déjà terminée ! Le mot était: ` +
-                game.word,
+              `${game.renderHistory()}\nLa partie est déjà terminée ! Le mot était: ${game.word}`,
             )
             .catch((e: unknown) => {
               console.error(e);
