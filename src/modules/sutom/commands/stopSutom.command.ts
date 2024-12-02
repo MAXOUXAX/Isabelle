@@ -12,7 +12,7 @@ export class StartSutomCommand implements IsabelleCommand {
 
     const game = sutomGameManager.getGame(user.id);
     if (!game) {
-      await interaction
+      interaction
         .reply(
           "Tu n'as pas de partie en cours ! Utilise la commande /start-sutom pour en commencer une.",
         )

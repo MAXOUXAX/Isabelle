@@ -9,13 +9,13 @@ export class RussianRouletteCommand implements IsabelleCommand {
       "Joue à la roulette russe pour avoir une chance d'être banni !",
     );
 
-  async executeCommand(interaction: CommandInteraction) {
+  executeCommand(interaction: CommandInteraction) {
     const user = interaction.user.id;
 
     const guild = interaction.guild;
 
     if (!guild) {
-      await interaction.reply("You can't play this game in DMs!");
+      void interaction.reply("You can't play this game in DMs!");
       return;
     }
 
@@ -32,8 +32,8 @@ export class RussianRouletteCommand implements IsabelleCommand {
           // Create an invite to the killed user to join back
           guild.invites
             .create(interaction.channelId)
-            .then(async (invite) => {
-              await dm.send(`https://discord.gg/${invite.code}`);
+            .then((invite) => {
+              void dm.send(`https://discord.gg/${invite.code}`);
               interaction.guild?.members
                 .kick(killed, 'Tu as perdu à la roulette russe, RIP')
                 .catch((e: unknown) => {
@@ -55,11 +55,9 @@ export class RussianRouletteCommand implements IsabelleCommand {
             })
             .catch((e: unknown) => {
               console.error('[RussianRoulette] Error while creating invite', e);
-              interaction
-                .reply('Click ! Tu as survécu à la roulette russe, GG')
-                .catch((e: unknown) => {
-                  console.error(e);
-                });
+              void interaction.reply(
+                'Click ! Tu as survécu à la roulette russe, GG',
+              );
             });
         })
         .catch((e: unknown) => {

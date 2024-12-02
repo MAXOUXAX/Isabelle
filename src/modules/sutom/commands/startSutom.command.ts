@@ -9,12 +9,12 @@ export class StartSutomCommand implements IsabelleCommand {
       'Joue une partie de sutom ! Chaque joueur a sa propre instance de jeu.',
     );
 
-  public async executeCommand(interaction: CommandInteraction): Promise<void> {
+  public executeCommand(interaction: CommandInteraction): void {
     const { user } = interaction;
 
     const isNewGame = sutomGameManager.createGame(user.id);
     if (!isNewGame) {
-      await interaction
+      interaction
         .reply('Tu as déjà une partie en cours !')
         .catch((e: unknown) => {
           console.error(e);
@@ -24,7 +24,7 @@ export class StartSutomCommand implements IsabelleCommand {
 
     const channel = interaction.channel;
     if (channel?.isSendable()) {
-      await interaction
+      interaction
         .reply(
           `Une partie de Sutom a été créée pour toi !\n${sutomGameManager.getGame(user.id)?.renderHistory() ?? ''}`,
         )
