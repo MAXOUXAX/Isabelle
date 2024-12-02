@@ -20,8 +20,6 @@ export class CommandManager {
         return command;
       }
     }
-
-    return undefined;
   }
 
   getFlatCommandsArray() {
