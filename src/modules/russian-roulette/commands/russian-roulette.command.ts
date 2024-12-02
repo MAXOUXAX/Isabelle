@@ -88,17 +88,20 @@ let numberOfGamesSinceLastKill = 0;
 
 function howIsGonnaBeKilled(user: string, guild: Guild) {
   const isSelfKilling = Math.random() > PERCENTAGES.kill_other;
-  const isKillingMapped = increasePercentageWithLog(
+  const killingThreshold = increasePercentageWithLog(
     PERCENTAGES.is_killing,
     0.7,
   );
+
+  console.log('[RussianRoullete] killingThreshold', killingThreshold);
+
   if (isSelfKilling) {
-    if (Math.random() < isKillingMapped) {
+    if (Math.random() < killingThreshold) {
       numberOfGamesSinceLastKill = 0;
       return user;
     }
   } else {
-    if (Math.random() < isKillingMapped) {
+    if (Math.random() < killingThreshold) {
       return (
         guild.members.cache.filter((member) => member.kickable).random()?.id ??
         user
