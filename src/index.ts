@@ -1,5 +1,8 @@
 import { commandManager } from '@/manager/commands/command.manager.js';
 import { CoreModule } from '@/modules/core/core.module.js';
+import { PlanifierModule } from '@/modules/planifier/planifier.module.js';
+import { RussianRoulette } from '@/modules/russian-roulette/russian-roulette.module.js';
+import { SutomModule } from '@/modules/sutom/sutom.module.js';
 import { ActivityType, Client, Events, GatewayIntentBits } from 'discord.js';
 import { config } from './config.js';
 import { interactionManager } from './manager/interaction.manager.js';
@@ -17,6 +20,14 @@ export const client = new Client({
     GatewayIntentBits.MessageContent,
   ],
 });
+
+const MODULES: IsabelleModule[] = [
+  new CoreModule(),
+  new HotPotato(),
+  new PlanifierModule(),
+  new RussianRoulette(),
+  new SutomModule(),
+];
 
 client.once(Events.ClientReady, () => {
   async function handler() {
@@ -46,7 +57,7 @@ client.once(Events.ClientReady, () => {
         );
         return;
       }
-
+      
       console.log(
         `[DEVELOPMENT] Isabelle is connected to the ${developmentGuild.name} development server.`,
       );
@@ -127,8 +138,6 @@ client.on(Events.InteractionCreate, (interaction) => {
 
 await client.login(config.DISCORD_TOKEN);
 
-const MODULES: IsabelleModule[] = [new CoreModule(), new HotPotato()];
-
 function registerModules() {
   for (const module of MODULES) {
     console.log(`[Modules] Initializing module ${module.name}`);
@@ -137,6 +146,21 @@ function registerModules() {
     interactionManager.registerInteractionHandlers(module.interactionHandlers);
     console.log(`[Modules] Module ${module.name} initialized.`);
   }
+
+  commandManager
+    .deployCommandsForGuild(
+      config.DISCORD_GUILD_ID,
+      commandManager.getIsabelleCommandsAsSlashBuilderArray(),
+    )
+    .then(() => {
+      console.log('Successfully deployed commands for the guild.');
+    })
+    .catch((error: unknown) => {
+      console.error(
+        'An error occurred while deploying commands for the guild.',
+        error,
+      );
+    });
 }
 
 client.on(Events.GuildCreate, (guild) => {
