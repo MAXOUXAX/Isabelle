@@ -54,7 +54,7 @@ export class CommandManager {
   async deployCommandsForGuild(guildId: string) {
     try {
       console.log(
-        `Started registering application commands  (/) for guild ${guildId}.`,
+        `Started registering application commands (/) for guild ${guildId}.`,
       );
 
       const commands = this.getFlatCommandsArray();
