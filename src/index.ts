@@ -25,9 +25,6 @@ client.once(Events.ClientReady, () => {
     console.log('Registering modules...');
     registerModules();
 
-    console.log('Deploying global commands...');
-    await commandManager.deployCommandsGlobally();
-
     if (process.env.NODE_ENV === 'development') {
       console.log('[DEVELOPMENT] Isabelle is running in development mode.');
 
@@ -69,6 +66,19 @@ client.once(Events.ClientReady, () => {
             `[DEVELOPMENT] Commands deployed for the ${developmentGuild.name} server!`,
           );
         });
+    } else if (process.env.NODE_ENV === 'production') {
+      console.log('[PRODUCTION] Isabelle is running in production mode.');
+
+      console.log('[PRODUCTION] Deploying global commands...');
+      await commandManager.deployCommandsGlobally();
+      console.log(
+        '[PRODUCTION] Global commands deployed! If this is the first time you deploy commands, it may take up to an hour before they are available.',
+      );
+    } else {
+      console.error(
+        'No valid environment specified. Please set the NODE_ENV environment variable to either "development" or "production".',
+      );
+      return process.exit(1);
     }
 
     console.log('Isabelle is ready to serve! 🚀');
