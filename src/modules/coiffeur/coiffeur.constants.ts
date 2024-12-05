@@ -1,4 +1,6 @@
-export const WHY = [
+import { MessageDictionnary } from '@/utils/dictionnary.js';
+
+const WHY = [
   'pourquoi',
   'pourkoi',
   'pourkwa',
@@ -7,9 +9,9 @@ export const WHY = [
   'pour kwa',
 ];
 
-export const WHAT = ['quoi', 'koi', 'kwa'];
+const WHAT = ['quoi', 'koi', 'kwa'];
 
-export const WHAT_ANSWER = [
+const WHAT_ANSWER = [
   'feur',
   'feur!',
   'feur.',
@@ -24,7 +26,7 @@ export const WHAT_ANSWER = [
   'coubeh...',
 ];
 
-export const WHY_ANWSER = [
+const WHY_ANWSER = [
   'Pour feur!',
   'Pour feur.',
   'Pour feur?',
@@ -34,3 +36,14 @@ export const WHY_ANWSER = [
   'Parce que feur?',
   'Parce que feur...',
 ];
+
+export const COIFFEUR_DICTIONARY: MessageDictionnary = {
+  why: {
+    trigger: WHY,
+    answer: WHY_ANWSER,
+  },
+  what: {
+    trigger: WHAT,
+    answer: WHAT_ANSWER,
+  },
+};
