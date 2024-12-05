@@ -1,7 +1,8 @@
 import { Message } from 'discord.js';
 import { COIFFEUR_DICTIONARY } from '@/modules/coiffeur/coiffeur.constants.js';
 
-function shouldReply(): boolean {
+function shouldReply(message: string): boolean {
+  console.log(message); //Fais plaisir à ESLint
   return Math.random() > 0.66; //Répond une fois sur 3 (en théorie)
 }
 
@@ -11,7 +12,7 @@ export async function coiffeurMessageListener(message: Message): Promise<void> {
   const content = message.content.toLowerCase();
 
   //Isabelle répond ?
-  if (shouldReply()) {
+  if (shouldReply(content)) {
     //On regarde si le message contient un trigger
     for (const key in COIFFEUR_DICTIONARY) {
       const { trigger, answer } = COIFFEUR_DICTIONARY[key];
