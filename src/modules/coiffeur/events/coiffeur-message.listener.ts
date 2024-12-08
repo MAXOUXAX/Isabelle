@@ -1,8 +1,8 @@
 import { Message } from 'discord.js';
 import { COIFFEUR_DICTIONARY } from '@/modules/coiffeur/coiffeur.constants.js';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function shouldReply(message: string): boolean {
-  console.log(message); //Fais plaisir à ESLint
   return Math.random() > 0.66; //Répond une fois sur 3 (en théorie)
 }
 
@@ -13,16 +13,15 @@ export async function coiffeurMessageListener(message: Message): Promise<void> {
 
   //Isabelle répond ?
   if (shouldReply(content)) {
-    //On regarde si le message contient un trigger
-    for (const key in COIFFEUR_DICTIONARY) {
-      const { trigger, answer } = COIFFEUR_DICTIONARY[key];
+    const matchedEntry = Object.entries(COIFFEUR_DICTIONARY).find(
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      ([_, { trigger }]) => trigger.some((t) => content.includes(t)),
+    );
 
-      if (trigger.some((t) => content.includes(t))) {
-        // si oui, Isabelle répond avec une réponse aléatoire parmi celle disponibles dans le dico
-        const randomAnswer = answer[Math.floor(Math.random() * answer.length)];
-        await message.reply(randomAnswer);
-        return;
-      }
+    if (matchedEntry) {
+      const { answer } = matchedEntry[1];
+      const randomAnswer = answer[Math.floor(Math.random() * answer.length)];
+      await message.reply(randomAnswer);
     }
   }
 }
