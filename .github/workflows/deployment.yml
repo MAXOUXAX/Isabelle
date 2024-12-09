@@ -1,8 +1,13 @@
-# This workflow runs when the "Build" workflow is completed
+# This workflow runs when a release is published, or the workflow is manually dispatched
 on:
-  workflow_run:
-    types: [completed]
-    workflows: ['Build and Package']
+  release: 
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy (defaults to latest)'
+        required: false
+        type: string
 
 name: Deploy to Pterodactyl
 
@@ -13,12 +18,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download a Build Artifact
+      - name: Get Version to Deploy
+        id: get-version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download Build Artifact
         uses: actions/download-artifact@v4
         with:
-          path: isabelle-build
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ github.event.workflow_run.id }}
+          name: build-artifact-${{ steps.get-version.outputs.version }}
+          path: build-artifact
 
       - name: Create Backup
         id: create-backup
