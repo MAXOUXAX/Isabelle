@@ -4,6 +4,9 @@
   "version": "1.0.1",
   "description": "Isabelle est un BOT Discord à destination des élèves de TELECOM Nancy, et plus particulièrement aux étudiants de la promotion 2027 des FISA",
   "author": "MAXOUXAX",
+  "engines": {
+    "node": ">=22"
+  },
   "packageManager": "npm@10.9.0",
   "license": "AGPL-3.0-or-later",
   "homepage": "https://github.com/MAXOUXAX/Isabelle",
@@ -29,7 +32,7 @@
   "scripts": {
     "dev": "cross-env NODE_ENV=development tsx watch src/index.ts",
     "start": "cross-env NODE_ENV=production node dist/index.js",
-    "build": "tsup src/index.ts --minify --tsconfig tsconfig.json",
+    "build": "tsup src/index.ts --minify --sourcemap --format esm --tsconfig tsconfig.json",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prettier": "prettier --ignore-path .gitignore --write \"./src/**/*.+(js|ts|json)\"",
