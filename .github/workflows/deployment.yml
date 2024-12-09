@@ -1,0 +1,80 @@
+# This workflow runs when a release is published, or the workflow is manually dispatched
+on:
+  release: 
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy (defaults to latest)'
+        required: false
+        type: string
+
+name: Deploy to Pterodactyl
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get Version to Deploy
+        id: get-version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact-${{ steps.get-version.outputs.version }}
+          path: build-artifact
+
+      - name: Create Backup
+        id: create-backup
+        run: |
+          BACKUP_UUID=$(curl -X POST "${{ secrets.PANEL_URL }}/api/client/servers/${{ secrets.PANEL_SERVER_ID }}/backups" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.PANEL_API_KEY }}" | jq -r '.attributes.uuid')
+          if [ -z "$BACKUP_UUID" ]; then
+            echo "Failed to create backup"
+            exit 1
+          fi
+          echo "backup_uuid=$BACKUP_UUID" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for Backup Completion
+        run: |
+          BACKUP_UUID=${{ steps.create-backup.outputs.backup_uuid }}
+          while true; do
+            RESPONSE=$(curl "${{ secrets.PANEL_URL }}/api/client/servers/${{ secrets.PANEL_SERVER_ID }}/backups/$BACKUP_UUID" \
+              -H "Accept: application/json" \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer ${{ secrets.PANEL_API_KEY }}")
+            
+            COMPLETED_AT=$(echo "$RESPONSE" | jq -r '.attributes.completed_at')
+            
+            if [ "$COMPLETED_AT" != "null" ]; then
+              echo "Backup completed successfully at $COMPLETED_AT"
+              break
+            fi
+            echo "Waiting for backup to complete..."
+            sleep 10
+          done
+          
+      - name: Upload Artifact to Pterodactyl Panel
+        run: |
+          curl -X POST "${{ secrets.PANEL_URL }}/api/client/servers/${{ secrets.PANEL_SERVER_ID }}/files" \
+            -H "Authorization: Bearer ${{ secrets.PANEL_API_KEY }}" \
+            --form "file=@build-artifact/*" \
+            --form "directory=/app"
+
+      - name: Restart Pterodactyl Server
+        run: |
+          curl -X POST "${{ secrets.PANEL_URL }}/api/client/servers/${{ secrets.PANEL_SERVER_ID }}/power" \
+            -H "Authorization: Bearer ${{ secrets.PANEL_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"signal": "restart"}'
