@@ -11,10 +11,10 @@ name: ESLint
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ['main']
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [ "main" ]
+    branches: ['main']
   schedule:
     - cron: '54 05 * * 3'
 
@@ -32,11 +32,13 @@ jobs:
 
       - name: Install Dependencies
         # Not using npm ci because we want to install devDependencies
-        run: npm install
+        run: |
+          - npm install
+          - npm install @microsoft/eslint-formatter-sarif
 
       - name: Run ESLint
         env:
-          SARIF_ESLINT_IGNORE_SUPPRESSED: "true"
+          SARIF_ESLINT_IGNORE_SUPPRESSED: 'true'
         run: npx eslint .
           --config eslint.config.js
           --format @microsoft/eslint-formatter-sarif
