@@ -5,6 +5,7 @@ import { config } from './config.js';
 import { interactionManager } from './manager/interaction.manager.js';
 import { IsabelleModule } from './modules/bot-module.js';
 import { HotPotato } from './modules/hot-potato/hot-potato.module.js';
+import { Coiffeur } from '@/modules/coiffeur/coiffeur.module.js';
 
 export const client = new Client({
   intents: [
@@ -127,7 +128,11 @@ client.on(Events.InteractionCreate, (interaction) => {
 
 await client.login(config.DISCORD_TOKEN);
 
-const MODULES: IsabelleModule[] = [new CoreModule(), new HotPotato()];
+const MODULES: IsabelleModule[] = [
+  new CoreModule(),
+  new HotPotato(),
+  new Coiffeur(),
+];
 
 function registerModules() {
   for (const module of MODULES) {
