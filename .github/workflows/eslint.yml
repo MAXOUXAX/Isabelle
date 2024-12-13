@@ -33,8 +33,8 @@ jobs:
       - name: Install Dependencies
         # Not using npm ci because we want to install devDependencies
         run: |
-          - npm install
-          - npm install @microsoft/eslint-formatter-sarif
+          npm install
+          npm install @microsoft/eslint-formatter-sarif
 
       - name: Run ESLint
         env:
