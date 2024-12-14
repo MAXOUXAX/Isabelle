@@ -1,7 +1,13 @@
 import { config } from '@/config.js';
 import { IsabelleCommand } from '@/manager/commands/command.interface.js';
 import { IsabelleModule } from '@/modules/bot-module.js';
-import { REST, Routes } from 'discord.js';
+import {
+  REST,
+  Routes,
+  SlashCommandBuilder,
+  SlashCommandOptionsOnlyBuilder,
+  SlashCommandOptionsOnlyBuilder
+} from 'discord.js';
 
 export class CommandManager {
   private commands = new Map<IsabelleModule, IsabelleCommand[]>();
@@ -72,6 +78,16 @@ export class CommandManager {
     } catch (error) {
       console.error(error);
     }
+  }
+
+  getIsabelleCommandsAsSlashBuilderArray(): (
+    | SlashCommandBuilder
+    | SlashCommandOptionsOnlyBuilder
+    | SlashCommandOptionsOnlyBuilder
+  )[] {
+    return Array.from(this.commands.values())
+      .flat()
+      .map((command) => command.commandData);
   }
 }
 
