@@ -137,10 +137,35 @@ const MODULES: IsabelleModule[] = [
 function registerModules() {
   for (const module of MODULES) {
     console.log(`[Modules] Initializing module ${module.name}`);
-    module.init();
-    commandManager.registerCommandsFromModule(module);
-    interactionManager.registerInteractionHandlers(module.interactionHandlers);
-    console.log(`[Modules] Module ${module.name} initialized.`);
+    const startTime = performance.now();
+
+    try {
+      module.init();
+      commandManager.registerCommandsFromModule(module);
+      interactionManager.registerInteractionHandlers(
+        module.interactionHandlers,
+      );
+
+      const endTime = performance.now();
+      const loadTime = endTime - startTime;
+
+      if (loadTime > 1000) {
+        console.warn(
+          `[Modules] WARNING! Module ${module.name} took ${loadTime.toFixed(2)}ms to initialize! This may impact bot startup time.`,
+        );
+      } else {
+        console.log(
+          `[Modules] Module ${module.name} initialized in ${loadTime.toFixed(2)}ms`,
+        );
+      }
+    } catch (error) {
+      console.error(
+        `[Modules] Failed to initialize module ${module.name}:`,
+        error,
+      );
+      console.error(`[Modules] Module ${module.name} will be disabled`);
+      continue;
+    }
   }
 }
 
