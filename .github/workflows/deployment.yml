@@ -29,11 +29,15 @@ jobs:
 
       - name: Create Backup
         id: create-backup
+        env:
+          PANEL_URL: ${{ secrets.PANEL_URL }}
+          PANEL_SERVER_ID: ${{ secrets.PANEL_SERVER_ID }}
+          PANEL_API_KEY: ${{ secrets.PANEL_API_KEY }}
         run: |
-          BACKUP_UUID=$(curl -X POST "${{ secrets.PANEL_URL }}/api/client/servers/${{ secrets.PANEL_SERVER_ID }}/backups" \
+          BACKUP_UUID=$(curl -X POST "$PANEL_URL/api/client/servers/$PANEL_SERVER_ID/backups" \
             -H "Accept: application/json" \
             -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${{ secrets.PANEL_API_KEY }}" | jq -r '.attributes.uuid')
+            -H "Authorization: Bearer $PANEL_API_KEY" | jq -r '.attributes.uuid')
           if [ -z "$BACKUP_UUID" ]; then
             echo "Failed to create backup"
             exit 1
@@ -41,13 +45,17 @@ jobs:
           echo "backup_uuid=$BACKUP_UUID" >> "$GITHUB_OUTPUT"
 
       - name: Wait for Backup Completion
+        env:
+          PANEL_URL: ${{ secrets.PANEL_URL }}
+          PANEL_SERVER_ID: ${{ secrets.PANEL_SERVER_ID }}
+          PANEL_API_KEY: ${{ secrets.PANEL_API_KEY }}
+          BACKUP_UUID: ${{ steps.create-backup.outputs.backup_uuid }}
         run: |
-          BACKUP_UUID=${{ steps.create-backup.outputs.backup_uuid }}
           while true; do
-            RESPONSE=$(curl "${{ secrets.PANEL_URL }}/api/client/servers/${{ secrets.PANEL_SERVER_ID }}/backups/$BACKUP_UUID" \
+            RESPONSE=$(curl "$PANEL_URL/api/client/servers/$PANEL_SERVER_ID/backups/$BACKUP_UUID" \
               -H "Accept: application/json" \
               -H "Content-Type: application/json" \
-              -H "Authorization: Bearer ${{ secrets.PANEL_API_KEY }}")
+              -H "Authorization: Bearer $PANEL_API_KEY")
             
             COMPLETED_AT=$(echo "$RESPONSE" | jq -r '.attributes.completed_at')
             
@@ -60,15 +68,23 @@ jobs:
           done
 
       - name: Upload Artifact to Pterodactyl Panel
+        env:
+          PANEL_URL: ${{ secrets.PANEL_URL }}
+          PANEL_SERVER_ID: ${{ secrets.PANEL_SERVER_ID }}
+          PANEL_API_KEY: ${{ secrets.PANEL_API_KEY }}
         run: |
-          curl -X POST "${{ secrets.PANEL_URL }}/api/client/servers/${{ secrets.PANEL_SERVER_ID }}/files" \
-            -H "Authorization: Bearer ${{ secrets.PANEL_API_KEY }}" \
+          curl -X POST "$PANEL_URL/api/client/servers/$PANEL_SERVER_ID/files" \
+            -H "Authorization: Bearer $PANEL_API_KEY" \
             --form "file=@build-artifact/*" \
             --form "directory=/app"
 
       - name: Restart Pterodactyl Server
+        env:
+          PANEL_URL: ${{ secrets.PANEL_URL }}
+          PANEL_SERVER_ID: ${{ secrets.PANEL_SERVER_ID }}
+          PANEL_API_KEY: ${{ secrets.PANEL_API_KEY }}
         run: |
-          curl -X POST "${{ secrets.PANEL_URL }}/api/client/servers/${{ secrets.PANEL_SERVER_ID }}/power" \
-            -H "Authorization: Bearer ${{ secrets.PANEL_API_KEY }}" \
+          curl -X POST "$PANEL_URL/api/client/servers/$PANEL_SERVER_ID/power" \
+            -H "Authorization: Bearer $PANEL_API_KEY" \
             -H "Content-Type: application/json" \
             -d '{"signal": "restart"}'
