@@ -98,47 +98,18 @@ jobs:
             sleep 10
           done
 
+      - name: Create Archive for Upload
+        run: |
+          cd build-artifact
+          tar -czf app.tar.gz .
+            
       - name: Upload Artifact to Pterodactyl Panel
-        run: |
-          # Debug: List files to upload
-          echo "Contents of build-artifact directory:"
-          ls -la build-artifact/
-          
-          # Upload each file individually
-          for file in build-artifact/*; do
-            echo "Uploading $file..."
-            RESPONSE=$(curl -v -k -s -w "\n%{http_code}" \
-              -X POST "$PANEL_URL/api/client/servers/$PANEL_SERVER_ID/files" \
-              -H "Authorization: Bearer $PANEL_API_KEY" \
-              --form "file=@$file" \
-              --form "directory=/app" 2>&1)
-            
-            HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
-            BODY=$(echo "$RESPONSE" | sed '$d')
-            
-            if [ "$HTTP_STATUS" -ne 200 ]; then
-              echo "Error uploading $file: HTTP status $HTTP_STATUS"
-              echo "Response body: $BODY"
-              exit 1
-            fi
-            
-            echo "Successfully uploaded $file"
-          done
-
-      - name: Restart Pterodactyl Server
-        run: |
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$PANEL_URL/api/client/servers/$PANEL_SERVER_ID/power" \
-            -H "Authorization: Bearer $PANEL_API_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{"signal": "restart"}')
-          
-          HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
-          BODY=$(echo "$RESPONSE" | sed '$d')
-          
-          if [ "$HTTP_STATUS" -ne 200 ]; then
-            echo "Error restarting server: HTTP status $HTTP_STATUS"
-            echo "Response body: $BODY"
-            exit 1
-          fi
-          
-          echo "Successfully initiated server restart"
+        uses: rexlManu/pterodactyl-upload-action@v2.4
+        with:
+          panel-host: ${{ secrets.PANEL_URL }}
+          api-key: ${{ secrets.PANEL_API_KEY }}
+          restart: true
+          server-id: ${{ secrets.PANEL_SERVER_ID }}
+          source: ./build-artifact/app.tar.gz
+          decompress-target: true
+          target: ./app
