@@ -1,36 +1,30 @@
 # This workflow runs when a release is published, or the workflow is manually dispatched
 on:
-  release: 
+  release:
     types: [published]
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to deploy (defaults to latest)'
-        required: false
+        description: 'Version to deploy (git tag)'
+        required: true
         type: string
 
 name: Deploy to Pterodactyl
 
 jobs:
+  call-build-workflow:
+    uses: ./.github/workflows/build.yml
+    with:
+      version: ${{ github.event.release.tag_name || inputs.version }}
+
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Get Version to Deploy
-        id: get-version
-        run: |
-          if [ -n "${{ inputs.version }}" ]; then
-            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
-          fi
-
       - name: Download Build Artifact
         uses: actions/download-artifact@v4
         with:
-          name: build-artifact-${{ steps.get-version.outputs.version }}
+          name: build-artifact-${{ inputs.version || github.event.release.tag_name }}
           path: build-artifact
 
       - name: Create Backup
@@ -64,7 +58,7 @@ jobs:
             echo "Waiting for backup to complete..."
             sleep 10
           done
-          
+
       - name: Upload Artifact to Pterodactyl Panel
         run: |
           curl -X POST "${{ secrets.PANEL_URL }}/api/client/servers/${{ secrets.PANEL_SERVER_ID }}/files" \
