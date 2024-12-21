@@ -20,8 +20,24 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: call-build-workflow
+    environment: production
+
+    env:
+      PANEL_URL: ${{ secrets.PANEL_URL }}
+      PANEL_SERVER_ID: ${{ secrets.PANEL_SERVER_ID }}
+      PANEL_API_KEY: ${{ secrets.PANEL_API_KEY }}
 
     steps:
+      - name: Verify Required Secrets
+        run: |
+          if [ -z "$PANEL_URL" ] || [ -z "$PANEL_SERVER_ID" ] || [ -z "$PANEL_API_KEY" ]; then
+            echo "Error: Required environment variables are not set"
+            exit 1
+          fi
+          # Remove trailing slashes from URL if present
+          PANEL_URL="${PANEL_URL%/}"
+          echo "PANEL_URL=$PANEL_URL" >> $GITHUB_ENV
+
       - name: Download Build Artifact
         uses: actions/download-artifact@v4
         with:
@@ -30,30 +46,8 @@ jobs:
 
       - name: Create Backup
         id: create-backup
-        env:
-          PANEL_URL: ${{ secrets.PANEL_URL }}
-          PANEL_SERVER_ID: ${{ secrets.PANEL_SERVER_ID }}
-          PANEL_API_KEY: ${{ secrets.PANEL_API_KEY }}
         run: |
-          # Debug output (will be masked in logs if contains secret)
-          echo "Panel URL: $PANEL_URL"
-          echo "Server ID: $PANEL_SERVER_ID"
-          
-          # Verify variables are not empty
-          if [ -z "$PANEL_URL" ] || [ -z "$PANEL_SERVER_ID" ] || [ -z "$PANEL_API_KEY" ]; then
-            echo "Error: Required environment variables are not set"
-            exit 1
-          fi
-          
-          # Remove trailing slashes from URL if present
-          PANEL_URL="${PANEL_URL%/}"
-          
-          # Form the complete URL and store it in a variable
-          BACKUP_URL="${PANEL_URL}/api/client/servers/${PANEL_SERVER_ID}/backups"
-          echo "Making request to: $BACKUP_URL"
-          
-          # Make the API call with proper error handling
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BACKUP_URL" \
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$PANEL_URL/api/client/servers/$PANEL_SERVER_ID/backups" \
             -H "Accept: application/json" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer $PANEL_API_KEY")
@@ -76,21 +70,26 @@ jobs:
           
           echo "backup_uuid=$BACKUP_UUID" >> "$GITHUB_OUTPUT"
           echo "Successfully created backup with UUID: $BACKUP_UUID"
+          
       - name: Wait for Backup Completion
-        env:
-          PANEL_URL: ${{ secrets.PANEL_URL }}
-          PANEL_SERVER_ID: ${{ secrets.PANEL_SERVER_ID }}
-          PANEL_API_KEY: ${{ secrets.PANEL_API_KEY }}
-          BACKUP_UUID: ${{ steps.create-backup.outputs.backup_uuid }}
         run: |
+          BACKUP_UUID=${{ steps.create-backup.outputs.backup_uuid }}
           while true; do
-            RESPONSE=$(curl "$PANEL_URL/api/client/servers/$PANEL_SERVER_ID/backups/$BACKUP_UUID" \
+            RESPONSE=$(curl -s -w "\n%{http_code}" "$PANEL_URL/api/client/servers/$PANEL_SERVER_ID/backups/$BACKUP_UUID" \
               -H "Accept: application/json" \
               -H "Content-Type: application/json" \
               -H "Authorization: Bearer $PANEL_API_KEY")
             
-            COMPLETED_AT=$(echo "$RESPONSE" | jq -r '.attributes.completed_at')
+            HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
+            BODY=$(echo "$RESPONSE" | sed '$d')
             
+            if [ "$HTTP_STATUS" -ne 200 ]; then
+              echo "Error checking backup status: HTTP status $HTTP_STATUS"
+              echo "Response body: $BODY"
+              exit 1
+            fi
+            
+            COMPLETED_AT=$(echo "$BODY" | jq -r '.attributes.completed_at')
             if [ "$COMPLETED_AT" != "null" ]; then
               echo "Backup completed successfully at $COMPLETED_AT"
               break
@@ -100,23 +99,37 @@ jobs:
           done
 
       - name: Upload Artifact to Pterodactyl Panel
-        env:
-          PANEL_URL: ${{ secrets.PANEL_URL }}
-          PANEL_SERVER_ID: ${{ secrets.PANEL_SERVER_ID }}
-          PANEL_API_KEY: ${{ secrets.PANEL_API_KEY }}
         run: |
-          curl -X POST "$PANEL_URL/api/client/servers/$PANEL_SERVER_ID/files" \
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$PANEL_URL/api/client/servers/$PANEL_SERVER_ID/files" \
             -H "Authorization: Bearer $PANEL_API_KEY" \
             --form "file=@build-artifact/*" \
-            --form "directory=/app"
+            --form "directory=/app")
+          
+          HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "Error uploading artifact: HTTP status $HTTP_STATUS"
+            echo "Response body: $BODY"
+            exit 1
+          fi
+          
+          echo "Successfully uploaded artifact"
 
       - name: Restart Pterodactyl Server
-        env:
-          PANEL_URL: ${{ secrets.PANEL_URL }}
-          PANEL_SERVER_ID: ${{ secrets.PANEL_SERVER_ID }}
-          PANEL_API_KEY: ${{ secrets.PANEL_API_KEY }}
         run: |
-          curl -X POST "$PANEL_URL/api/client/servers/$PANEL_SERVER_ID/power" \
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$PANEL_URL/api/client/servers/$PANEL_SERVER_ID/power" \
             -H "Authorization: Bearer $PANEL_API_KEY" \
             -H "Content-Type: application/json" \
-            -d '{"signal": "restart"}'
+            -d '{"signal": "restart"}')
+          
+          HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "Error restarting server: HTTP status $HTTP_STATUS"
+            echo "Response body: $BODY"
+            exit 1
+          fi
+          
+          echo "Successfully initiated server restart"
