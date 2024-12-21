@@ -100,8 +100,7 @@ jobs:
 
       - name: Create Archive for Upload
         run: |
-          cd build-artifact
-          tar -czf app.tar.gz .
+          tar -czf app.tar.gz ./build-artifact
             
       - name: Upload Artifact to Pterodactyl Panel
         uses: rexlManu/pterodactyl-upload-action@v2.4
@@ -110,6 +109,6 @@ jobs:
           api-key: ${{ secrets.PANEL_API_KEY }}
           restart: true
           server-id: ${{ secrets.PANEL_SERVER_ID }}
-          source: ./build-artifact/app.tar.gz
+          source: ./app.tar.gz
           decompress-target: true
           target: ./app
