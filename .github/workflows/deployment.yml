@@ -112,19 +112,8 @@ jobs:
           restart: true
           server-id: ${{ secrets.PANEL_SERVER_ID }}
           source: app.tar.gz
+          decompress-target: true
           target: app.tar.gz
-
-      - name: Decompress Archive on Server
-        run: |
-          curl "$PANEL_URL/api/client/servers/$PANEL_SERVER_ID/files/decompress" \
-            -H 'Accept: application/json' \
-            -H 'Content-Type: application/json' \
-            -H 'Authorization: Bearer $PANEL_API_KEY' \
-            -X POST \
-            -d '{
-            "root": "/", 
-            "file": "app.tar.gz"
-          }'
 
       - name: Cleanup
         run: |
@@ -135,7 +124,7 @@ jobs:
             -H 'Accept: application/json' \
             -H 'Content-Type: application/json' \
             -H 'Authorization: Bearer $PANEL_API_KEY' \
-            -X DELETE \
+            -X POST \
             -d '{
             "root": "/", 
             "files": ["app.tar.gz"]
