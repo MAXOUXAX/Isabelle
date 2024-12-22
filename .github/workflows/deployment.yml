@@ -51,26 +51,26 @@ jobs:
             -H "Accept: application/json" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer $PANEL_API_KEY")
-          
+
           HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
           BODY=$(echo "$RESPONSE" | sed '$d')
-          
+
           if [ "$HTTP_STATUS" -ne 200 ]; then
             echo "Error: HTTP status $HTTP_STATUS"
             echo "Response body: $BODY"
             exit 1
           fi
-          
+
           BACKUP_UUID=$(echo "$BODY" | jq -r '.attributes.uuid')
           if [ -z "$BACKUP_UUID" ] || [ "$BACKUP_UUID" = "null" ]; then
             echo "Failed to extract backup UUID from response"
             echo "Response body: $BODY"
             exit 1
           fi
-          
+
           echo "backup_uuid=$BACKUP_UUID" >> "$GITHUB_OUTPUT"
           echo "Successfully created backup with UUID: $BACKUP_UUID"
-          
+
       - name: Wait for Backup Completion
         run: |
           BACKUP_UUID=${{ steps.create-backup.outputs.backup_uuid }}
@@ -102,7 +102,7 @@ jobs:
         run: |
           tar -czf app.tar.gz ./build-artifact
           ls -lh app.tar.gz
-            
+
       - name: Upload Artifact to Pterodactyl Panel
         id: upload
         uses: rexlManu/pterodactyl-upload-action@v2.4
@@ -112,13 +112,31 @@ jobs:
           restart: true
           server-id: ${{ secrets.PANEL_SERVER_ID }}
           source: app.tar.gz
-          decompress-target: true
           target: app.tar.gz
 
-      - name: Verify Upload
+      - name: Decompress Archive on Server
         run: |
-          # Check if the upload log contains error messages
-          if grep -q "Error: Upload failed" "$GITHUB_STEP_SUMMARY"; then
-            echo "Upload failed with errors"
-            exit 1
-          fi
+          curl "$PANEL_URL/api/client/servers/$PANEL_SERVER_ID/files/decompress" \
+            -H 'Accept: application/json' \
+            -H 'Content-Type: application/json' \
+            -H 'Authorization: Bearer $PANEL_API_KEY' \
+            -X POST \
+            -d '{
+            "root": "/", 
+            "file": "app.tar.gz"
+          }'
+
+      - name: Cleanup
+        run: |
+          rm app.tar.gz
+          rm -rf build-artifact
+
+          curl "$PANEL_URL/api/client/servers/$PANEL_SERVER_ID/files/delete" \
+            -H 'Accept: application/json' \
+            -H 'Content-Type: application/json' \
+            -H 'Authorization: Bearer $PANEL_API_KEY' \
+            -X DELETE \
+            -d '{
+            "root": "/", 
+            "files": ["app.tar.gz"]
+          }'
