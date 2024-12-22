@@ -111,9 +111,9 @@ jobs:
           api-key: ${{ secrets.PANEL_API_KEY }}
           restart: true
           server-id: ${{ secrets.PANEL_SERVER_ID }}
-          source: ./app.tar.gz
+          source: app.tar.gz
           decompress-target: true
-          target: ./app
+          target: app.tar.gz
 
       - name: Verify Upload
         run: |
