@@ -101,8 +101,10 @@ jobs:
       - name: Create Archive for Upload
         run: |
           tar -czf app.tar.gz ./build-artifact
+          ls -lh app.tar.gz
             
       - name: Upload Artifact to Pterodactyl Panel
+        id: upload
         uses: rexlManu/pterodactyl-upload-action@v2.4
         with:
           panel-host: ${{ secrets.PANEL_URL }}
@@ -112,3 +114,11 @@ jobs:
           source: ./app.tar.gz
           decompress-target: true
           target: ./app
+
+      - name: Verify Upload
+        run: |
+          # Check if the upload log contains error messages
+          if grep -q "Error: Upload failed" "$GITHUB_STEP_SUMMARY"; then
+            echo "Upload failed with errors"
+            exit 1
+          fi
