@@ -61,10 +61,6 @@ export class SutomGame {
     return AttemptOutcome.VALID_WORD;
   }
 
-  removeLastWord(): void {
-    this.wordHistory.pop();
-  }
-
   checkError(word: string): AttemptOutcome {
     if (this.wordHistory.length >= 6) {
       return AttemptOutcome.GAME_FINISHED;
