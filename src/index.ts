@@ -57,7 +57,7 @@ client.once(Events.ClientReady, () => {
         );
         return;
       }
-      
+
       console.log(
         `[DEVELOPMENT] Isabelle is connected to the ${developmentGuild.name} development server.`,
       );
@@ -146,21 +146,6 @@ function registerModules() {
     interactionManager.registerInteractionHandlers(module.interactionHandlers);
     console.log(`[Modules] Module ${module.name} initialized.`);
   }
-
-  commandManager
-    .deployCommandsForGuild(
-      config.DISCORD_GUILD_ID,
-      commandManager.getIsabelleCommandsAsSlashBuilderArray(),
-    )
-    .then(() => {
-      console.log('Successfully deployed commands for the guild.');
-    })
-    .catch((error: unknown) => {
-      console.error(
-        'An error occurred while deploying commands for the guild.',
-        error,
-      );
-    });
 }
 
 client.on(Events.GuildCreate, (guild) => {
