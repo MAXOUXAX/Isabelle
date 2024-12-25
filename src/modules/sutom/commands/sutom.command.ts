@@ -1,6 +1,6 @@
 import { IsabelleCommand } from '@/manager/commands/command.interface.js';
 import { sutomGameManager } from '@/modules/sutom/core/GameManager.js';
-import { WordState } from '@/modules/sutom/core/SutomGame.js';
+import { AttemptOutcome } from '@/modules/sutom/core/SutomGame.js';
 import { CommandInteraction, SlashCommandBuilder } from 'discord.js';
 
 export class SutomCommand implements IsabelleCommand {
@@ -19,7 +19,7 @@ export class SutomCommand implements IsabelleCommand {
   public async executeCommand(interaction: CommandInteraction): Promise<void> {
     const { user } = interaction;
 
-    console.log('[Sutom] Word to test:', interaction.options.get('mot'));
+    console.debug('[Sutom] Word to test:', interaction.options.get('mot'));
 
     const game = sutomGameManager.getGame(user.id);
     if (!game) {
@@ -35,28 +35,28 @@ export class SutomCommand implements IsabelleCommand {
 
     const word = interaction.options.get('mot')?.value as string;
 
-    const error = game.addWord(word.toLowerCase());
-    if (!error) {
+    const wordOutcome = game.addWord(word.toLowerCase());
+    if (!wordOutcome) {
       interaction.reply(game.renderHistory()).catch((e: unknown) => {
         console.error(e);
       });
     } else {
-      switch (error) {
-        case WordState.ALREADY_TRIED:
+      switch (wordOutcome) {
+        case AttemptOutcome.WORD_ALREADY_TRIED:
           interaction
             .reply('Tu as déjà essayé ce mot !')
             .catch((e: unknown) => {
               console.error(e);
             });
           break;
-        case WordState.LENGHT_NOT_CORRECT:
+        case AttemptOutcome.WORD_LENGHT_NOT_CORRECT:
           interaction
             .reply("Le mot que tu as proposé n'a pas la bonne longueur !")
             .catch((e: unknown) => {
               console.error(e);
             });
           break;
-        case WordState.GAME_FINISHED:
+        case AttemptOutcome.GAME_FINISHED:
           await interaction
             .reply(
               `${game.renderHistory()}\nLa partie est déjà terminée ! Le mot était: ${game.word}`,
@@ -66,7 +66,7 @@ export class SutomCommand implements IsabelleCommand {
             });
           sutomGameManager.deleteGame(user.id);
           break;
-        case WordState.NOT_IN_DICTIONARY:
+        case AttemptOutcome.WORD_UNKNOWED:
           interaction
             .reply(
               "Le mot que tu as proposé n'existe pas dans le dictionnaire !",
@@ -75,7 +75,7 @@ export class SutomCommand implements IsabelleCommand {
               console.error(e);
             });
           break;
-        case WordState.GAME_WIN:
+        case AttemptOutcome.CORRECT_WORD_FOUND:
           await interaction
             .reply(
               `${game.renderHistory()}\nBravo, tu as trouvé le mot ! Le mot était: ` +

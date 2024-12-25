@@ -10,17 +10,15 @@ export class RussianRouletteCommand implements IsabelleCommand {
     );
 
   executeCommand(interaction: CommandInteraction) {
-    const user = interaction.user.id;
-
     const guild = interaction.guild;
 
     if (!guild) {
-      void interaction.reply("You can't play this game in DMs!");
+      void interaction.reply('Vous ne pouvez pas jouer en DM !');
       return;
     }
 
     // choose a random user to be killed between the user that use the command and all the guild member
-    const killed = howIsGonnaBeKilled(user, guild);
+    const killed = howIsGonnaBeKilled(interaction.user.id, guild);
 
     if (killed) {
       const member = guild.members.cache.get(killed);
@@ -84,25 +82,25 @@ const PERCENTAGES = {
 
 let numberOfGamesSinceLastKill = 0;
 
-function howIsGonnaBeKilled(user: string, guild: Guild) {
+function howIsGonnaBeKilled(userID: string, guild: Guild) {
   const isSelfKilling = Math.random() > PERCENTAGES.kill_other;
   const killingThreshold = increasePercentageWithLog(
     PERCENTAGES.is_killing,
     0.7,
   );
 
-  console.log('[RussianRoullete] killingThreshold', killingThreshold);
+  console.debug('[RussianRoullete] killingThreshold', killingThreshold);
 
   if (isSelfKilling) {
     if (Math.random() < killingThreshold) {
       numberOfGamesSinceLastKill = 0;
-      return user;
+      return userID;
     }
   } else {
     if (Math.random() < killingThreshold) {
       return (
         guild.members.cache.filter((member) => member.kickable).random()?.id ??
-        user
+        userID
       );
     }
   }

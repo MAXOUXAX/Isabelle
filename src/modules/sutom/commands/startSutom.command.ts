@@ -22,7 +22,7 @@ export class StartSutomCommand implements IsabelleCommand {
       return;
     }
 
-    const channel = interaction.channel;
+    const { channel } = interaction;
     if (channel?.isSendable()) {
       interaction
         .reply(

@@ -21,7 +21,7 @@ export class SutomGame {
     let final = '';
 
     for (const word of this.wordHistory) {
-      const letters = this.detectWordCorrectness(word);
+      const letters = this.evaluateGuess(word);
 
       final += word.split('').join(' ').toUpperCase();
       final += '\n';
@@ -41,9 +41,8 @@ export class SutomGame {
     return final;
   }
 
-  addWord(word: string): WordState {
+  addWord(word: string): AttemptOutcome {
     const error = this.checkError(word);
-    console.log(error);
 
     if (error) {
       return error;
@@ -51,75 +50,75 @@ export class SutomGame {
 
     this.wordHistory.push(word);
     if (this.wordHistory.length === 6) {
-      return WordState.GAME_FINISHED;
+      return AttemptOutcome.GAME_FINISHED;
     }
 
-    const letters = this.detectWordCorrectness(word);
+    const letters = this.evaluateGuess(word);
     if (letters.every((letter) => letter === LetterState.CORRECT)) {
-      return WordState.GAME_WIN;
+      return AttemptOutcome.CORRECT_WORD_FOUND;
     }
 
-    return WordState.NO_ERROR;
+    return AttemptOutcome.VALID_WORD;
   }
 
   removeLastWord(): void {
     this.wordHistory.pop();
   }
 
-  checkError(word: string): WordState {
+  checkError(word: string): AttemptOutcome {
     if (this.wordHistory.length >= 6) {
-      return WordState.GAME_FINISHED;
+      return AttemptOutcome.GAME_FINISHED;
     }
 
     if (word.length !== this.word.length) {
-      return WordState.LENGHT_NOT_CORRECT;
+      return AttemptOutcome.WORD_LENGHT_NOT_CORRECT;
     }
 
     if (this.wordHistory.includes(word)) {
-      return WordState.ALREADY_TRIED;
+      return AttemptOutcome.WORD_ALREADY_TRIED;
     }
 
     if (!this.wordRepository.wordExists(word)) {
-      return WordState.NOT_IN_DICTIONARY;
+      return AttemptOutcome.WORD_UNKNOWED;
     }
 
-    return WordState.NO_ERROR;
+    return AttemptOutcome.VALID_WORD;
   }
 
-  detectWordCorrectness(word: string): LetterState[] {
-    const letter = [];
-    const numberOccurence = new Map<string, number>();
+  evaluateGuess(word: string): LetterState[] {
+    const letterStates = [];
+    const lettersOccurence = new Map<string, number>();
 
-    word.split('').forEach((letter) => {
-      const numberOfOccurence = numberOccurence.get(letter);
+    word.split('').forEach((letterStates) => {
+      const numberOfOccurence = lettersOccurence.get(letterStates);
       if (numberOfOccurence != null) {
-        numberOccurence.set(letter, numberOfOccurence + 1);
+        lettersOccurence.set(letterStates, numberOfOccurence + 1);
       } else {
-        numberOccurence.set(letter, 1);
+        lettersOccurence.set(letterStates, 1);
       }
     });
 
     for (let i = 0; i < this.word.length; i++) {
       if (word[i] === this.word[i]) {
-        letter.push(LetterState.CORRECT);
-        numberOccurence.set(word[i], (numberOccurence.get(word[i]) ?? 0) - 1);
+        letterStates.push(LetterState.CORRECT);
+        lettersOccurence.set(word[i], (lettersOccurence.get(word[i]) ?? 0) - 1);
       } else {
         if (
-          numberOccurence.has(this.word[i]) &&
-          (numberOccurence.get(this.word[i]) ?? 0) > 0
+          lettersOccurence.has(this.word[i]) &&
+          (lettersOccurence.get(this.word[i]) ?? 0) > 0
         ) {
-          letter.push(LetterState.MISPLACED);
-          numberOccurence.set(
+          letterStates.push(LetterState.MISPLACED);
+          lettersOccurence.set(
             this.word[i],
-            (numberOccurence.get(this.word[i]) ?? 0) - 1,
+            (lettersOccurence.get(this.word[i]) ?? 0) - 1,
           );
         } else {
-          letter.push(LetterState.INCORRECT);
+          letterStates.push(LetterState.INCORRECT);
         }
       }
     }
 
-    return letter;
+    return letterStates;
   }
 }
 
@@ -129,11 +128,11 @@ export enum LetterState {
   MISPLACED,
 }
 
-export enum WordState {
-  NO_ERROR,
-  NOT_IN_DICTIONARY,
-  LENGHT_NOT_CORRECT,
-  ALREADY_TRIED,
+export enum AttemptOutcome {
+  VALID_WORD,
+  WORD_UNKNOWED,
+  WORD_LENGHT_NOT_CORRECT,
+  WORD_ALREADY_TRIED,
   GAME_FINISHED,
-  GAME_WIN,
+  CORRECT_WORD_FOUND,
 }
