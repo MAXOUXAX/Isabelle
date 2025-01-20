@@ -31,8 +31,7 @@
   "type": "module",
   "scripts": {
     "dev": "cross-env NODE_ENV=development tsx watch src/index.ts",
-    "start": "cross-env NODE_ENV=production node dist/index.js",
-    "build": "tsup src/index.ts --minify --sourcemap --format esm --tsconfig tsconfig.json",
+    "build": "tsup",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prettier": "prettier --ignore-path .gitignore --write \"./src/**/*.+(js|ts|json)\"",
