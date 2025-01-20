@@ -14,7 +14,7 @@ on:
         required: true
         type: string
 
-  workflow_call: 
+  workflow_call:
     inputs:
       version:
         description: 'Version to build (git tag)'
@@ -51,6 +51,9 @@ jobs:
 
       - name: Build Application
         run: npm run build --if-present
+
+      - name: Copy package.json and package-lock.json
+        run: cp package.json package-lock.json dist/
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4

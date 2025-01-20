@@ -66,7 +66,7 @@ client.once(Events.ClientReady, () => {
             `[DEVELOPMENT] Commands deployed for the ${developmentGuild.name} server!`,
           );
         });
-    } else if (process.env.NODE_ENV === 'production') {
+    } else if (process.env.NODE_ENV === undefined) {
       console.log('[PRODUCTION] Isabelle is running in production mode.');
 
       console.log('[PRODUCTION] Deploying global commands...');
@@ -76,7 +76,7 @@ client.once(Events.ClientReady, () => {
       );
     } else {
       console.error(
-        'No valid environment specified. Please set the NODE_ENV environment variable to either "development" or "production".',
+        'No valid environment specified. Please set the NODE_ENV environment variable to "development" or delete it to run in production mode.',
       );
       return process.exit(1);
     }
