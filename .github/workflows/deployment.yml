@@ -50,6 +50,10 @@ jobs:
           name: build-artifact-${{ steps.artifact-name.outputs.safe_name }}
           path: build-artifact
 
+      - name: ECHO DIRECTORY CONTENT
+        run: |
+          ls -la build-artifact
+
       - name: Create Backup
         id: create-backup
         run: |
