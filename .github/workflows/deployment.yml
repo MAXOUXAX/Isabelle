@@ -106,7 +106,7 @@ jobs:
 
       - name: Create Archive for Upload
         run: |
-          tar -czf app.tar.gz -C build-artifact .
+          tar -czf app.tgz -C build-artifact .
 
       - name: Upload Artifact to Pterodactyl Panel
         id: upload
@@ -116,16 +116,16 @@ jobs:
           api-key: ${{ secrets.PANEL_API_KEY }}
           restart: true
           server-id: ${{ secrets.PANEL_SERVER_ID }}
-          source: app.tar.gz
+          source: app.tgz
           decompress-target: true
-          target: app.tar.gz
+          target: app.tgz
 
       - name: Waiting for previous step to finish
         run: sleep 10
 
       - name: Cleanup
         run: |
-          rm app.tar.gz
+          rm app.tgz
           rm -rf build-artifact
 
           curl "$PANEL_URL/api/client/servers/$PANEL_SERVER_ID/files/delete" \
@@ -135,5 +135,5 @@ jobs:
             -X POST \
             -d '{
             "root": "/", 
-            "files": ["app.tar.gz"]
+            "files": ["app.tgz"])
           }'
