@@ -50,10 +50,6 @@ jobs:
           name: build-artifact-${{ steps.artifact-name.outputs.safe_name }}
           path: build-artifact
 
-      - name: ECHO DIRECTORY CONTENT
-        run: |
-          ls -la build-artifact
-
       - name: Create Backup
         id: create-backup
         run: |
@@ -124,6 +120,9 @@ jobs:
           source: app.tar.gz
           decompress-target: true
           target: app.tar.gz
+
+      - name: Waiting for previous step to finish
+        run: sleep 10
 
       - name: Cleanup
         run: |
