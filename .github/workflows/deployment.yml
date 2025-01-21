@@ -106,8 +106,7 @@ jobs:
 
       - name: Create Archive for Upload
         run: |
-          tar -czf app.tar.gz ./build-artifact
-          ls -lh app.tar.gz
+          tar -czf app.tar.gz -C build-artifact .
 
       - name: Upload Artifact to Pterodactyl Panel
         id: upload
@@ -132,7 +131,7 @@ jobs:
           curl "$PANEL_URL/api/client/servers/$PANEL_SERVER_ID/files/delete" \
             -H 'Accept: application/json' \
             -H 'Content-Type: application/json' \
-            -H 'Authorization: Bearer $PANEL_API_KEY' \
+            -H "Authorization: Bearer $PANEL_API_KEY" \
             -X POST \
             -d '{
             "root": "/", 
