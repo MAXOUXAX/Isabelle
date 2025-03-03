@@ -52,57 +52,11 @@ jobs:
 
       - name: Create Backup
         id: create-backup
-        run: |
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$PANEL_URL/api/client/servers/$PANEL_SERVER_ID/backups" \
-            -H "Accept: application/json" \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer $PANEL_API_KEY")
-
-          HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
-          BODY=$(echo "$RESPONSE" | sed '$d')
-
-          if [ "$HTTP_STATUS" -ne 200 ]; then
-            echo "Error: HTTP status $HTTP_STATUS"
-            echo "Response body: $BODY"
-            exit 1
-          fi
-
-          BACKUP_UUID=$(echo "$BODY" | jq -r '.attributes.uuid')
-          if [ -z "$BACKUP_UUID" ] || [ "$BACKUP_UUID" = "null" ]; then
-            echo "Failed to extract backup UUID from response"
-            echo "Response body: $BODY"
-            exit 1
-          fi
-
-          echo "backup_uuid=$BACKUP_UUID" >> "$GITHUB_OUTPUT"
-          echo "Successfully created backup with UUID: $BACKUP_UUID"
-
-      - name: Wait for Backup Completion
-        run: |
-          BACKUP_UUID=${{ steps.create-backup.outputs.backup_uuid }}
-          while true; do
-            RESPONSE=$(curl -s -w "\n%{http_code}" "$PANEL_URL/api/client/servers/$PANEL_SERVER_ID/backups/$BACKUP_UUID" \
-              -H "Accept: application/json" \
-              -H "Content-Type: application/json" \
-              -H "Authorization: Bearer $PANEL_API_KEY")
-            
-            HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
-            BODY=$(echo "$RESPONSE" | sed '$d')
-            
-            if [ "$HTTP_STATUS" -ne 200 ]; then
-              echo "Error checking backup status: HTTP status $HTTP_STATUS"
-              echo "Response body: $BODY"
-              exit 1
-            fi
-            
-            COMPLETED_AT=$(echo "$BODY" | jq -r '.attributes.completed_at')
-            if [ "$COMPLETED_AT" != "null" ]; then
-              echo "Backup completed successfully at $COMPLETED_AT"
-              break
-            fi
-            echo "Waiting for backup to complete..."
-            sleep 10
-          done
+        uses: maxouxax/pterodactyl-create-backup-action@v1
+        with:
+          panel-url: ${{ secrets.PANEL_URL }}
+          api-key: ${{ secrets.PANEL_API_KEY }}
+          server-id: ${{ secrets.PANEL_SERVER_ID }}
 
       - name: Create Archive for Upload
         run: |
