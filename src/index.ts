@@ -1,11 +1,11 @@
 import { commandManager } from '@/manager/commands/command.manager.js';
+import { Coiffeur } from '@/modules/coiffeur/coiffeur.module.js';
 import { CoreModule } from '@/modules/core/core.module.js';
 import { ActivityType, Client, Events, GatewayIntentBits } from 'discord.js';
 import { config } from './config.js';
 import { interactionManager } from './manager/interaction.manager.js';
 import { IsabelleModule } from './modules/bot-module.js';
 import { HotPotato } from './modules/hot-potato/hot-potato.module.js';
-import { Coiffeur } from '@/modules/coiffeur/coiffeur.module.js';
 
 export const client = new Client({
   intents: [
@@ -134,14 +134,59 @@ const MODULES: IsabelleModule[] = [
   new Coiffeur(),
 ];
 
-function registerModules() {
+function registerModules(): void {
+  interface ModuleResult {
+    module: IsabelleModule;
+    success: boolean;
+    time: number;
+  }
+
+  const globalStartTime = performance.now();
+  const results: ModuleResult[] = [];
+
   for (const module of MODULES) {
     console.log(`[Modules] Initializing module ${module.name}`);
-    module.init();
-    commandManager.registerCommandsFromModule(module);
-    interactionManager.registerInteractionHandlers(module.interactionHandlers);
-    console.log(`[Modules] Module ${module.name} initialized.`);
+    const startTime = performance.now();
+    let success = false;
+
+    try {
+      module.init();
+      commandManager.registerCommandsFromModule(module);
+      interactionManager.registerInteractionHandlers(
+        module.interactionHandlers,
+      );
+      success = true;
+    } catch (error) {
+      console.error(
+        `[Modules] Failed to initialize module ${module.name}:`,
+        error,
+      );
+      console.error(`[Modules] Module ${module.name} will be disabled`);
+    } finally {
+      const endTime = performance.now();
+      const loadTime = endTime - startTime;
+      results.push({ module, success, time: loadTime });
+
+      const timeMessage = `${loadTime.toFixed(2)}ms`;
+      if (success) {
+        if (loadTime > 1000) {
+          console.warn(
+            `[Modules] WARNING! Module ${module.name} took ${timeMessage} to initialize! This may impact bot startup time.`,
+          );
+        } else {
+          console.log(
+            `[Modules] Module ${module.name} initialized in ${timeMessage}`,
+          );
+        }
+      }
+    }
   }
+
+  const totalTime = performance.now() - globalStartTime;
+  const successCount = results.filter((r) => r.success).length;
+  console.log(
+    `[Modules] Finished initializing ${successCount.toString()}/${MODULES.length.toString()} modules in ${totalTime.toFixed(2)}ms`,
+  );
 }
 
 client.on(Events.GuildCreate, (guild) => {
