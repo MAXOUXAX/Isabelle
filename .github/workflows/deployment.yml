@@ -81,13 +81,3 @@ jobs:
         run: |
           rm app.tgz
           rm -rf build-artifact
-
-          curl "$PANEL_URL/api/client/servers/$PANEL_SERVER_ID/files/delete" \
-            -H 'Accept: application/json' \
-            -H 'Content-Type: application/json' \
-            -H "Authorization: Bearer $PANEL_API_KEY" \
-            -X POST \
-            -d '{
-            "root": "/", 
-            "files": ["app.tgz"])
-          }'
