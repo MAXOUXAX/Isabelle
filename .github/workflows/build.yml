@@ -14,7 +14,7 @@ on:
         required: true
         type: string
 
-  workflow_call: 
+  workflow_call:
     inputs:
       version:
         description: 'Version to build (git tag)'
@@ -52,8 +52,19 @@ jobs:
       - name: Build Application
         run: npm run build --if-present
 
+      - name: Copy package.json and package-lock.json
+        run: |
+          cp package.json package-lock.json dist/
+          ls -la dist/
+
+      - name: Generate safe artifact name
+        id: artifact-name
+        run: |
+          NAME="${{ inputs.version || github.ref_name || github.sha }}"
+          echo "safe_name=${NAME//\//-}" >> $GITHUB_OUTPUT
+
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build-artifact-${{ inputs.version || github.sha }}
+          name: build-artifact-${{ steps.artifact-name.outputs.safe_name }}
           path: dist/*

@@ -19,56 +19,65 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
+    needs: call-build-workflow
+    environment: production
+
+    env:
+      PANEL_URL: ${{ secrets.PANEL_URL }}
+      PANEL_SERVER_ID: ${{ secrets.PANEL_SERVER_ID }}
+      PANEL_API_KEY: ${{ secrets.PANEL_API_KEY }}
 
     steps:
+      - name: Verify Required Secrets
+        run: |
+          if [ -z "$PANEL_URL" ] || [ -z "$PANEL_SERVER_ID" ] || [ -z "$PANEL_API_KEY" ]; then
+            echo "Error: Required environment variables are not set"
+            exit 1
+          fi
+          # Remove trailing slashes from URL if present
+          PANEL_URL="${PANEL_URL%/}"
+          echo "PANEL_URL=$PANEL_URL" >> $GITHUB_ENV
+
+      - name: Generate safe artifact name
+        id: artifact-name
+        run: |
+          NAME="${{ inputs.version || github.event.release.tag_name }}"
+          echo "safe_name=${NAME//\//-}" >> $GITHUB_OUTPUT
+
       - name: Download Build Artifact
         uses: actions/download-artifact@v4
         with:
-          name: build-artifact-${{ inputs.version || github.event.release.tag_name }}
+          name: build-artifact-${{ steps.artifact-name.outputs.safe_name }}
           path: build-artifact
 
       - name: Create Backup
         id: create-backup
-        run: |
-          BACKUP_UUID=$(curl -X POST "${{ secrets.PANEL_URL }}/api/client/servers/${{ secrets.PANEL_SERVER_ID }}/backups" \
-            -H "Accept: application/json" \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${{ secrets.PANEL_API_KEY }}" | jq -r '.attributes.uuid')
-          if [ -z "$BACKUP_UUID" ]; then
-            echo "Failed to create backup"
-            exit 1
-          fi
-          echo "backup_uuid=$BACKUP_UUID" >> "$GITHUB_OUTPUT"
+        uses: maxouxax/pterodactyl-create-backup-action@v1
+        with:
+          panel-url: ${{ secrets.PANEL_URL }}
+          api-key: ${{ secrets.PANEL_API_KEY }}
+          server-id: ${{ secrets.PANEL_SERVER_ID }}
 
-      - name: Wait for Backup Completion
+      - name: Create Archive for Upload
         run: |
-          BACKUP_UUID=${{ steps.create-backup.outputs.backup_uuid }}
-          while true; do
-            RESPONSE=$(curl "${{ secrets.PANEL_URL }}/api/client/servers/${{ secrets.PANEL_SERVER_ID }}/backups/$BACKUP_UUID" \
-              -H "Accept: application/json" \
-              -H "Content-Type: application/json" \
-              -H "Authorization: Bearer ${{ secrets.PANEL_API_KEY }}")
-            
-            COMPLETED_AT=$(echo "$RESPONSE" | jq -r '.attributes.completed_at')
-            
-            if [ "$COMPLETED_AT" != "null" ]; then
-              echo "Backup completed successfully at $COMPLETED_AT"
-              break
-            fi
-            echo "Waiting for backup to complete..."
-            sleep 10
-          done
+          tar -czf app.tgz -C build-artifact .
 
       - name: Upload Artifact to Pterodactyl Panel
-        run: |
-          curl -X POST "${{ secrets.PANEL_URL }}/api/client/servers/${{ secrets.PANEL_SERVER_ID }}/files" \
-            -H "Authorization: Bearer ${{ secrets.PANEL_API_KEY }}" \
-            --form "file=@build-artifact/*" \
-            --form "directory=/app"
+        id: upload
+        uses: rexlManu/pterodactyl-upload-action@v2.4
+        with:
+          panel-host: ${{ secrets.PANEL_URL }}
+          api-key: ${{ secrets.PANEL_API_KEY }}
+          restart: true
+          server-id: ${{ secrets.PANEL_SERVER_ID }}
+          source: app.tgz
+          decompress-target: true
+          target: app.tgz
 
-      - name: Restart Pterodactyl Server
+      - name: Waiting for previous step to finish
+        run: sleep 10
+
+      - name: Cleanup
         run: |
-          curl -X POST "${{ secrets.PANEL_URL }}/api/client/servers/${{ secrets.PANEL_SERVER_ID }}/power" \
-            -H "Authorization: Bearer ${{ secrets.PANEL_API_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d '{"signal": "restart"}'
+          rm app.tgz
+          rm -rf build-artifact
