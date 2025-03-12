@@ -6,6 +6,7 @@ import { config } from './config.js';
 import { interactionManager } from './manager/interaction.manager.js';
 import { IsabelleModule } from './modules/bot-module.js';
 import { HotPotato } from './modules/hot-potato/hot-potato.module.js';
+import { get_today_lessons } from '@/utils/calendar.js';
 
 export const client = new Client({
   intents: [
@@ -182,6 +183,7 @@ function registerModules(): void {
     }
   }
 
+  console.log(get_today_lessons());
   const totalTime = performance.now() - globalStartTime;
   const successCount = results.filter((r) => r.success).length;
   console.log(
