@@ -1,12 +1,12 @@
 import { commandManager } from '@/manager/commands/command.manager.js';
 import { Coiffeur } from '@/modules/coiffeur/coiffeur.module.js';
 import { CoreModule } from '@/modules/core/core.module.js';
+import { getEndOfTodayClasses, getWeekClasses } from '@/utils/calendar.js';
 import { ActivityType, Client, Events, GatewayIntentBits } from 'discord.js';
 import { config } from './config.js';
 import { interactionManager } from './manager/interaction.manager.js';
 import { IsabelleModule } from './modules/bot-module.js';
 import { HotPotato } from './modules/hot-potato/hot-potato.module.js';
-import { get_today_lessons } from '@/utils/calendar.js';
 
 export const client = new Client({
   intents: [
@@ -183,12 +183,13 @@ function registerModules(): void {
     }
   }
 
-  console.log(get_today_lessons());
   const totalTime = performance.now() - globalStartTime;
   const successCount = results.filter((r) => r.success).length;
   console.log(
     `[Modules] Finished initializing ${successCount.toString()}/${MODULES.length.toString()} modules in ${totalTime.toFixed(2)}ms`,
   );
+  console.log(getWeekClasses());
+  console.log(getEndOfTodayClasses());
 }
 
 client.on(Events.GuildCreate, (guild) => {
