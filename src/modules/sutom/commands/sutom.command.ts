@@ -1,4 +1,7 @@
 import { IsabelleCommand } from '@/manager/commands/command.interface.js';
+import startSutomSubcommand from '@/modules/sutom/commands/subcommands/startSutom.js';
+import stopSutomSubcommand from '@/modules/sutom/commands/subcommands/stopSutom.js';
+import guessWordSubcommand from '@/modules/sutom/commands/subcommands/sutomGuess.js';
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 
 export class SutomCommand implements IsabelleCommand {
@@ -25,23 +28,28 @@ export class SutomCommand implements IsabelleCommand {
     )
     .addSubcommand((subcommand) =>
       subcommand
-        .setName('stop-sutom')
+        .setName('stop')
         .setDescription('Arrête ta partie de sutom !'),
     );
 
   public executeCommand(
     interaction: ChatInputCommandInteraction,
-  ): Promise<void> {
-    console.log('[Sutom] Interaction:', interaction);
-    console.log(interaction.options.getSubcommand());
-
+  ) {
     switch (interaction.options.getSubcommand()) {
       case 'mot':
+        guessWordSubcommand(interaction)
+        break;
+      case 'start':
+        startSutomSubcommand(interaction)
+        break;
+      case 'stop':
+        stopSutomSubcommand(interaction)
+        break;
+      default:
+        interaction.reply('not a valid subcommand').catch((e: unknown) => {
+          console.error(e);
+        });
         break;
     }
-
-    interaction.reply('Sutom command').catch((e: unknown) => {
-      console.error(e);
-    });
   }
 }

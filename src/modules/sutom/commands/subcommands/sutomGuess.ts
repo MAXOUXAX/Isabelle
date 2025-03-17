@@ -2,7 +2,7 @@ import { sutomGameManager } from '@/modules/sutom/core/GameManager.js';
 import { AttemptOutcome } from '@/modules/sutom/core/SutomGame.js';
 import { CommandInteraction } from 'discord.js';
 
-export default async function guessWord(
+export default async function guessWordSubcommand(
   interaction: CommandInteraction,
 ): Promise<Promise<void>> {
   const { user } = interaction;
@@ -62,7 +62,7 @@ export default async function guessWord(
         await interaction
           .reply(
             `${game.renderHistory()}\nBravo, tu as trouvé le mot ! Le mot était: ` +
-              game.word,
+            game.word,
           )
           .catch((e: unknown) => {
             console.error(e);
