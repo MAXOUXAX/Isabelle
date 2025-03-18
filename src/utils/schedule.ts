@@ -16,9 +16,10 @@ interface Lesson {
 }
 
 export const SCHEDULE_CACHE_KEY = 'calendarData';
-const cacheEntry = cacheStore.cache(
+
+const cacheEntry = cacheStore.useCache(
   SCHEDULE_CACHE_KEY,
-  async () => await getSchedule(),
+  getSchedule,
   1000 * 60 * 60 * 24,
 );
 
@@ -43,10 +44,10 @@ function createLessonsFromData(data: VEvent[]): Lesson[] {
 /*
  * Récupère les cours du jour
  */
-export function getTodaysLessons(): Lesson[] {
-  const calendarData = cacheEntry.get();
+export async function getTodaysLessons(): Promise<Lesson[]> {
+  const calendarData = await cacheEntry.get();
 
-  console.log(calendarData);
+  //console.log(calendarData);
 
   const today = dateUtils.startOfToday();
 
@@ -96,8 +97,8 @@ export function getWeekLessons(): Record<string, Lesson[]> {
 /*
  * Récupère l'heure de fin du dernier cours de la journée
  */
-export function getEndOfTodayLessons(): Date | null {
-  const lessons = getTodaysLessons();
+export async function getEndOfTodayLessons(): Promise<Date | null> {
+  const lessons = await getTodaysLessons();
 
   if (lessons.length === 0) {
     return null;
@@ -110,9 +111,9 @@ export function getEndOfTodayLessons(): Date | null {
  * Récupère le prochain cours
  */
 
-export function getNextLesson() {
+export async function getNextLesson() {
   const now = new Date();
-  const lessons = getTodaysLessons();
+  const lessons = await getTodaysLessons();
 
   const nextLessons = lessons.filter((lesson) => lesson.start > now);
 
