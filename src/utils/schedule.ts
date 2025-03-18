@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { config } from '@/config.js';
 import { cacheStore } from '@/utils/cache.js';
 import { VEvent, fromURL } from 'node-ical';
