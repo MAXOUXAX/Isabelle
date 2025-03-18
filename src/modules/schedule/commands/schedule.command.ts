@@ -93,13 +93,13 @@ export class EndOfLessonsCommand implements IsabelleCommand {
     if (!lesson) {
       return await interaction.reply({
         ephemeral: true,
-        content: 'Les cours sont déjà finis, lâchez moi!',
+        content: "Y a pas cours aujourd'hui, lâchez moi!",
       });
     }
 
     return await interaction.reply({
-      ephemeral: true,
-      content: `Les cours finissent à ${humanDate(lesson)} soit dans ${time(lesson, TimestampStyles.RelativeTime)}`,
+      ephemeral: false,
+      content: `Les cours finissent ${humanDate(lesson)} soit ${time(lesson, TimestampStyles.RelativeTime)}`,
     });
   }
 }
