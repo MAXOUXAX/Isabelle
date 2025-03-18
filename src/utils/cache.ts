@@ -61,7 +61,7 @@ class CacheStore {
    * @returns {Cache<T>} the cache object related to the key
    */
 
-  public cache<T>(
+  public useCache<T>(
     key: string,
     fetcher?: Fetcher<T>,
     revalidationPeriod?: number,
