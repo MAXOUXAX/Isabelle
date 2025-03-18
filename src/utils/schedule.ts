@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { config } from '@/config.js';
-import { CalendarComponent, VEvent, fromURL } from 'node-ical';
-import * as dateUtils from './date.js';
 import { cacheStore } from '@/utils/cache.js';
+import { VEvent, fromURL } from 'node-ical';
+import * as dateUtils from './date.js';
 
 // Interface pour affichés les cours avec seulement les informations nécessaires
 interface Lesson {
@@ -10,7 +12,17 @@ interface Lesson {
   end: Date;
   room: string;
   teacher: string;
+  color: string;
 }
+
+export const SCHEDULE_CACHE_KEY = 'calendarData';
+const cacheEntry = cacheStore.cache(
+  SCHEDULE_CACHE_KEY,
+  async () => await getSchedule(),
+  1000 * 60 * 60 * 24,
+);
+
+// const calendarData: CalendarComponent[] = await fromURL(config.SCHEDULE_URL);
 
 /*
  * Crée un tableau de cours à partir des données du fichier ICS
@@ -32,7 +44,10 @@ function createLessonsFromData(data: VEvent[]): Lesson[] {
  * Récupère les cours du jour
  */
 export function getTodaysLessons(): Lesson[] {
-  const calendarData: CalendarComponent[] = getCalendarData();
+  const calendarData = cacheEntry.get();
+
+  console.log(calendarData);
+
   const today = dateUtils.startOfToday();
 
   const todayData = Object.values(calendarData).filter((lesson) => {
@@ -61,7 +76,7 @@ export function getTodaysLessons(): Lesson[] {
  * Récupère les cours de la semaine
  */
 export function getWeekLessons(): Record<string, Lesson[]> {
-  const calendarData: CalendarComponent[] = getCalendarData();
+  const calendarData = cacheEntry.get();
   const startOfWeek = dateUtils.startOfCurrentWeek();
   const endOfWeek = dateUtils.endOfCurrentWeek();
 
@@ -151,19 +166,6 @@ function getLessonColor(title: string): string {
   }
 }
 
-function getCalendarData() {
-  let calendarData: CalendarComponent[] | undefined =
-    cacheStore.cache('calendarData');
-  if (!calendarData) {
-    calendarData = cacheStore.cache(
-      'calendarData',
-      async () => {
-        const data = await fromURL(config.SCHEDULE_URL);
-        return data;
-      },
-      1000 * 60 * 60 * 24,
-    );
-  }
-
-  return calendarData;
+async function getSchedule() {
+  return await fromURL(config.SCHEDULE_URL);
 }
