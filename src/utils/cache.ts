@@ -1,6 +1,6 @@
 type Fetcher<T> = () => Promise<T>;
 
-class CacheEntry<T> {
+class Cache<T> {
   private fetcher: Fetcher<T> | null = null;
   private revalidationPeriod: number | null = null;
   private value: T | null = null;
@@ -18,7 +18,7 @@ class CacheEntry<T> {
     return this.value;
   }
 
-  public async get(): Promise<T | null> {
+  public get(): Promise<T | null> {
     const now = Date.now();
     if (
       !this.value ||
@@ -28,7 +28,7 @@ class CacheEntry<T> {
     ) {
       return this.fetchValue();
     }
-    return this.value;
+    return Promise.resolve(this.value);
   }
 
   public async revalidate(): Promise<T | null> {
@@ -42,22 +42,20 @@ class CacheEntry<T> {
 }
 
 class CacheStore {
-  private caches = new Map<string, CacheEntry<unknown>>();
+  private caches = new Map<string, Cache<unknown>>();
 
-  public cache<T>(
+  public useCache<T>(
     key: string,
     fetcher?: Fetcher<T>,
     revalidationPeriod?: number,
-  ): CacheEntry<T> | undefined {
+  ): Cache<T> {
     if (!this.caches.has(key)) {
-      this.caches.set(key, new CacheEntry<T>(fetcher, revalidationPeriod));
+      this.caches.set(key, new Cache<T>(fetcher, revalidationPeriod));
     } else if (fetcher || revalidationPeriod) {
       const cache = this.caches.get(key);
-      if (cache) {
-        cache.updateConfig(fetcher, revalidationPeriod);
-      }
+      if (cache) cache.updateConfig(fetcher, revalidationPeriod);
     }
-    return this.caches.get(key) as CacheEntry<T>;
+    return this.caches.get(key) as Cache<T>;
   }
 }
 
