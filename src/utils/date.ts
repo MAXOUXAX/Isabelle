@@ -25,10 +25,7 @@ export function endOfCurrentWeek() {
 }
 
 export function startOfToday() {
-  let now = new Date();
-  now.setDate(now.getDate() + 1); // Set to tomorrow's date for testing
-  now = new Date(now.setHours(0, 0, 0, 0));
-  return now;
+  return startOfDay(new Date());
 }
 
 export function endOfToday() {
