@@ -20,7 +20,7 @@ export class TodaysLessonCommand implements IsabelleCommand {
     .setDescription('Affiche les cours du jour (passés ou non).');
 
   async executeCommand(interaction: CommandInteraction) {
-    const lessons = getTodaysLessons();
+    const lessons = await getTodaysLessons();
 
     if (lessons.length === 0) {
       return await interaction.reply({
@@ -57,7 +57,7 @@ export class NextLessonCommand implements IsabelleCommand {
     .setDescription('Affiche le prochain cours de la journée.');
 
   async executeCommand(interaction: CommandInteraction) {
-    const lesson = getNextLesson();
+    const lesson = await getNextLesson();
 
     if (!lesson) {
       return await interaction.reply({
@@ -88,7 +88,7 @@ export class EndOfLessonsCommand implements IsabelleCommand {
     .setDescription('Affiche les cours du jour (passés ou non).');
 
   async executeCommand(interaction: CommandInteraction) {
-    const lesson = getEndOfTodayLessons();
+    const lesson = await getEndOfTodayLessons();
 
     if (!lesson) {
       return await interaction.reply({

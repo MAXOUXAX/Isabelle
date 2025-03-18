@@ -27,7 +27,7 @@ class Cache<T> {
     return this.value;
   }
 
-  public get(): Promise<T | null> {
+  public async get(): Promise<T | null> {
     const now = Date.now();
     if (
       !this.value ||
