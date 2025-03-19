@@ -53,6 +53,14 @@ class Cache<T> {
 class CacheStore {
   private caches = new Map<string, Cache<unknown>>();
 
+  /**
+   *
+   * @param {string} key  the key to store the cache
+   * @param {Fetcher<T>} fetcher  the fetcher function to fetch the value
+   * @param {number} revalidationPeriod  the revalidation period in milliseconds
+   * @returns {Cache<T>} the cache object related to the key
+   */
+
   public cache<T>(
     key: string,
     fetcher?: Fetcher<T>,
