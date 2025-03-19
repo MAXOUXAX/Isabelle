@@ -6,6 +6,7 @@ import { config } from './config.js';
 import { interactionManager } from './manager/interaction.manager.js';
 import { IsabelleModule } from './modules/bot-module.js';
 import { HotPotato } from './modules/hot-potato/hot-potato.module.js';
+import { Schedule } from './modules/schedule/schedule.module.js';
 
 export const client = new Client({
   intents: [
@@ -132,6 +133,7 @@ const MODULES: IsabelleModule[] = [
   new CoreModule(),
   new HotPotato(),
   new Coiffeur(),
+  new Schedule(),
 ];
 
 function registerModules(): void {
