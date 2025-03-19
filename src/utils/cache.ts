@@ -1,5 +1,14 @@
 type Fetcher<T> = () => Promise<T>;
 
+/**
+ * Cache class
+ * @template T
+ * @param {Fetcher<T>} fetcher
+ * @param {number} revalidationPeriod in milliseconds
+ * @param {T} value
+ * @param {number} lastFetched timestamp in milliseconds for the last fetch
+ */
+
 class Cache<T> {
   private fetcher: Fetcher<T> | null = null;
   private revalidationPeriod: number | null = null;
@@ -44,7 +53,7 @@ class Cache<T> {
 class CacheStore {
   private caches = new Map<string, Cache<unknown>>();
 
-  public useCache<T>(
+  public cache<T>(
     key: string,
     fetcher?: Fetcher<T>,
     revalidationPeriod?: number,

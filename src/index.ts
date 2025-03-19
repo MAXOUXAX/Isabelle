@@ -1,7 +1,6 @@
 import { commandManager } from '@/manager/commands/command.manager.js';
 import { Coiffeur } from '@/modules/coiffeur/coiffeur.module.js';
 import { CoreModule } from '@/modules/core/core.module.js';
-import { getNextLesson, getTodaysLessons } from '@/utils/schedule.js';
 import { ActivityType, Client, Events, GatewayIntentBits } from 'discord.js';
 import { config } from './config.js';
 import { interactionManager } from './manager/interaction.manager.js';
@@ -188,8 +187,6 @@ function registerModules(): void {
   console.log(
     `[Modules] Finished initializing ${successCount.toString()}/${MODULES.length.toString()} modules in ${totalTime.toFixed(2)}ms`,
   );
-  console.log(getTodaysLessons());
-  console.log(getNextLesson());
 }
 
 client.on(Events.GuildCreate, (guild) => {
