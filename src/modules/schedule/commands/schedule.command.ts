@@ -1,5 +1,5 @@
 import { IsabelleCommand } from '@/manager/commands/command.interface.js';
-import { humanDate } from '@/utils/date.js';
+import { humanDate, humanTime } from '@/utils/date.js';
 import {
   getEndOfTodayLessons,
   getNextLesson,
@@ -45,7 +45,7 @@ export class TodaysLessonCommand implements IsabelleCommand {
     }
 
     return await interaction.reply({
-      ephemeral: true,
+      ephemeral: false,
       embeds: embeds,
     });
   }
@@ -61,7 +61,7 @@ export class NextLessonCommand implements IsabelleCommand {
 
     if (!lesson) {
       return await interaction.reply({
-        ephemeral: true,
+        ephemeral: false,
         content: "Les cours c'est stop! IL",
       });
     }
@@ -69,14 +69,14 @@ export class NextLessonCommand implements IsabelleCommand {
     const embed = new EmbedBuilder()
       .setTitle(lesson.name)
       .addFields(
-        { name: 'Début', value: humanDate(lesson.start) },
-        { name: 'Fin', value: humanDate(lesson.end) },
+        { name: 'Début', value: humanTime(lesson.start) },
+        { name: 'Fin', value: humanTime(lesson.end) },
         { name: 'Salle', value: lesson.room },
       )
       .setColor(lesson.color as ColorResolvable);
 
     return await interaction.reply({
-      ephemeral: true,
+      ephemeral: false,
       embeds: [embed],
     });
   }
@@ -85,21 +85,21 @@ export class NextLessonCommand implements IsabelleCommand {
 export class EndOfLessonsCommand implements IsabelleCommand {
   commandData: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('lessons-end')
-    .setDescription('Affiche les cours du jour (passés ou non).');
+    .setDescription('Affiche quand se termine la journée.');
 
   async executeCommand(interaction: CommandInteraction) {
-    const lesson = await getEndOfTodayLessons();
+    const lessonEnd = await getEndOfTodayLessons();
 
-    if (!lesson) {
+    if (!lessonEnd) {
       return await interaction.reply({
-        ephemeral: true,
+        ephemeral: false,
         content: "Y a pas cours aujourd'hui, lâchez moi!",
       });
     }
 
     return await interaction.reply({
       ephemeral: false,
-      content: `Les cours finissent ${humanDate(lesson)} soit ${time(lesson, TimestampStyles.RelativeTime)}`,
+      content: `Les cours finissent à ${humanTime(lessonEnd)} soit ${time(lessonEnd, TimestampStyles.RelativeTime)}`,
     });
   }
 }

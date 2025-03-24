@@ -47,3 +47,7 @@ export function endOfDay(date: Date) {
 export function humanDate(date: Date) {
   return dateFormatter.format(date);
 }
+
+export function humanTime(date: Date) {
+  return date.toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit' });
+}
