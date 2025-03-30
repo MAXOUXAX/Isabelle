@@ -43,7 +43,9 @@ export class TodaysLessonCommand implements IsabelleCommand {
 
   async executeCommand(interaction: CommandInteraction) {
 
-    switch (interaction.options.getSubcommand()) {
+    const subcommand : string = interaction.options.getSubcommand();
+
+    switch (subcommand) {
       case 'get':
         const lessons = await getTodaysLessons();
         if (lessons.length === 0) {
