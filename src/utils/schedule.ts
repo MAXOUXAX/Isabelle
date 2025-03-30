@@ -105,7 +105,7 @@ export async function getEndOfTodayLessons(): Promise<Date | null> {
  * Récupère le prochain cours
  */
 
-export async function getNextLesson() {
+export async function getTodaysNextLesson() {
   const now = new Date();
   const lessons = await getTodaysLessons();
 
