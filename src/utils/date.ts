@@ -33,13 +33,15 @@ export function endOfToday() {
 }
 
 export function startOfDay(date: Date) {
-  date.setHours(8, 0, 0, 0);
-  return date;
+  const clonedDate = new Date(date.getTime());
+  clonedDate.setHours(8, 0, 0, 0);
+  return clonedDate;
 }
 
 export function endOfDay(date: Date) {
-  date.setHours(20, 0, 0, 0);
-  return date;
+  const clonedDate = new Date(date.getTime());
+  clonedDate.setHours(20, 0, 0, 0);
+  return clonedDate;
 }
 
 export function humanDate(date: Date) {

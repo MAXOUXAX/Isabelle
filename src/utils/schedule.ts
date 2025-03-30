@@ -30,8 +30,8 @@ function createLessonsFromData(data: VEvent[]): Lesson[] {
       name: lesson.summary,
       start: new Date(lesson.start),
       end: new Date(lesson.end),
-      room: lesson.location.replaceAll('Remicourt_', ''), // Balek du Remicourt
-      teacher: lesson.description.split('\n')[2], // TODO: Trouver un moyen de récupérer le nom du prof
+      room: lesson.location.replaceAll('Remicourt_', ''),
+      teacher: "Inconnu", //lesson.description.split('\n')[2], // TODO: Trouver un moyen de récupérer le nom du prof
       color: getLessonColor(lesson.summary),
     };
   });
