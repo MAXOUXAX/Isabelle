@@ -6,16 +6,16 @@ import {
   getTodaysNextLesson,
 } from '@/utils/schedule.js';
 import {
+  ChatInputCommandInteraction,
   ColorResolvable,
-  CommandInteraction,
   EmbedBuilder,
   SlashCommandBuilder,
   time,
-  TimestampStyles,
+  TimestampStyles
 } from 'discord.js';
 
 export class TodaysLessonCommand implements IsabelleCommand {
-  commandData: SlashCommandBuilder = new SlashCommandBuilder()
+  commandData = new SlashCommandBuilder()
     .setName('todays-lessons')
     .setDescription('Affiche les cours du jour (passés ou non).')
     .addSubcommand(subcommand =>
@@ -41,7 +41,7 @@ export class TodaysLessonCommand implements IsabelleCommand {
 
 
 
-  async executeCommand(interaction: CommandInteraction) {
+  public async executeCommand(interaction: ChatInputCommandInteraction): Promise<void> {
 
     const subcommand : string = interaction.options.getSubcommand();
 
@@ -49,10 +49,11 @@ export class TodaysLessonCommand implements IsabelleCommand {
       case 'get':
         const lessons = await getTodaysLessons();
         if (lessons.length === 0) {
-          return await interaction.reply({
+          await interaction.reply({
             ephemeral: true,
             content: "Aujourd'hui c'est dodo...",
           });
+          break;
         }
 
         const embeds = [];
@@ -70,19 +71,21 @@ export class TodaysLessonCommand implements IsabelleCommand {
           embeds.push(embed);
         }
 
-        return await interaction.reply({
+        await interaction.reply({
           ephemeral: false,
           embeds: embeds,
         });
+        break;
 
       case 'next':
         const lesson = await getTodaysNextLesson();
 
         if (!lesson) {
-          return await interaction.reply({
+          await interaction.reply({
             ephemeral: false,
             content: "Les cours c'est stop! IL",
           });
+          break;
         }
 
         const embed = new EmbedBuilder()
@@ -94,25 +97,28 @@ export class TodaysLessonCommand implements IsabelleCommand {
           )
           .setColor(lesson.color as ColorResolvable);
 
-        return await interaction.reply({
+        await interaction.reply({
           ephemeral: false,
           embeds: [embed],
         });
+        break;
 
       case 'end':
         const lessonEnd = await getEndOfTodayLessons();
 
         if (!lessonEnd) {
-          return await interaction.reply({
+          await interaction.reply({
             ephemeral: false,
             content: "Y a pas cours aujourd'hui, lâchez moi!",
           });
+          break;
         }
 
-        return await interaction.reply({
+        await interaction.reply({
           ephemeral: interaction.options.getBoolean('ephemeral') ?? false,
           content: `Les cours finissent à ${humanTime(lessonEnd)} soit ${time(lessonEnd, TimestampStyles.RelativeTime)}`,
         });
+        break;
     }
   }
 }
