@@ -9,6 +9,7 @@
     "source.organizeImports": "always",
     "source.removeUnusedImports": "always"
   },
+  "files.eol": "\n",
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
