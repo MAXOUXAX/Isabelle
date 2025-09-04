@@ -30,8 +30,8 @@ function createLessonsFromData(data: VEvent[]): Lesson[] {
       name: lesson.summary,
       start: new Date(lesson.start),
       end: new Date(lesson.end),
-      room: lesson.location.replaceAll('Remicourt_', ''),
-      teacher: "Inconnu", //lesson.description.split('\n')[2], // TODO: Trouver un moyen de récupérer le nom du prof
+      room: lesson.location.replaceAll('Remicourt_', '').toUpperCase(), // Balek du Remicourt
+      teacher: lesson.description.split('\n')[2], // TODO: Trouver un moyen de récupérer le nom du prof
       color: getLessonColor(lesson.summary),
     };
   });
@@ -105,7 +105,7 @@ export async function getEndOfTodayLessons(): Promise<Date | null> {
  * Récupère le prochain cours
  */
 
-export async function getNextLesson() {
+export async function getTodaysNextLesson() {
   const now = new Date();
   const lessons = await getTodaysLessons();
 
@@ -144,17 +144,19 @@ function sortLessons(lessons: Lesson[]): Lesson[] {
 }
 
 function getLessonColor(title: string): string {
-  if (/note|noté|examen/.exec(title.toLowerCase())) {
+  const titleLower = title.toLowerCase();
+
+  if (/note|noté|examen/.test(titleLower)) {
     return '#e60000';
-  } else if (/cm/.exec(title)) {
+  } else if (titleLower.includes('cm')) {
     return '#ff8000';
-  } else if (/td/.exec(title)) {
+  } else if (titleLower.includes('td')) {
     return '#008000';
-  } else if (/tp/.exec(title)) {
+  } else if (titleLower.includes('tp')) {
     return '#0066cc';
-  } else if (/periode|période/.exec(title)) {
+  } else if (/periode|période/.test(titleLower)) {
     return '#663300';
-  } else if (/anglais/.exec(title)) {
+  } else if (titleLower.includes('anglais')) {
     return '#9966ff';
   } else {
     return '#660066';
