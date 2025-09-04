@@ -42,83 +42,91 @@ export class TodaysLessonCommand implements IsabelleCommand {
 
 
   public async executeCommand(interaction: ChatInputCommandInteraction): Promise<void> {
+    const subcommand: string = interaction.options.getSubcommand();
 
-    const subcommand : string = interaction.options.getSubcommand();
+    const handlers = {
+      get: () => this.handleGetCommand(interaction),
+      next: () => this.handleNextCommand(interaction),
+      end: () => this.handleEndCommand(interaction),
+    };
 
-    switch (subcommand) {
-      case 'get':
-        const lessons = await getTodaysLessons();
-        if (lessons.length === 0) {
-          await interaction.reply({
-            ephemeral: true,
-            content: "Aujourd'hui c'est dodo...",
-          });
-          break;
-        }
-
-        const embeds = [];
-
-        for (const lesson of lessons) {
-          const embed = new EmbedBuilder()
-            .setTitle(lesson.name)
-            .addFields(
-              { name: 'Début', value: humanDate(lesson.start) },
-              { name: 'Fin', value: humanDate(lesson.end) },
-              { name: 'Salle', value: lesson.room },
-            )
-            .setColor(lesson.color as ColorResolvable);
-
-          embeds.push(embed);
-        }
-
-        await interaction.reply({
-          ephemeral: false,
-          embeds: embeds,
-        });
-        break;
-
-      case 'next':
-        const lesson = await getTodaysNextLesson();
-
-        if (!lesson) {
-          await interaction.reply({
-            ephemeral: false,
-            content: "Les cours c'est stop! IL",
-          });
-          break;
-        }
-
-        const embed = new EmbedBuilder()
-          .setTitle(lesson.name)
-          .addFields(
-            { name: 'Début', value: humanTime(lesson.start) },
-            { name: 'Fin', value: humanTime(lesson.end) },
-            { name: 'Salle', value: lesson.room },
-          )
-          .setColor(lesson.color as ColorResolvable);
-
-        await interaction.reply({
-          ephemeral: false,
-          embeds: [embed],
-        });
-        break;
-
-      case 'end':
-        const lessonEnd = await getEndOfTodayLessons();
-
-        if (!lessonEnd) {
-          await interaction.reply({
-            ephemeral: false,
-            content: "Y a pas cours aujourd'hui, lâchez moi!",
-          });
-          break;
-        }
-
-        await interaction.reply({
-          ephemeral: interaction.options.getBoolean('ephemeral') ?? false,
-          content: `Les cours finissent à ${humanTime(lessonEnd)} soit ${time(lessonEnd, TimestampStyles.RelativeTime)}`,
-        });
-        break;
+    const handler = handlers[subcommand as keyof typeof handlers];
+    if (handler) {
+      await handler();
     }
+  }
+
+  private async handleGetCommand(interaction: ChatInputCommandInteraction): Promise<void> {
+    const lessons = await getTodaysLessons();
+    if (lessons.length === 0) {
+      await interaction.reply({
+        ephemeral: true,
+        content: "Aujourd'hui c'est dodo...",
+      });
+      return;
+    }
+
+    const embeds = [];
+
+    for (const lesson of lessons) {
+      const embed = new EmbedBuilder()
+        .setTitle(lesson.name)
+        .addFields(
+          { name: 'Début', value: humanDate(lesson.start) },
+          { name: 'Fin', value: humanDate(lesson.end) },
+          { name: 'Salle', value: lesson.room },
+        )
+        .setColor(lesson.color as ColorResolvable);
+
+      embeds.push(embed);
+    }
+
+    await interaction.reply({
+      ephemeral: false,
+      embeds: embeds,
+    });
+  }
+
+  private async handleNextCommand(interaction: ChatInputCommandInteraction): Promise<void> {
+    const lesson = await getTodaysNextLesson();
+
+    if (!lesson) {
+      await interaction.reply({
+        ephemeral: false,
+        content: "Les cours c'est stop! IL",
+      });
+      return;
+    }
+
+    const embed = new EmbedBuilder()
+      .setTitle(lesson.name)
+      .addFields(
+        { name: 'Début', value: humanTime(lesson.start) },
+        { name: 'Fin', value: humanTime(lesson.end) },
+        { name: 'Salle', value: lesson.room },
+      )
+      .setColor(lesson.color as ColorResolvable);
+
+    await interaction.reply({
+      ephemeral: false,
+      embeds: [embed],
+    });
+  }
+
+  private async handleEndCommand(interaction: ChatInputCommandInteraction): Promise<void> {
+    const lessonEnd = await getEndOfTodayLessons();
+
+    if (!lessonEnd) {
+      await interaction.reply({
+        ephemeral: false,
+        content: "Y a pas cours aujourd'hui, lâchez moi!",
+      });
+      return;
+    }
+
+    await interaction.reply({
+      ephemeral: interaction.options.getBoolean('ephemeral') ?? false,
+      content: `Les cours finissent à ${humanTime(lessonEnd)} soit ${time(lessonEnd, TimestampStyles.RelativeTime)}`,
+    });
   }
 }
