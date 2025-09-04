@@ -44,15 +44,20 @@ export class TodaysLessonCommand implements IsabelleCommand {
   public async executeCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     const subcommand: string = interaction.options.getSubcommand();
 
-    const handlers = {
+    const handlers: Record<string, () => Promise<void>> = {
       get: () => this.handleGetCommand(interaction),
       next: () => this.handleNextCommand(interaction),
       end: () => this.handleEndCommand(interaction),
     };
 
-    const handler = handlers[subcommand as keyof typeof handlers];
+    const handler = handlers[subcommand];
     if (handler) {
       await handler();
+    } else {
+      await interaction.reply({
+        ephemeral: true,
+        content: 'Qu\'est-ce que tu me demandes frérot ?',
+      });
     }
   }
 
