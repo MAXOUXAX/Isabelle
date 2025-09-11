@@ -13,100 +13,102 @@ export class RussianRouletteCommand implements IsabelleCommand {
     const guild = interaction.guild;
 
     if (!guild) {
-      void interaction.reply('Vous ne pouvez pas jouer en DM !');
+      await interaction.reply('Vous ne pouvez pas jouer en DM !');
       return;
     }
 
-    // choose a random user to be killed between the user that use the command and all the guild member
-    const killed = getGunTarget(interaction.user.id, guild);
+    const targetId = getGunTarget(interaction.user.id, guild);
 
-    if (killed == null) {
-      interaction
-        .reply('Click ! Tu as survécu à la roulette russe, GG')
-        .catch((e: unknown) => {
-          console.error(e);
-        });
+    // No one got hit this round.
+    if (targetId == null) {
+      numberOfGamesSinceLastKill++;
+      await interaction.reply('Click ! Tu as survécu à la roulette russe, GG');
       return;
     }
 
-    const member = guild.members.cache.get(killed);
+    // Reset counter on kill (any kill: self or other)
+    numberOfGamesSinceLastKill = 0;
+
     try {
-      const dm = await member?.createDM();
-      if (dm) {
-        await dm.send('Tu as perdu à la roulette russe, RIP');
+      const member = await guild.members
+        .fetch(targetId)
+        .catch(() => guild.members.cache.get(targetId));
 
-        try {
-          const invite = await guild.invites.create(interaction.channelId);
-          await dm.send(`https://discord.gg/${invite.code}`);
-          await interaction.guild.members.kick(
-            killed,
-            'Tu as perdu à la roulette russe, RIP',
-          );
-          console.debug(
-            '[RussianRoulette] Kicked user',
-            killed,
-            mentionId(killed),
-          );
-        } catch (e) {
-          console.error(
-            '[RussianRoulette] Error while creating invite or kicking user',
-            e,
-          );
-          await interaction.reply(
-            'Click ! Tu as survécu à la roulette russe, GG',
-          );
-        }
+      if (!member) {
+        console.warn('[RussianRoulette] Impossible de récupérer le membre');
+        await interaction.reply(
+          'Click ! Tu as survécu à la roulette russe, GG',
+        );
+        return;
       }
+
+      // 5 minutes timeout
+      await member.timeout(
+        TIMEOUT_DURATION_MS,
+        'Perdu à la roulette russe (timeout 5 min)',
+      );
+
+      await interaction.reply(
+        `Bang ! ${mentionId(targetId)} a été mis en timeout pendant 5 minutes.`,
+      );
+      console.debug(
+        '[RussianRoulette] Timed-out user',
+        targetId,
+        mentionId(targetId),
+      );
     } catch (e) {
-      console.error('[RussianRoulette] Error while sending DM', e);
-      await interaction.reply('Error while sending DM');
+      console.error('[RussianRoulette] Error while timing out user', e);
+      await interaction.reply(
+        'Une erreur est survenue, personne ne meurt cette fois-ci.',
+      );
     }
   }
 }
 
+// Probabilities (tweak as needed)
 const PERCENTAGES = {
-  kill_other: 0.1,
-  is_killing: 0.1,
-  kill_self: 0.1,
+  kill_other: 0.1, // 10% chance the gun points to someone else instead of self
+  is_killing: 0.1, // Base chance that the trigger actually fires (scaled dynamically)
 };
+
+// Duration of the timeout applied when a player "dies" (5 minutes)
+const TIMEOUT_DURATION_MS = 5 * 60 * 1000;
 
 let numberOfGamesSinceLastKill = 0;
 
+/**
+ * Determines who (if anyone) is hit by the roulette.
+ * Returns null when nobody is hit.
+ */
 function getGunTarget(userID: string, guild: Guild) {
-  const isSelfKilling = Math.random() > PERCENTAGES.kill_other;
-  const killingThreshold = increasePercentageWithLog(
+  const targetSelf = Math.random() > PERCENTAGES.kill_other;
+  const dynamicFireChance = increasePercentageWithLog(
     PERCENTAGES.is_killing,
     0.7,
   );
 
-  console.debug('[RussianRoulette] killingThreshold', killingThreshold);
+  console.debug('[RussianRoulette] dynamicFireChance', dynamicFireChance);
 
-  if (isSelfKilling) {
-    if (Math.random() < killingThreshold) {
-      numberOfGamesSinceLastKill = 0;
-      return userID;
-    }
-  } else {
-    if (Math.random() < killingThreshold) {
-      return (
-        guild.members.cache.filter((member) => member.kickable).random()?.id ??
-        userID
-      );
-    }
-  }
+  // Gun does not fire
+  if (Math.random() >= dynamicFireChance) return null;
 
-  return null;
+  if (targetSelf) return userID;
+
+  // Pick a random moderatable member; fallback to self if none
+  const otherId = guild.members.cache
+    .filter((m) => m.id !== userID && (m.moderatable || m.kickable))
+    .random()?.id;
+  return otherId ?? userID;
 }
 
 // Increase the chance that someone is gonna be killed, plus la suite de commande sans kill augmente plus la chance est elever
 function increasePercentageWithLog(
   maxPercentage: number,
-  percentage: number,
+  base: number,
 ): number {
   return Math.min(
     maxPercentage,
-    percentage +
-      mapNumber(Math.log(numberOfGamesSinceLastKill + 1), 0, 4, 0, 1),
+    base + mapNumber(Math.log(numberOfGamesSinceLastKill + 1), 0, 4, 0, 1),
   );
 }
 
@@ -120,12 +122,10 @@ function increasePercentageWithLog(
 // return : 15
 function mapNumber(
   number: number,
-  in_min: number,
-  in_max: number,
-  out_min: number,
-  out_max: number,
+  inMin: number,
+  inMax: number,
+  outMin: number,
+  outMax: number,
 ) {
-  return (
-    ((number - in_min) * (out_max - out_min)) / (in_max - in_min) + out_min
-  );
+  return ((number - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
 }
