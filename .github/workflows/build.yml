@@ -8,6 +8,18 @@ on:
       - main
 
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (git tag)'
+        required: true
+        type: string
+
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version to build (git tag)'
+        required: true
+        type: string
 
 name: Build and Package
 
@@ -20,16 +32,14 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.version || github.ref }}
 
       - name: Set up Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-
-      - name: Retrieve Version from package.json
-        id: package-version
-        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
       - name: Clean npm cache and remove existing dependencies
         run: |
@@ -42,8 +52,19 @@ jobs:
       - name: Build Application
         run: npm run build --if-present
 
+      - name: Copy package.json and package-lock.json
+        run: |
+          cp package.json package-lock.json dist/
+          ls -la dist/
+
+      - name: Generate safe artifact name
+        id: artifact-name
+        run: |
+          NAME="${{ inputs.version || github.ref_name || github.sha }}"
+          echo "safe_name=${NAME//\//-}" >> $GITHUB_OUTPUT
+
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build-artifact-${{ steps.package-version.outputs.version }}
+          name: build-artifact-${{ steps.artifact-name.outputs.safe_name }}
           path: dist/*

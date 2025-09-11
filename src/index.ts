@@ -1,4 +1,5 @@
 import { commandManager } from '@/manager/commands/command.manager.js';
+import { Coiffeur } from '@/modules/coiffeur/coiffeur.module.js';
 import { CoreModule } from '@/modules/core/core.module.js';
 import { PlanifierModule } from '@/modules/planifier/planifier.module.js';
 import { RussianRoulette } from '@/modules/russian-roulette/russian-roulette.module.js';
@@ -24,6 +25,7 @@ export const client = new Client({
 const MODULES: IsabelleModule[] = [
   new CoreModule(),
   new HotPotato(),
+  new Coiffeur(),
   new PlanifierModule(),
   new RussianRoulette(),
   new SutomModule(),
@@ -77,7 +79,7 @@ client.once(Events.ClientReady, () => {
             `[DEVELOPMENT] Commands deployed for the ${developmentGuild.name} server!`,
           );
         });
-    } else if (process.env.NODE_ENV === 'production') {
+    } else if (process.env.NODE_ENV === undefined) {
       console.log('[PRODUCTION] Isabelle is running in production mode.');
 
       console.log('[PRODUCTION] Deploying global commands...');
@@ -87,7 +89,7 @@ client.once(Events.ClientReady, () => {
       );
     } else {
       console.error(
-        'No valid environment specified. Please set the NODE_ENV environment variable to either "development" or "production".',
+        'No valid environment specified. Please set the NODE_ENV environment variable to "development" or delete it to run in production mode.',
       );
       return process.exit(1);
     }
@@ -138,14 +140,59 @@ client.on(Events.InteractionCreate, (interaction) => {
 
 await client.login(config.DISCORD_TOKEN);
 
-function registerModules() {
+function registerModules(): void {
+  interface ModuleResult {
+    module: IsabelleModule;
+    success: boolean;
+    time: number;
+  }
+
+  const globalStartTime = performance.now();
+  const results: ModuleResult[] = [];
+
   for (const module of MODULES) {
     console.log(`[Modules] Initializing module ${module.name}`);
-    module.init();
-    commandManager.registerCommandsFromModule(module);
-    interactionManager.registerInteractionHandlers(module.interactionHandlers);
-    console.log(`[Modules] Module ${module.name} initialized.`);
+    const startTime = performance.now();
+    let success = false;
+
+    try {
+      module.init();
+      commandManager.registerCommandsFromModule(module);
+      interactionManager.registerInteractionHandlers(
+        module.interactionHandlers,
+      );
+      success = true;
+    } catch (error) {
+      console.error(
+        `[Modules] Failed to initialize module ${module.name}:`,
+        error,
+      );
+      console.error(`[Modules] Module ${module.name} will be disabled`);
+    } finally {
+      const endTime = performance.now();
+      const loadTime = endTime - startTime;
+      results.push({ module, success, time: loadTime });
+
+      const timeMessage = `${loadTime.toFixed(2)}ms`;
+      if (success) {
+        if (loadTime > 1000) {
+          console.warn(
+            `[Modules] WARNING! Module ${module.name} took ${timeMessage} to initialize! This may impact bot startup time.`,
+          );
+        } else {
+          console.log(
+            `[Modules] Module ${module.name} initialized in ${timeMessage}`,
+          );
+        }
+      }
+    }
   }
+
+  const totalTime = performance.now() - globalStartTime;
+  const successCount = results.filter((r) => r.success).length;
+  console.log(
+    `[Modules] Finished initializing ${successCount.toString()}/${MODULES.length.toString()} modules in ${totalTime.toFixed(2)}ms`,
+  );
 }
 
 client.on(Events.GuildCreate, (guild) => {
