@@ -65,10 +65,6 @@ export class SutomGame {
   }
 
   checkError(word: string): AttemptOutcome {
-    if (this.wordHistory.length == 6) {
-      return AttemptOutcome.GAME_FINISHED;
-    }
-
     if (word.length !== this.word.length) {
       return AttemptOutcome.WORD_LENGTH_MISMATCH;
     }
@@ -132,7 +128,6 @@ export enum AttemptOutcome {
   UNKNOWN_WORD,
   WORD_LENGTH_MISMATCH,
   WORD_REPEATED,
-  GAME_FINISHED,
   WORD_SUCCESSFULLY_GUESSED,
   ATTEMPTS_EXHAUSTED,
 }

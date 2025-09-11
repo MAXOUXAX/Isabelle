@@ -37,16 +37,6 @@ export default async function guessWordSubcommand(
           console.error(e);
         });
       break;
-    case AttemptOutcome.GAME_FINISHED:
-      await interaction
-        .reply(
-          `${game.renderHistory()}\nLa partie est déjà terminée ! Le mot était: ${game.word}`,
-        )
-        .catch((e: unknown) => {
-          console.error(e);
-        });
-      sutomGameManager.deleteGame(user.id);
-      break;
     case AttemptOutcome.ATTEMPTS_EXHAUSTED:
       await interaction
         .reply(
@@ -74,6 +64,15 @@ export default async function guessWordSubcommand(
           console.error(e);
         });
       sutomGameManager.deleteGame(user.id);
+      break;
+    case AttemptOutcome.VALID_WORD:
+      interaction
+        .reply(
+          `${game.renderHistory()}\nIl te reste ${String(6 - game.wordHistory.length)} tentatives.`,
+        )
+        .catch((e: unknown) => {
+          console.error(e);
+        });
       break;
     default:
       interaction.reply('Erreur inconnue !').catch((e: unknown) => {
