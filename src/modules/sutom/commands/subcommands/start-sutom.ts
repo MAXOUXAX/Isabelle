@@ -18,10 +18,12 @@ export default function startSutomSubcommand(
 
   const { channel } = interaction;
   if (channel?.isSendable()) {
+    const game = sutomGameManager.getGame(user.id);
     interaction
-      .reply(
-        `Une partie de Sutom a été créée pour toi !\n${sutomGameManager.getGame(user.id)?.renderHistory() ?? ''}`,
-      )
+      .reply({
+        content: 'Une partie de Sutom a été créée pour toi !',
+        embeds: game ? [game.buildEmbed()] : [],
+      })
       .catch((e: unknown) => {
         console.error(e);
       });

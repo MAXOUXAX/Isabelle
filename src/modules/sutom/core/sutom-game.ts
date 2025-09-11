@@ -1,4 +1,5 @@
 import { WordRepository } from '@/modules/sutom/core/word-repository.js';
+import { EmbedBuilder } from 'discord.js';
 
 export class SutomGame {
   word = '';
@@ -11,34 +12,83 @@ export class SutomGame {
     this.wordRepository = wordRepository;
   }
 
+  /**
+   * Render the current board.
+   * Rules for the visual representation:
+   *  - Correct letter (good letter & good place): show the letter as a REGIONAL INDICATOR emoji (🇦 🇧 🇨 ...)
+   *  - Misplaced letter: 🟧
+   *  - Incorrect letter: ⬜
+   *  - When no attempt yet: show first letter revealed then placeholder squares.
+   * Using emojis helps keep a “monospace-ish” alignment inside a code block / embed description.
+   */
   renderHistory(): string {
+    return this.renderBoard();
+  }
+
+  renderBoard(): string {
+    // Build rows for each guess
+    const rows: string[] = [];
+
     if (this.wordHistory.length === 0) {
-      return (
-        this.word[0].toUpperCase() + '⬜'.repeat(this.word.length - 1) + '\n'
+      // Initial hint row: first letter uppercase + placeholders
+      rows.push(
+        this.letterToEmoji(this.word[0], true) +
+          ' ' +
+          Array.from({ length: this.word.length - 1 })
+            .map(() => '⬜')
+            .join(' '),
       );
     }
 
-    let final = '';
-
-    for (const word of this.wordHistory) {
-      const letters = this.evaluateGuess(word);
-
-      final += word.split('').join(' ').toUpperCase();
-      final += '\n';
-
-      for (const letter of letters) {
-        if (letter === LetterState.CORRECT) {
-          final += '🟩';
-        } else if (letter === LetterState.MISPLACED) {
-          final += '🟧';
+    for (const guess of this.wordHistory) {
+      const evaluation = this.evaluateGuess(guess);
+      const tokens: string[] = [];
+      for (let i = 0; i < guess.length; i++) {
+        const state = evaluation[i];
+        if (state === LetterState.CORRECT) {
+          tokens.push(this.letterToEmoji(guess[i], true));
+        } else if (state === LetterState.MISPLACED) {
+          tokens.push('🟧');
         } else {
-          final += '⬜';
+          tokens.push('⬜');
         }
       }
-      final += '\n';
+      rows.push(tokens.join(' '));
     }
 
-    return final;
+    return rows.join('\n');
+  }
+
+  /**
+   * Convert a latin letter to its regional indicator symbol (A-Z only) to display the letter.
+   * If not a-z (e.g. accented letters), fallback to bold uppercase letter.
+   */
+  private letterToEmoji(letter: string, uppercase = false): string {
+    const l = (uppercase ? letter.toUpperCase() : letter).normalize('NFD');
+    const plain = l[0];
+    if (/^[A-Z]$/i.test(plain)) {
+      // Use Discord colon shortcode so it renders even outside code blocks
+      return `:regional_indicator_${plain.toLowerCase()}:`;
+    }
+    return `**${plain.toUpperCase()}**`;
+  }
+
+  getRemainingAttempts(): number {
+    return 6 - this.wordHistory.length;
+  }
+
+  buildEmbed(message?: string): EmbedBuilder {
+    const descriptionParts: string[] = [];
+    descriptionParts.push(this.renderBoard());
+    descriptionParts.push('Essais: ' + String(this.wordHistory.length) + '/6');
+    if (message) descriptionParts.push(message);
+
+    return new EmbedBuilder()
+      .setTitle('🎯 SUTOM')
+      .setColor(0x2ecc71)
+      .setDescription(descriptionParts.join('\n'))
+      .setFooter({ text: 'Trouve le mot avant la 6ᵉ tentative !' })
+      .setTimestamp();
   }
 
   addWord(word: string): AttemptOutcome {

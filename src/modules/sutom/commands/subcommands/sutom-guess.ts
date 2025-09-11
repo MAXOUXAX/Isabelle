@@ -37,16 +37,16 @@ export default async function guessWordSubcommand(
           console.error(e);
         });
       break;
-    case AttemptOutcome.ATTEMPTS_EXHAUSTED:
-      await interaction
-        .reply(
-          `${game.renderHistory()}\nTu as utilisé toutes tes tentatives ! Le mot était: ${game.word}`,
-        )
-        .catch((e: unknown) => {
-          console.error(e);
-        });
+    case AttemptOutcome.ATTEMPTS_EXHAUSTED: {
+      const embed = game.buildEmbed(
+        `❌ Tu as utilisé toutes tes tentatives ! Le mot était: **${game.word.toUpperCase()}**`,
+      );
+      await interaction.reply({ embeds: [embed] }).catch((e: unknown) => {
+        console.error(e);
+      });
       sutomGameManager.deleteGame(user.id);
       break;
+    }
     case AttemptOutcome.UNKNOWN_WORD:
       interaction
         .reply("Le mot que tu as proposé n'existe pas dans le dictionnaire !")
@@ -54,26 +54,26 @@ export default async function guessWordSubcommand(
           console.error(e);
         });
       break;
-    case AttemptOutcome.WORD_SUCCESSFULLY_GUESSED:
-      await interaction
-        .reply(
-          `${game.renderHistory()}\nBravo, tu as trouvé le mot ! Le mot était: ` +
-            game.word,
-        )
-        .catch((e: unknown) => {
-          console.error(e);
-        });
+    case AttemptOutcome.WORD_SUCCESSFULLY_GUESSED: {
+      const embed = game.buildEmbed(
+        `🎉 Bravo, tu as trouvé le mot: **${game.word.toUpperCase()}**`,
+      );
+      await interaction.reply({ embeds: [embed] }).catch((e: unknown) => {
+        console.error(e);
+      });
       sutomGameManager.deleteGame(user.id);
       break;
-    case AttemptOutcome.VALID_WORD:
-      interaction
-        .reply(
-          `${game.renderHistory()}\nIl te reste ${String(6 - game.wordHistory.length)} tentatives.`,
-        )
-        .catch((e: unknown) => {
-          console.error(e);
-        });
+    }
+    case AttemptOutcome.VALID_WORD: {
+      const remaining = 6 - game.wordHistory.length;
+      const embed = game.buildEmbed(
+        `Il te reste **${String(remaining)}** tentative${remaining > 1 ? 's' : ''}.`,
+      );
+      interaction.reply({ embeds: [embed] }).catch((e: unknown) => {
+        console.error(e);
+      });
       break;
+    }
     default:
       interaction.reply('Erreur inconnue !').catch((e: unknown) => {
         console.error(e);

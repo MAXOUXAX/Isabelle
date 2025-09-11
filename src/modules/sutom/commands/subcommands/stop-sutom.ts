@@ -10,7 +10,7 @@ export default async function stopSutomSubcommand(
   if (!game) {
     interaction
       .reply(
-        "Tu n'as pas de partie en cours ! Utilise la commande /start-sutom pour en commencer une.",
+        "Tu n'as pas de partie en cours ! Utilise la commande /sutom start pour en commencer une.",
       )
       .catch((e: unknown) => {
         console.error(e);
@@ -20,13 +20,12 @@ export default async function stopSutomSubcommand(
 
   const { channel } = interaction;
   if (channel?.isSendable()) {
-    await interaction
-      .reply(
-        `${game.renderHistory()}\nLa partie est terminée ! Le mot était: ${game.word}`,
-      )
-      .catch((e: unknown) => {
-        console.error(e);
-      });
+    const embed = game.buildEmbed(
+      `🛑 La partie est terminée ! Le mot était: **${game.word.toUpperCase()}**`,
+    );
+    await interaction.reply({ embeds: [embed] }).catch((e: unknown) => {
+      console.error(e);
+    });
     sutomGameManager.deleteGame(user.id);
   }
 }
