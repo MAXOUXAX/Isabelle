@@ -26,9 +26,6 @@ export class RussianRouletteCommand implements IsabelleCommand {
       return;
     }
 
-    // Reset counter on kill (any kill: self or other)
-    numberOfGamesSinceLastKill = 0;
-
     try {
       const member = await guild.members
         .fetch(targetId)
@@ -36,9 +33,19 @@ export class RussianRouletteCommand implements IsabelleCommand {
 
       if (!member) {
         console.warn('[RussianRoulette] Impossible de récupérer le membre');
+        numberOfGamesSinceLastKill++; // pas de kill finalement
         await interaction.reply(
           'Click ! Tu as survécu à la roulette russe, GG',
         );
+        return;
+      }
+
+      if (!(member.moderatable || member.kickable)) {
+        numberOfGamesSinceLastKill++;
+        await interaction.reply(
+          `Bang...? ${mentionId(targetId)} était trop puissant pour être affecté. Le canon a fondu et tout le monde s'en sort vivant cette fois-ci !`,
+        );
+        console.debug('[RussianRoulette] Target not moderatable', targetId);
         return;
       }
 
@@ -47,6 +54,8 @@ export class RussianRouletteCommand implements IsabelleCommand {
         TIMEOUT_DURATION_MS,
         'Perdu à la roulette russe (timeout 5 min)',
       );
+
+      numberOfGamesSinceLastKill = 0;
 
       await interaction.reply(
         `Bang ! ${mentionId(targetId)} a été mis en timeout pendant 5 minutes.`,
@@ -58,8 +67,9 @@ export class RussianRouletteCommand implements IsabelleCommand {
       );
     } catch (e) {
       console.error('[RussianRoulette] Error while timing out user', e);
+      numberOfGamesSinceLastKill++;
       await interaction.reply(
-        'Une erreur est survenue, personne ne meurt cette fois-ci.',
+        `Le pistolet s'enraye... Personne ne meurt cette fois-ci (erreur: ${(e as Error).name}).`,
       );
     }
   }
