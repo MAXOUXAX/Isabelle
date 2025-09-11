@@ -1,6 +1,9 @@
 import { commandManager } from '@/manager/commands/command.manager.js';
 import { Coiffeur } from '@/modules/coiffeur/coiffeur.module.js';
 import { CoreModule } from '@/modules/core/core.module.js';
+import { PlanifierModule } from '@/modules/planifier/planifier.module.js';
+import { RussianRoulette } from '@/modules/russian-roulette/russian-roulette.module.js';
+import { SutomModule } from '@/modules/sutom/sutom.module.js';
 import { ActivityType, Client, Events, GatewayIntentBits } from 'discord.js';
 import { config } from './config.js';
 import { interactionManager } from './manager/interaction.manager.js';
@@ -18,6 +21,15 @@ export const client = new Client({
     GatewayIntentBits.MessageContent,
   ],
 });
+
+const MODULES: IsabelleModule[] = [
+  new CoreModule(),
+  new HotPotato(),
+  new Coiffeur(),
+  new PlanifierModule(),
+  new RussianRoulette(),
+  new SutomModule(),
+];
 
 client.once(Events.ClientReady, () => {
   async function handler() {
@@ -127,12 +139,6 @@ client.on(Events.InteractionCreate, (interaction) => {
 });
 
 await client.login(config.DISCORD_TOKEN);
-
-const MODULES: IsabelleModule[] = [
-  new CoreModule(),
-  new HotPotato(),
-  new Coiffeur(),
-];
 
 function registerModules(): void {
   interface ModuleResult {
