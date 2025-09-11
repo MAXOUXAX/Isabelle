@@ -1,5 +1,5 @@
-import { SutomGame } from '@/modules/sutom/core/SutomGame.js';
-import { wordRepository } from '@/modules/sutom/core/wordRepository.js';
+import { SutomGame } from '@/modules/sutom/core/sutom-game.js';
+import { wordRepository } from '@/modules/sutom/core/word-repository.js';
 
 class GameManager {
   gameInstances: Map<string, SutomGame>;

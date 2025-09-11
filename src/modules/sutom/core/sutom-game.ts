@@ -1,4 +1,4 @@
-import { WordRepository } from '@/modules/sutom/core/wordRepository.js';
+import { WordRepository } from '@/modules/sutom/core/word-repository.js';
 
 export class SutomGame {
   word = '';
@@ -42,40 +42,43 @@ export class SutomGame {
   }
 
   addWord(word: string): AttemptOutcome {
-    const error = this.checkError(word);
+    const candidate = word.trim().toLowerCase();
 
-    if (error) {
+    const error = this.checkError(candidate);
+    if (error !== AttemptOutcome.VALID_WORD) {
       return error;
     }
 
-    this.wordHistory.push(word);
-    if (this.wordHistory.length === 6) {
-      return AttemptOutcome.GAME_FINISHED;
+    const letters = this.evaluateGuess(candidate);
+
+    this.wordHistory.push(candidate);
+
+    if (letters.every((l) => l === LetterState.CORRECT)) {
+      return AttemptOutcome.WORD_SUCCESSFULLY_GUESSED;
     }
 
-    const letters = this.evaluateGuess(word);
-    if (letters.every((letter) => letter === LetterState.CORRECT)) {
-      return AttemptOutcome.CORRECT_WORD_FOUND;
+    if (this.wordHistory.length == 6) {
+      return AttemptOutcome.ATTEMPTS_EXHAUSTED;
     }
 
     return AttemptOutcome.VALID_WORD;
   }
 
   checkError(word: string): AttemptOutcome {
-    if (this.wordHistory.length >= 6) {
+    if (this.wordHistory.length == 6) {
       return AttemptOutcome.GAME_FINISHED;
     }
 
     if (word.length !== this.word.length) {
-      return AttemptOutcome.WORD_LENGHT_NOT_CORRECT;
+      return AttemptOutcome.WORD_LENGTH_MISMATCH;
     }
 
     if (this.wordHistory.includes(word)) {
-      return AttemptOutcome.WORD_ALREADY_TRIED;
+      return AttemptOutcome.WORD_REPEATED;
     }
 
     if (!this.wordRepository.wordExists(word)) {
-      return AttemptOutcome.WORD_UNKNOWED;
+      return AttemptOutcome.UNKNOWN_WORD;
     }
 
     return AttemptOutcome.VALID_WORD;
@@ -126,9 +129,10 @@ export enum LetterState {
 
 export enum AttemptOutcome {
   VALID_WORD,
-  WORD_UNKNOWED,
-  WORD_LENGHT_NOT_CORRECT,
-  WORD_ALREADY_TRIED,
+  UNKNOWN_WORD,
+  WORD_LENGTH_MISMATCH,
+  WORD_REPEATED,
   GAME_FINISHED,
-  CORRECT_WORD_FOUND,
+  WORD_SUCCESSFULLY_GUESSED,
+  ATTEMPTS_EXHAUSTED,
 }

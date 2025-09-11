@@ -9,7 +9,7 @@ class OfflineWordRepository implements WordRepository {
   wordList: string[] = [];
   constructor() {
     const fileContent = fs.readFileSync(
-      'src/modules/sutom/core/mots.filtered.txt',
+      'src/modules/sutom/resources/mots.filtered.txt',
       'utf-8',
     );
     this.wordList = fileContent
