@@ -26,7 +26,7 @@ export class RussianRouletteCommand implements IsabelleCommand {
         .catch((e: unknown) => {
           console.error(e);
         });
-      return
+      return;
     }
 
     const member = guild.members.cache.get(killed);
@@ -38,11 +38,23 @@ export class RussianRouletteCommand implements IsabelleCommand {
         try {
           const invite = await guild.invites.create(interaction.channelId);
           await dm.send(`https://discord.gg/${invite.code}`);
-          await interaction.guild?.members.kick(killed, 'Tu as perdu à la roulette russe, RIP');
-          console.debug('[RussianRoulette] Kicked user', killed, mentionId(killed));
+          await interaction.guild.members.kick(
+            killed,
+            'Tu as perdu à la roulette russe, RIP',
+          );
+          console.debug(
+            '[RussianRoulette] Kicked user',
+            killed,
+            mentionId(killed),
+          );
         } catch (e) {
-          console.error('[RussianRoulette] Error while creating invite or kicking user', e);
-          await interaction.reply('Click ! Tu as survécu à la roulette russe, GG');
+          console.error(
+            '[RussianRoulette] Error while creating invite or kicking user',
+            e,
+          );
+          await interaction.reply(
+            'Click ! Tu as survécu à la roulette russe, GG',
+          );
         }
       }
     } catch (e) {
@@ -67,7 +79,7 @@ function getGunTarget(userID: string, guild: Guild) {
     0.7,
   );
 
-  console.debug('[RussianRoullete] killingThreshold', killingThreshold);
+  console.debug('[RussianRoulette] killingThreshold', killingThreshold);
 
   if (isSelfKilling) {
     if (Math.random() < killingThreshold) {
@@ -94,7 +106,7 @@ function increasePercentageWithLog(
   return Math.min(
     maxPercentage,
     percentage +
-    mapNumber(Math.log(numberOfGamesSinceLastKill + 1), 0, 4, 0, 1),
+      mapNumber(Math.log(numberOfGamesSinceLastKill + 1), 0, 4, 0, 1),
   );
 }
 
