@@ -20,12 +20,14 @@ export default async function stopSutomSubcommand(
 
   const { channel } = interaction;
   if (channel?.isSendable()) {
-    const embed = game.buildEmbed(
+    const { embed, attachment } = game.buildBoard(
       `🛑 La partie est terminée ! Le mot était: **${game.word.toUpperCase()}**`,
     );
-    await interaction.reply({ embeds: [embed] }).catch((e: unknown) => {
-      console.error(e);
-    });
+    await interaction
+      .reply({ embeds: [embed], files: [attachment] })
+      .catch((e: unknown) => {
+        console.error(e);
+      });
     sutomGameManager.deleteGame(user.id);
   }
 }

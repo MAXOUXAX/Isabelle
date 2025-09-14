@@ -1,5 +1,6 @@
+import { renderSutomBoardImage } from '@/modules/sutom/canvas/sutom-board-image.js';
 import { WordRepository } from '@/modules/sutom/core/word-repository.js';
-import { EmbedBuilder } from 'discord.js';
+import { AttachmentBuilder, EmbedBuilder } from 'discord.js';
 
 export class SutomGame {
   word = '';
@@ -12,83 +13,33 @@ export class SutomGame {
     this.wordRepository = wordRepository;
   }
 
-  /**
-   * Render the current board.
-   * Rules for the visual representation:
-   *  - Correct letter (good letter & good place): show the letter as a REGIONAL INDICATOR emoji (🇦 🇧 🇨 ...)
-   *  - Misplaced letter: 🟧
-   *  - Incorrect letter: ⬜
-   *  - When no attempt yet: show first letter revealed then placeholder squares.
-   * Using emojis helps keep a “monospace-ish” alignment inside a code block / embed description.
-   */
-  renderHistory(): string {
-    return this.renderBoard();
-  }
-
-  renderBoard(): string {
-    // Build rows for each guess
-    const rows: string[] = [];
-
-    if (this.wordHistory.length === 0) {
-      // Initial hint row: first letter uppercase + placeholders
-      rows.push(
-        this.letterToEmoji(this.word[0], true) +
-          ' ' +
-          Array.from({ length: this.word.length - 1 })
-            .map(() => '⬜')
-            .join(' '),
-      );
-    }
-
-    for (const guess of this.wordHistory) {
-      const evaluation = this.evaluateGuess(guess);
-      const tokens: string[] = [];
-      for (let i = 0; i < guess.length; i++) {
-        const state = evaluation[i];
-        if (state === LetterState.CORRECT) {
-          tokens.push(this.letterToEmoji(guess[i], true));
-        } else if (state === LetterState.MISPLACED) {
-          tokens.push('🟧');
-        } else {
-          tokens.push('⬜');
-        }
-      }
-      rows.push(tokens.join(' '));
-    }
-
-    return rows.join('\n');
-  }
-
-  /**
-   * Convert a latin letter to its regional indicator symbol (A-Z only) to display the letter.
-   * If not a-z (e.g. accented letters), fallback to bold uppercase letter.
-   */
-  private letterToEmoji(letter: string, uppercase = false): string {
-    const l = (uppercase ? letter.toUpperCase() : letter).normalize('NFD');
-    const plain = l[0];
-    if (/^[A-Z]$/i.test(plain)) {
-      // Use Discord colon shortcode so it renders even outside code blocks
-      return `:regional_indicator_${plain.toLowerCase()}:`;
-    }
-    return `**${plain.toUpperCase()}**`;
-  }
-
   getRemainingAttempts(): number {
     return 6 - this.wordHistory.length;
   }
 
-  buildEmbed(message?: string): EmbedBuilder {
+  /**
+   * Build an embed + attachment pair using the canvas renderer instead of the legacy text board.
+   * Consumers can pass the returned embed & attachment directly to an interaction reply.
+   */
+  buildBoard(message?: string): {
+    embed: EmbedBuilder;
+    attachment: AttachmentBuilder;
+  } {
+    const attachment = renderSutomBoardImage(this);
+
     const descriptionParts: string[] = [];
-    descriptionParts.push(this.renderBoard());
     descriptionParts.push('Essais: ' + String(this.wordHistory.length) + '/6');
     if (message) descriptionParts.push(message);
 
-    return new EmbedBuilder()
+    const embed = new EmbedBuilder()
       .setTitle('🎯 SUTOM')
       .setColor(0x2ecc71)
       .setDescription(descriptionParts.join('\n'))
       .setFooter({ text: 'Trouve le mot avant la 6ᵉ tentative !' })
+      .setImage('attachment://sutom-board.png')
       .setTimestamp();
+
+    return { embed, attachment };
   }
 
   addWord(word: string): AttemptOutcome {
