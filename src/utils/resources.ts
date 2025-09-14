@@ -2,6 +2,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
+// Maximum number of parent directories to traverse while searching for the project root.
+// Prevents accidentally walking the entire filesystem if something is misconfigured.
+const MAX_DIRECTORY_TRAVERSAL_DEPTH = 10;
+
 /**
  * Resolve the absolute path to a resource in a way that works in both development and production.
  *
@@ -19,15 +23,23 @@ import { fileURLToPath } from 'url';
 export function resolveResourcePath(...segments: string[]): string {
   const runtimeDir = path.dirname(fileURLToPath(import.meta.url));
 
-  function findProjectRoot(dir: string): string {
-    let current = dir;
-    for (let i = 0; i < 10; i++) {
+  /**
+   * Walk up the directory tree (bounded by MAX_DIRECTORY_TRAVERSAL_DEPTH) to find a folder
+   * containing a package.json which we treat as the project root.
+   *
+   * Fallback behaviour: if no package.json is found within the depth limit, we return the
+   * starting directory (runtimeDir).
+   */
+  function findProjectRoot(startDir: string): string {
+    let current = startDir;
+    for (let i = 0; i < MAX_DIRECTORY_TRAVERSAL_DEPTH; i++) {
       if (fs.existsSync(path.join(current, 'package.json'))) return current;
       const parent = path.dirname(current);
-      if (parent === current) break;
+      if (parent === current) break; // Reached filesystem root
       current = parent;
     }
-    return dir;
+    // Fallback: no package.json found within limit; use the original runtime directory.
+    return startDir;
   }
 
   const projectRoot = findProjectRoot(runtimeDir);
