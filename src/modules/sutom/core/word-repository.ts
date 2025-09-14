@@ -1,3 +1,4 @@
+import { resolveResourcePath } from '@/utils/resources.js';
 import * as fs from 'fs';
 
 export interface WordRepository {
@@ -8,10 +9,8 @@ export interface WordRepository {
 class OfflineWordRepository implements WordRepository {
   wordList: string[] = [];
   constructor() {
-    const fileContent = fs.readFileSync(
-      'src/modules/sutom/resources/mots.filtered.txt',
-      'utf-8',
-    );
+    const wordsFile = resolveResourcePath('sutom', 'mots.filtered.txt');
+    const fileContent = fs.readFileSync(wordsFile, 'utf-8');
     this.wordList = fileContent
       .split('\n')
       .filter((word) => word.trim() !== '')
