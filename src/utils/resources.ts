@@ -2,34 +2,38 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
-// Maximum number of parent directories to traverse while searching for the project root.
-// Prevents accidentally walking the entire filesystem if something is misconfigured.
+// Maximum number of parent directories to ascend while locating the project root.
 const MAX_DIRECTORY_TRAVERSAL_DEPTH = 10;
 
 /**
- * Resolve the absolute path to a resource in a way that works in both development and production.
+ * Resolve the absolute path to a resource file (e.g. data, word lists, templates) in both
+ * development and production environments.
  *
- * Search order (first existing wins):
- *  1. <runtimeDir>/resources/... (production: bundled index.mjs next to resources)
- *  2. <projectRoot>/resources/... (deployment copies resources to root)
- *  3. <projectRoot>/public/resources/... (development with tsx; resources served from public)
+ * Search order (first existing path wins):
+ *  1. <runtimeDir>/resources/...            (bundled runtime: resources collocated with compiled code)
+ *  2. <projectRoot>/resources/...           (deployment: resources copied to repository root)
+ *  3. <projectRoot>/public/resources/...    (development: raw resources under public/)
  *
- * The project root is discovered by walking up from the caller's directory until a package.json is found.
+ * The project root is inferred by ascending parent directories from the calling file until a
+ * directory containing a package.json is found (bounded by MAX_DIRECTORY_TRAVERSAL_DEPTH).
  *
- * Usage:
- *   const filePath = resolveResourcePath('sutom', 'mots.filtered.txt');
- *   const data = fs.readFileSync(filePath, 'utf-8');
+ * @param segments One or more path components identifying the resource relative to the resource
+ *                 root (e.g. resolveResourcePath('sutom', 'mots.filtered.txt')). Each argument is
+ *                 treated as a distinct path segment to remain cross‑platform and avoid manual
+ *                 string concatenation.
+ * @returns The absolute filesystem path to the first matching resource.
+ * @throws  If no candidate path exists for the provided segments.
+ *
+ * @example
+ * const wordListPath = resolveResourcePath('sutom', 'mots.filtered.txt');
+ * const contents = fs.readFileSync(wordListPath, 'utf-8');
  */
 export function resolveResourcePath(...segments: string[]): string {
   const runtimeDir = path.dirname(fileURLToPath(import.meta.url));
 
-  /**
-   * Walk up the directory tree (bounded by MAX_DIRECTORY_TRAVERSAL_DEPTH) to find a folder
-   * containing a package.json which we treat as the project root.
-   *
-   * Fallback behaviour: if no package.json is found within the depth limit, we return the
-   * starting directory (runtimeDir).
-   */
+  // Ascend directories (bounded) to locate a directory containing package.json. If none is found
+  // within the traversal limit, fall back to the starting directory so resolution still attempts
+  // runtime-relative locations.
   function findProjectRoot(startDir: string): string {
     let current = startDir;
     for (let i = 0; i < MAX_DIRECTORY_TRAVERSAL_DEPTH; i++) {
@@ -38,7 +42,7 @@ export function resolveResourcePath(...segments: string[]): string {
       if (parent === current) break; // Reached filesystem root
       current = parent;
     }
-    // Fallback: no package.json found within limit; use the original runtime directory.
+    // No package.json found within limit; use the original runtime directory.
     return startDir;
   }
 
