@@ -15,7 +15,7 @@ interface Lesson {
 
 export const SCHEDULE_CACHE_KEY = 'calendarData';
 
-const cacheEntry = cacheStore.cache(
+const cacheEntry = cacheStore.useCache(
   SCHEDULE_CACHE_KEY,
   getSchedule,
   1000 * 60 * 60 * 24,
@@ -45,16 +45,23 @@ export async function getTodaysLessons(): Promise<Lesson[]> {
 
   const today = dateUtils.startOfToday();
 
-  const todayData = Object.values(calendarData).filter((lesson) => {
-    if (lesson.type === 'VEVENT') {
-      // Le seul type qui nous intéresse est VEVENT
+  if (!calendarData) {
+    console.error('Calendar data is undefined');
+    return [];
+  }
 
-      // On récupère les seulement les cours d'aujourd'hui dans le ICS
-      const eventStart = dateUtils.startOfDay(new Date(lesson.start));
-      return eventStart.getTime() === today.getTime();
-    }
-    return false;
-  });
+  const todayData: VEvent[] = Object.values(calendarData).filter(
+    (lesson): lesson is VEvent => {
+      if (lesson.type === 'VEVENT') {
+        // Le seul type qui nous intéresse est VEVENT
+
+        // On récupère les seulement les cours d'aujourd'hui dans le ICS
+        const eventStart = dateUtils.startOfDay(new Date(lesson.start));
+        return eventStart.getTime() === today.getTime();
+      }
+      return false;
+    },
+  );
 
   // On crée le tableau de cours
   const todaysClasses = createLessonsFromData(todayData);
@@ -75,13 +82,20 @@ export async function getWeekLessons(): Promise<Record<string, Lesson[]>> {
   const startOfWeek = dateUtils.startOfCurrentWeek();
   const endOfWeek = dateUtils.endOfCurrentWeek();
 
-  const weekData = Object.values(calendarData).filter((lesson) => {
-    if (lesson.type === 'VEVENT') {
-      const eventStart = new Date(lesson.start);
-      return eventStart >= startOfWeek && eventStart <= endOfWeek;
-    }
-    return false;
-  });
+  if (!calendarData) {
+    console.error('Calendar data is undefined');
+    return {};
+  }
+
+  const weekData: VEvent[] = Object.values(calendarData).filter(
+    (lesson): lesson is VEvent => {
+      if (lesson.type === 'VEVENT') {
+        const eventStart = new Date(lesson.start);
+        return eventStart >= startOfWeek && eventStart <= endOfWeek;
+      }
+      return false;
+    },
+  );
 
   const weekClasses = createLessonsFromData(weekData);
 
