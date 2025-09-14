@@ -7,4 +7,5 @@ export default defineConfig({
   format: 'esm',
   outExtension: () => ({ js: '.mjs' }),
   tsconfig: 'tsconfig.json',
+  publicDir: 'public',
 });
