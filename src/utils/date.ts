@@ -51,3 +51,9 @@ export function humanDate(date: Date) {
 export function humanTime(date: Date) {
   return date.toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit' });
 }
+
+export function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}

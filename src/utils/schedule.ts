@@ -74,6 +74,39 @@ export async function getTodaysLessons(): Promise<Lesson[]> {
   return sortLessons(todaysClasses);
 }
 
+export async function getLessonsFromDate(date: Date): Promise<Lesson[]> {
+  const calendarData = await cacheEntry.get();
+  const targetDate = dateUtils.startOfDay(date);
+
+  if (!calendarData) {
+    console.error('Calendar data is undefined');
+    return [];
+  }
+
+  const dateData: VEvent[] = Object.values(calendarData).filter(
+    (lesson): lesson is VEvent => {
+      if (lesson.type === 'VEVENT') {
+        const eventStart = dateUtils.startOfDay(new Date(lesson.start));
+        return eventStart.getTime() === targetDate.getTime();
+      }
+      return false;
+    },
+  );
+
+  const classes = createLessonsFromData(dateData);
+
+  if (classes.length === 0) {
+    return [];
+  }
+
+  return sortLessons(classes);
+}
+
+export async function getTomorrowsLessons(): Promise<Lesson[]> {
+  const tomorrow = dateUtils.addDays(new Date(), 1);
+  return await getLessonsFromDate(tomorrow);
+}
+
 /*
  * Récupère les cours de la semaine
  */

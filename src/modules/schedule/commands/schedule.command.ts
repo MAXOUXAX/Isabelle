@@ -4,6 +4,7 @@ import {
   getEndOfTodayLessons,
   getTodaysLessons,
   getTodaysNextLesson,
+  getTomorrowsLessons,
 } from '@/utils/schedule.js';
 import {
   ChatInputCommandInteraction,
@@ -11,62 +12,59 @@ import {
   EmbedBuilder,
   SlashCommandBuilder,
   time,
-  TimestampStyles
+  TimestampStyles,
 } from 'discord.js';
 
-export class TodaysLessonCommand implements IsabelleCommand {
+export class ScheduleCommand implements IsabelleCommand {
   commandData = new SlashCommandBuilder()
-    .setName('todays-lessons')
-    .setDescription('Affiche les cours du jour (passés ou non).')
-    .addSubcommand(subcommand =>
+    .setName('schedule')
+    .setDescription("Consultation de l'emploi du temps")
+    .addSubcommand((subcommand) =>
       subcommand
-        .setName('get')
-        .setDescription('Affiche tous les cours du jour (passés ou non).')
+        .setName('aujourdhui')
+        .setDescription("Affiche tous les cours d'aujourd'hui"),
     )
-    .addSubcommand(subcommand =>
-      subcommand.setName('next')
-        .setDescription('Affiche le prochain cours de la journée.')
-        .addBooleanOption(option =>
-          option.setName('ephemeral')
-            .setDescription('Répondre en privé')
-            .setRequired(false)
-        )
-    )
-    .addSubcommand(subcommand =>
+    .addSubcommand((subcommand) =>
       subcommand
-        .setName('end')
-        .setDescription('Affiche l\'heure de fin des cours du jour.')
+        .setName('demain')
+        .setDescription('Affiche tous les cours de demain'),
+    )
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName('cours-suivant')
+        .setDescription('Affiche le prochain cours de la journée.'),
+    )
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName('fin-de-journée')
+        .setDescription("Affiche l'heure de fin des cours du jour."),
     );
 
-
-
-
-  public async executeCommand(interaction: ChatInputCommandInteraction): Promise<void> {
+  public async executeCommand(
+    interaction: ChatInputCommandInteraction,
+  ): Promise<void> {
     const subcommand: string = interaction.options.getSubcommand();
 
     const handlers: Record<string, () => Promise<void>> = {
-      get: () => this.handleGetCommand(interaction),
-      next: () => this.handleNextCommand(interaction),
-      end: () => this.handleEndCommand(interaction),
+      aujourdhui: () => this.handleTodaysClassesCommand(interaction),
+      demain: () => this.handleTomorrowClassesCommand(interaction),
+      'cours-suivant': () => this.handleNextClassCommand(interaction),
+      'fin-de-journée': () => this.handleEndOfDayCommand(interaction),
     };
 
     const handler = handlers[subcommand];
-    if (handler) {
-      await handler();
-    } else {
-      await interaction.reply({
-        ephemeral: true,
-        content: 'Qu\'est-ce que tu me demandes frérot ?',
-      });
-    }
+    await handler();
   }
 
-  private async handleGetCommand(interaction: ChatInputCommandInteraction): Promise<void> {
+  private async handleTodaysClassesCommand(
+    interaction: ChatInputCommandInteraction,
+  ): Promise<void> {
     const lessons = await getTodaysLessons();
     if (lessons.length === 0) {
       await interaction.reply({
         ephemeral: true,
-        content: "Aujourd'hui c'est dodo...",
+        content:
+          "Aujourd'hui c'est dodo...\n-# *Aucun cours n'est prévu aujourd'hui*",
       });
       return;
     }
@@ -92,13 +90,48 @@ export class TodaysLessonCommand implements IsabelleCommand {
     });
   }
 
-  private async handleNextCommand(interaction: ChatInputCommandInteraction): Promise<void> {
+  private async handleTomorrowClassesCommand(
+    interaction: ChatInputCommandInteraction,
+  ): Promise<void> {
+    const lessons = await getTomorrowsLessons();
+    if (lessons.length === 0) {
+      await interaction.reply({
+        ephemeral: true,
+        content: "Demain c'est dodo...\n-# *Aucun cours n'est prévu demain*",
+      });
+      return;
+    }
+
+    const embeds = [];
+
+    for (const lesson of lessons) {
+      const embed = new EmbedBuilder()
+        .setTitle(lesson.name)
+        .addFields(
+          { name: 'Début', value: humanDate(lesson.start) },
+          { name: 'Fin', value: humanDate(lesson.end) },
+          { name: 'Salle', value: lesson.room },
+        )
+        .setColor(lesson.color as ColorResolvable);
+
+      embeds.push(embed);
+    }
+
+    await interaction.reply({
+      ephemeral: false,
+      embeds: embeds,
+    });
+  }
+
+  private async handleNextClassCommand(
+    interaction: ChatInputCommandInteraction,
+  ): Promise<void> {
     const lesson = await getTodaysNextLesson();
 
     if (!lesson) {
       await interaction.reply({
         ephemeral: false,
-        content: "Les cours c'est stop! IL",
+        content: "Les cours c'est stop! IL\n-# *La journée est terminée*",
       });
       return;
     }
@@ -118,7 +151,9 @@ export class TodaysLessonCommand implements IsabelleCommand {
     });
   }
 
-  private async handleEndCommand(interaction: ChatInputCommandInteraction): Promise<void> {
+  private async handleEndOfDayCommand(
+    interaction: ChatInputCommandInteraction,
+  ): Promise<void> {
     const lessonEnd = await getEndOfTodayLessons();
 
     if (!lessonEnd) {
