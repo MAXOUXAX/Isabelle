@@ -46,7 +46,7 @@
   },
   "dependencies": {
     "discord.js": "^14.18.0",
-    "dotenv": "^16.4.7",
+    "dotenv": "^17.2.2",
     "node-ical": "^0.20.1"
   },
   "devDependencies": {
