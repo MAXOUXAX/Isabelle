@@ -27,7 +27,7 @@ class Cache<T> {
     return this.value;
   }
 
-  public get(): Promise<T | null> {
+  public async get(): Promise<T | null> {
     const now = Date.now();
     if (
       !this.value ||
@@ -61,7 +61,7 @@ class CacheStore {
    * @returns {Cache<T>} the cache object related to the key
    */
 
-  public cache<T>(
+  public useCache<T>(
     key: string,
     fetcher?: Fetcher<T>,
     revalidationPeriod?: number,

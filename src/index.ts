@@ -3,6 +3,7 @@ import { Coiffeur } from '@/modules/coiffeur/coiffeur.module.js';
 import { CoreModule } from '@/modules/core/core.module.js';
 import { PlanifierModule } from '@/modules/planifier/planifier.module.js';
 import { RussianRoulette } from '@/modules/russian-roulette/russian-roulette.module.js';
+import { Schedule } from '@/modules/schedule/schedule.module.js';
 import { SutomModule } from '@/modules/sutom/sutom.module.js';
 import { ActivityType, Client, Events, GatewayIntentBits } from 'discord.js';
 import { config } from './config.js';
@@ -29,6 +30,7 @@ const MODULES: IsabelleModule[] = [
   new PlanifierModule(),
   new RussianRoulette(),
   new SutomModule(),
+  new Schedule(),
 ];
 
 client.once(Events.ClientReady, () => {
