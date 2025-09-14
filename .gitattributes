@@ -1,1 +1,23 @@
-* text eol=lf
+# Base: let Git auto-detect text vs binary
+* text=auto
+
+# Enforce LF for typical source/text files (extend as needed)
+*.ts       text eol=lf
+*.tsx      text eol=lf
+*.js       text eol=lf
+*.mjs      text eol=lf
+*.cjs      text eol=lf
+*.json     text eol=lf
+*.yml      text eol=lf
+*.yaml     text eol=lf
+*.md       text eol=lf
+*.css      text eol=lf
+*.scss     text eol=lf
+*.html     text eol=lf
+*.svg      text eol=lf
+
+# Fonts must never be normalized (prevent corruption)
+*.ttf      -text
+*.otf      -text
+*.woff     -text
+*.woff2    -text
