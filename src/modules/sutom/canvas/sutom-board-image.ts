@@ -172,8 +172,8 @@ export function renderSutomBoardImage(
   const gameState = analyzeGameState(game);
   renderAllRows(ctx, game, gameState, config);
 
-  const buffer = canvas.toBuffer('image/jpeg');
-  return new AttachmentBuilder(buffer, { name: 'sutom-board.jpg' });
+  const buffer = canvas.toBuffer('image/png');
+  return new AttachmentBuilder(buffer, { name: 'sutom-board.png' });
 }
 
 // --- Row Rendering Functions ---

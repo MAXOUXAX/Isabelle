@@ -36,7 +36,7 @@ export class SutomGame {
       .setColor(0x2ecc71)
       .setDescription(descriptionParts.join('\n'))
       .setFooter({ text: 'Trouve le mot avant la 6ᵉ tentative !' })
-      .setImage('attachment://sutom-board.jpg')
+      .setImage('attachment://sutom-board.png')
       .setTimestamp();
 
     return { embed, attachment };
