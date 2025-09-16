@@ -11,7 +11,9 @@
   "license": "AGPL-3.0-or-later",
   "homepage": "https://github.com/MAXOUXAX/Isabelle",
   "contributors": [
-    "MAXOUXAX <24844231+MAXOUXAX@users.noreply.github.com>"
+    "MAXOUXAX <24844231+MAXOUXAX@users.noreply.github.com>",
+    "Tanguy <tanguyfox@gmail.com>",
+    "Ozraam <55456920+Ozraam@users.noreply.github.com>"
   ],
   "bugs": {
     "url": "https://github.com/MAXOUXAX/Isabelle/issues"
