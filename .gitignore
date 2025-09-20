@@ -137,3 +137,12 @@ dist
 # -- End of template
 
 # Add ignored Git files here if needed
+*.db
+
+# macOS
+.DS_Store
+
+# JetBrains IDEs
+.idea/
+*.iml
+out/
