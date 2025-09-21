@@ -1,27 +1,14 @@
 import { db } from '@/db/index.js';
 import { automaticResponses } from '@/db/schema.js';
-import { Cache } from '@/utils/cache.js';
+import { cacheStore } from '@/utils/cache.js';
 import { Message } from 'discord.js';
 import { eq, isNull, or } from 'drizzle-orm';
 
 // 24 hours in milliseconds
 const RESPONSE_CACHE_TTL = 24 * 60 * 60 * 1000;
 
-// Exported cache instance for external invalidation
-export const responseCache = new Cache<
-  string,
-  (typeof automaticResponses.$inferSelect)[]
->({ ttlMs: RESPONSE_CACHE_TTL });
-
-async function getCachedResponses(guildId: string | null) {
-  const cacheKey = guildId ?? 'global';
-  const cached = responseCache.get(cacheKey);
-  if (cached) {
-    return cached;
-  }
-
-  // Fetch from DB
-  const responses = await db
+async function getResponsesFromDb(guildId: string | null) {
+  return await db
     .select()
     .from(automaticResponses)
     .where(
@@ -32,8 +19,32 @@ async function getCachedResponses(guildId: string | null) {
           )
         : isNull(automaticResponses.guildId),
     );
-  responseCache.set(cacheKey, responses);
-  return responses;
+}
+
+/**
+ * Returns cached responses for a guild (or global if guildId is null).
+ * Uses the new cacheStore: each guild (or 'global') gets its own cache entry
+ * whose fetcher will query the DB when missing/expired.
+ */
+async function getCachedResponses(guildId: string | null) {
+  const cacheKey = guildId ?? 'global';
+
+  const cacheEntry = cacheStore.useCache<
+    (typeof automaticResponses.$inferSelect)[]
+  >(cacheKey, () => getResponsesFromDb(guildId), RESPONSE_CACHE_TTL);
+
+  const cached = await cacheEntry.get();
+  return cached ?? [];
+}
+
+/**
+ * Invalidate (revalidate) the cached responses for a guild or global.
+ * Call this after modifications to automatic responses to refresh the cache.
+ */
+export async function invalidateResponseCache(guildId: string | null) {
+  const cacheKey = guildId ?? 'global';
+  const cacheEntry = cacheStore.useCache(cacheKey);
+  await cacheEntry.revalidate();
 }
 
 export async function automaticResponseMessageListener(
