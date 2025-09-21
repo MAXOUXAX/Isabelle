@@ -4,9 +4,6 @@ import { cacheStore } from '@/utils/cache.js';
 import { Message } from 'discord.js';
 import { eq, isNull, or } from 'drizzle-orm';
 
-// 24 hours in milliseconds
-const RESPONSE_CACHE_TTL = 24 * 60 * 60 * 1000;
-
 async function getResponsesFromDb(guildId: string | null) {
   return await db
     .select()
@@ -23,28 +20,51 @@ async function getResponsesFromDb(guildId: string | null) {
 
 /**
  * Returns cached responses for a guild (or global if guildId is null).
- * Uses the new cacheStore: each guild (or 'global') gets its own cache entry
- * whose fetcher will query the DB when missing/expired.
  */
 async function getCachedResponses(guildId: string | null) {
-  const cacheKey = guildId ?? 'global';
-
-  const cacheEntry = cacheStore.useCache<
+  const globalCacheKey = `automatic-responses-global`;
+  const globalCacheEntry = cacheStore.useCache<
     (typeof automaticResponses.$inferSelect)[]
-  >(cacheKey, () => getResponsesFromDb(guildId), RESPONSE_CACHE_TTL);
+  >(globalCacheKey, () => getResponsesFromDb(null));
 
-  const cached = await cacheEntry.get();
-  return cached ?? [];
+  if (guildId == null) {
+    const globalResponses = await globalCacheEntry.get();
+    return globalResponses ?? [];
+  }
+
+  // Per-guild cache (only contains guild-specific responses)
+  const guildCacheKey = `automatic-responses-guild-${guildId}`;
+  const guildCacheEntry = cacheStore.useCache<
+    (typeof automaticResponses.$inferSelect)[]
+  >(guildCacheKey, () => getResponsesFromDb(guildId));
+
+  const [guildResponses, globalResponses] = await Promise.all([
+    guildCacheEntry.get(),
+    globalCacheEntry.get(),
+  ]);
+
+  const guildArr = guildResponses ?? [];
+  const globalArr = globalResponses ?? [];
+
+  // Return combined array with guild-specific responses first for prioritization
+  return [...guildArr, ...globalArr];
 }
 
 /**
  * Invalidate (revalidate) the cached responses for a guild or global.
  * Call this after modifications to automatic responses to refresh the cache.
+ * @param guildId The guild ID to invalidate the cache for, or null for global responses
  */
 export async function invalidateResponseCache(guildId: string | null) {
-  const cacheKey = guildId ?? 'global';
-  const cacheEntry = cacheStore.useCache(cacheKey);
-  await cacheEntry.revalidate();
+  if (guildId == null) {
+    const globalEntry = cacheStore.useCache('automatic-responses-global');
+    await globalEntry.revalidate();
+    return;
+  }
+
+  const guildKey = `automatic-responses-guild-${guildId}`;
+  const guildEntry = cacheStore.useCache(guildKey);
+  await guildEntry.revalidate();
 }
 
 export async function automaticResponseMessageListener(
