@@ -1,5 +1,5 @@
 import { commandManager } from '@/manager/commands/command.manager.js';
-import { Coiffeur } from '@/modules/coiffeur/coiffeur.module.js';
+import { AutomaticResponsesModule } from '@/modules/automatic-responses/automatic-responses.module.js';
 import { CoreModule } from '@/modules/core/core.module.js';
 import { PlanifierModule } from '@/modules/planifier/planifier.module.js';
 import { RussianRoulette } from '@/modules/russian-roulette/russian-roulette.module.js';
@@ -26,7 +26,7 @@ export const client = new Client({
 const MODULES: IsabelleModule[] = [
   new CoreModule(),
   new HotPotato(),
-  new Coiffeur(),
+  new AutomaticResponsesModule(),
   new PlanifierModule(),
   new RussianRoulette(),
   new SutomModule(),

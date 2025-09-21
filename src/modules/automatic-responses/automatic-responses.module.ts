@@ -1,0 +1,18 @@
+import { client } from '@/index.js';
+import { IsabelleModule } from '@/modules/bot-module.js';
+import { Events, Message } from 'discord.js';
+import { automaticResponseMessageListener } from './events/automatic-response.listener.js';
+
+export class AutomaticResponsesModule extends IsabelleModule {
+  readonly name = 'Réponses automatiques';
+
+  init(): void {
+    client.on(Events.MessageCreate, this.handleMessageCreate);
+  }
+
+  private handleMessageCreate = (message: Message): void => {
+    automaticResponseMessageListener(message).catch((error: unknown) => {
+      console.error('[AutomaticResponses] Error processing message:', error);
+    });
+  };
+}
