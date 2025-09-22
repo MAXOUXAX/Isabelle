@@ -76,13 +76,14 @@ client.once(Events.ClientReady, () => {
 
       await commandManager
         .deployCommandsForGuild(developmentGuild.id)
+        .then(() => {
+          console.log(
+            `[DEVELOPMENT] Commands deployed for the ${developmentGuild.name} server!`,
+          );
+        })
         .catch((error: unknown) => {
           console.error('[DEVELOPMENT] Failed to deploy commands:', error);
         });
-
-      console.log(
-        `[DEVELOPMENT] Commands deployed for the ${developmentGuild.name} server!`,
-      );
     } else if (process.env.NODE_ENV === undefined) {
       console.log('[PRODUCTION] Isabelle is running in production mode.');
 
