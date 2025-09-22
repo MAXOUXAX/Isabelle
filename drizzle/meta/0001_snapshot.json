@@ -1,6 +1,6 @@
 {
-  "id": "b6a2098d-6940-4da8-a698-658e4608e52d",
-  "prevId": "191c5f8f-3cd2-4d68-ab1d-d19f3a16c3f6",
+  "id": "7f45433a-656c-4329-b6b6-5a1f2aade19b",
+  "prevId": "6e6641e5-8c2e-429f-b3fe-d64164642078",
   "version": "6",
   "dialect": "sqlite",
   "tables": {
@@ -63,7 +63,7 @@
       "columns": {
         "guild_id": {
           "name": "guild_id",
-          "type": "integer",
+          "type": "text",
           "primaryKey": true,
           "notNull": true,
           "autoincrement": false

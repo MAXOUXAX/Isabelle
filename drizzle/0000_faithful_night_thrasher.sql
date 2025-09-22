@@ -8,7 +8,7 @@ CREATE TABLE `automatic_responses` (
 );
 --> statement-breakpoint
 CREATE TABLE `guild_configs` (
-	`guild_id` integer PRIMARY KEY NOT NULL,
+	`guild_id` text PRIMARY KEY NOT NULL,
 	`config` text NOT NULL,
 	`created_at` integer DEFAULT (current_timestamp),
 	`updated_at` integer

@@ -27,7 +27,7 @@ export const automaticResponses = sqliteTable('automatic_responses', {
 });
 
 export const guildConfigs = sqliteTable('guild_configs', {
-  id: int('guild_id').primaryKey(),
+  id: text('guild_id').primaryKey().notNull(),
   config: text('config', { mode: 'json' }).$type<GuildConfig>().notNull(),
   ...base(),
 });
