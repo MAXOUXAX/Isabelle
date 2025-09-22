@@ -10,12 +10,14 @@ type Fetcher<T> = () => Promise<T>;
  */
 
 class Cache<T> {
+  private key: string;
   private fetcher: Fetcher<T> | null = null;
   private revalidationPeriod: number | null = null;
   private value: T | null = null;
   private lastFetched: number | null = null;
 
-  constructor(fetcher?: Fetcher<T>, revalidationPeriod?: number) {
+  constructor(key: string, fetcher?: Fetcher<T>, revalidationPeriod?: number) {
+    this.key = key;
     if (fetcher) this.fetcher = fetcher;
     if (revalidationPeriod) this.revalidationPeriod = revalidationPeriod;
   }
@@ -67,7 +69,7 @@ class CacheStore {
     revalidationPeriod?: number,
   ): Cache<T> {
     if (!this.caches.has(key)) {
-      this.caches.set(key, new Cache<T>(fetcher, revalidationPeriod));
+      this.caches.set(key, new Cache<T>(key, fetcher, revalidationPeriod));
     } else if (fetcher || revalidationPeriod) {
       const cache = this.caches.get(key);
       if (cache) cache.updateConfig(fetcher, revalidationPeriod);

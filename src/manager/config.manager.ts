@@ -17,7 +17,7 @@ class ConfigManager {
   }
 }
 
-interface GuildConfig {
+export interface GuildConfig {
   HOT_POTATO_ROLE_ID?: string;
   HOT_POTATO_TIMEOUT_DURATION?: number;
 }

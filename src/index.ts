@@ -1,5 +1,5 @@
 import { commandManager } from '@/manager/commands/command.manager.js';
-import { Coiffeur } from '@/modules/coiffeur/coiffeur.module.js';
+import { AutomaticResponsesModule } from '@/modules/automatic-responses/automatic-responses.module.js';
 import { CoreModule } from '@/modules/core/core.module.js';
 import { PlanifierModule } from '@/modules/planifier/planifier.module.js';
 import { RussianRoulette } from '@/modules/russian-roulette/russian-roulette.module.js';
@@ -26,7 +26,7 @@ export const client = new Client({
 const MODULES: IsabelleModule[] = [
   new CoreModule(),
   new HotPotato(),
-  new Coiffeur(),
+  new AutomaticResponsesModule(),
   new PlanifierModule(),
   new RussianRoulette(),
   new SutomModule(),
@@ -74,12 +74,15 @@ client.once(Events.ClientReady, () => {
 
       console.log('[DEVELOPMENT] Deploying commands for this single guild...');
 
-      void commandManager
+      await commandManager
         .deployCommandsForGuild(developmentGuild.id)
         .then(() => {
           console.log(
             `[DEVELOPMENT] Commands deployed for the ${developmentGuild.name} server!`,
           );
+        })
+        .catch((error: unknown) => {
+          console.error('[DEVELOPMENT] Failed to deploy commands:', error);
         });
     } else if (process.env.NODE_ENV === undefined) {
       console.log('[PRODUCTION] Isabelle is running in production mode.');
@@ -102,7 +105,7 @@ client.once(Events.ClientReady, () => {
   handler().catch((error: unknown) => {
     console.error(
       'An error occurred while starting Isabelle:',
-      error as string,
+      error instanceof Error ? error.message : String(error),
     );
   });
 });
@@ -122,21 +125,34 @@ client.on(Events.InteractionCreate, (interaction) => {
       }
 
       await command.executeCommand(interaction);
-      return;
     } else {
       await interactionManager.handleInteraction(interaction);
-      return;
     }
   };
 
   handler().catch((error: unknown) => {
-    void interaction.reply(
-      `Une erreur est survenue lors du traitement de l'interaction.\n${error as string}`,
-    );
+    const errorMessage = error instanceof Error ? error.message : String(error);
     console.error(
       'An error occurred while handling an interaction:',
-      error as string,
+      errorMessage,
     );
+
+    // Only reply if the interaction hasn't been replied to already
+    if (interaction.replied || interaction.deferred) {
+      interaction
+        .followUp({
+          content: `Une erreur est survenue lors du traitement de l'interaction.\n${errorMessage}`,
+          ephemeral: true,
+        })
+        .catch(console.error);
+    } else {
+      interaction
+        .reply({
+          content: `Une erreur est survenue lors du traitement de l'interaction.\n${errorMessage}`,
+          ephemeral: true,
+        })
+        .catch(console.error);
+    }
   });
 });
 
@@ -209,10 +225,18 @@ client.on(Events.GuildCreate, (guild) => {
     console.log(
       `[DEVELOPMENT] New guild joined: ${guild.name} (id: ${guild.id}). Deploying commands for this guild...`,
     );
-    void commandManager.deployCommandsForGuild(guild.id).then(() => {
-      console.log(
-        `[DEVELOPMENT] Commands deployed for the ${guild.name} server!`,
-      );
-    });
+    commandManager
+      .deployCommandsForGuild(guild.id)
+      .then(() => {
+        console.log(
+          `[DEVELOPMENT] Commands deployed for the ${guild.name} server!`,
+        );
+      })
+      .catch((error: unknown) => {
+        console.error(
+          `[DEVELOPMENT] Failed to deploy commands for new guild:`,
+          error,
+        );
+      });
   }
 });
