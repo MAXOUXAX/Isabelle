@@ -1,7 +1,7 @@
 import { client } from '@/index.js';
 import { IsabelleModule } from '@/modules/bot-module.js';
 import { Events, Message } from 'discord.js';
-import { automaticResponseMessageListener } from './events/automatic-response.listener.js';
+import { automaticResponseMessageListener } from './events/automatic-responses.listener.js';
 
 export class AutomaticResponsesModule extends IsabelleModule {
   readonly name = 'Réponses automatiques';

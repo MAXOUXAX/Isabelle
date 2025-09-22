@@ -2,18 +2,27 @@ import { db } from '@/db/index.js';
 import { automaticResponses } from '@/db/schema.js';
 import { cacheStore } from '@/utils/cache.js';
 import { Message } from 'discord.js';
-import { eq, isNull, or } from 'drizzle-orm';
+import { eq, isNull } from 'drizzle-orm';
 
-async function getResponsesFromDb(guildId: string | null) {
+/**
+ * Fetches automatic response definitions scoped to a specific guild or global (guild-agnostic) responses.
+ *
+ * Behavior:
+ * - When a non-empty guildId is provided, returns all automatic responses whose `guildId` matches the argument.
+ * - When `guildId` is `null`, returns only the global automatic responses
+ *
+ * @param guildId The guild identifier to scope results to, or `null` to fetch global responses.
+ * @returns A promise resolving to the list of matching automatic response records.
+ */
+async function queryAutomaticResponses(
+  guildId: string | null,
+): Promise<(typeof automaticResponses.$inferSelect)[]> {
   return await db
     .select()
     .from(automaticResponses)
     .where(
       guildId
-        ? or(
-            eq(automaticResponses.guildId, guildId),
-            isNull(automaticResponses.guildId),
-          )
+        ? eq(automaticResponses.guildId, guildId)
         : isNull(automaticResponses.guildId),
     );
 }
@@ -25,7 +34,7 @@ async function getCachedResponses(guildId: string | null) {
   const globalCacheKey = `automatic-responses-global`;
   const globalCacheEntry = cacheStore.useCache<
     (typeof automaticResponses.$inferSelect)[]
-  >(globalCacheKey, () => getResponsesFromDb(null));
+  >(globalCacheKey, () => queryAutomaticResponses(null));
 
   if (guildId == null) {
     const globalResponses = await globalCacheEntry.get();
@@ -36,7 +45,7 @@ async function getCachedResponses(guildId: string | null) {
   const guildCacheKey = `automatic-responses-guild-${guildId}`;
   const guildCacheEntry = cacheStore.useCache<
     (typeof automaticResponses.$inferSelect)[]
-  >(guildCacheKey, () => getResponsesFromDb(guildId));
+  >(guildCacheKey, () => queryAutomaticResponses(guildId));
 
   const [guildResponses, globalResponses] = await Promise.all([
     guildCacheEntry.get(),
@@ -112,12 +121,8 @@ async function checkAndSendResponse(
   content: string,
   responseConfig: typeof automaticResponses.$inferSelect,
 ): Promise<boolean> {
-  let { triggers } = responseConfig.configuration;
-  const { responses } = responseConfig.configuration;
+  const { triggers, responses } = responseConfig.configuration;
   const probability = responseConfig.probability;
-
-  // Normalize triggers to lowercase
-  triggers = triggers.map((t) => t.toLowerCase());
 
   if (triggers.length === 0 || responses.length === 0) {
     return false;
