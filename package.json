@@ -55,7 +55,6 @@
   "dependencies": {
     "@libsql/client": "^0.14.0",
     "@napi-rs/canvas": "^0.1.80",
-    "@types/winston": "^2.4.4",
     "discord.js": "^14.18.0",
     "dotenv": "^17.2.2",
     "drizzle-orm": "^0.40.0",
