@@ -1,7 +1,9 @@
 import { client } from '@/index.js';
-import { logger } from '@/utils/logger.js';
+import { createLogger } from '@/utils/logger.js';
 import { Client } from 'discord.js';
 import { BaseModal } from './modal.base.js';
+
+const logger = createLogger('modals');
 
 export class ModalManager {
   private modals = new Map<string, BaseModal>();

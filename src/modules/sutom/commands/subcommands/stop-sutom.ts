@@ -1,6 +1,8 @@
 import { sutomGameManager } from '@/modules/sutom/core/game-manager.js';
 import { CommandInteraction } from 'discord.js';
-import { logger } from '@/utils/logger.js';
+import { createLogger } from '@/utils/logger.js';
+
+const logger = createLogger('sutom-stop');
 
 export default async function stopSutomSubcommand(
   interaction: CommandInteraction,

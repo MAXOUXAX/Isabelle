@@ -1,4 +1,6 @@
-import { logger } from '@/utils/logger.js';
+import { createLogger } from '@/utils/logger.js';
+
+const logger = createLogger('config');
 
 class ConfigManager {
   private guilds: Record<string, GuildConfig> = {};
