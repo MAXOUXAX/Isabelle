@@ -15,16 +15,18 @@ export class InteractionManager {
 
   async handleInteraction(interaction: Interaction) {
     if (!interaction.isMessageComponent()) {
-      logger.debug('Interaction is not a message component');
+      logger.debug(`Ignoring non-message component interaction (type: ${interaction.type})`);
       return;
     }
 
     const handler = this.handlers.get(interaction.customId);
     if (handler) {
+      logger.debug(`Handling interaction: ${interaction.customId} from user ${interaction.user.id}`);
       await handler.handle(interaction);
     } else {
       logger.warn(
-        `No handler found for interaction with customId ${interaction.customId}`,
+        `No handler registered for interaction customId: "${interaction.customId}"`,
+        { userId: interaction.user.id, guildId: interaction.guildId }
       );
     }
   }
