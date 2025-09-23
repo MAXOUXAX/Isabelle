@@ -1,5 +1,6 @@
 import { configManager } from '@/manager/config.manager.js';
 import { mention } from '@/utils/mention.js';
+import { createLogger } from '@/utils/logger.js';
 import {
   AuditLogEvent,
   Guild,
@@ -7,6 +8,8 @@ import {
   GuildAuditLogsEntry,
   GuildAuditLogsTargetType,
 } from 'discord.js';
+
+const logger = createLogger('hot-potato');
 
 export async function hotPotatoRoleListener(
   entry: GuildAuditLogsEntry<
@@ -38,7 +41,7 @@ export async function hotPotatoRoleListener(
     const valueChanged = wasCommunicationDisabled !== isCommunicationDisabled;
 
     if (valueChanged && isCommunicationDisabled) {
-      console.log(
+      logger.info(
         `Member ${mention(target)} has been timed-out by ${mention(executor)}.`,
       );
 
@@ -47,8 +50,8 @@ export async function hotPotatoRoleListener(
       ).HOT_POTATO_ROLE_ID;
 
       if (!hotPotatoRoleId) {
-        console.log(
-          `[HotPotato] No role configured for the guild ${guild.name} (${guild.id}).`,
+        logger.info(
+          `No role configured for the guild ${guild.name} (${guild.id}).`,
         );
         return;
       }
