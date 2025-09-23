@@ -1,6 +1,6 @@
 import { configManager } from '@/manager/config.manager.js';
 import { mention } from '@/utils/mention.js';
-import { logger } from '@/utils/logger.js';
+import { createLogger } from '@/utils/logger.js';
 import {
   AuditLogEvent,
   Guild,
@@ -8,6 +8,8 @@ import {
   GuildAuditLogsEntry,
   GuildAuditLogsTargetType,
 } from 'discord.js';
+
+const logger = createLogger('hot-potato');
 
 export async function hotPotatoRoleListener(
   entry: GuildAuditLogsEntry<
@@ -49,7 +51,7 @@ export async function hotPotatoRoleListener(
 
       if (!hotPotatoRoleId) {
         logger.info(
-          `[HotPotato] No role configured for the guild ${guild.name} (${guild.id}).`,
+          `No role configured for the guild ${guild.name} (${guild.id}).`,
         );
         return;
       }

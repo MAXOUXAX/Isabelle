@@ -10,7 +10,12 @@ import { config } from './config.js';
 import { interactionManager } from './manager/interaction.manager.js';
 import { IsabelleModule } from './modules/bot-module.js';
 import { HotPotato } from './modules/hot-potato/hot-potato.module.js';
-import { logger } from './utils/logger.js';
+import { createLogger } from './utils/logger.js';
+
+const logger = createLogger('core');
+const developmentLogger = createLogger('development');
+const productionLogger = createLogger('production');
+const modulesLogger = createLogger('modules');
 
 export const client = new Client({
   intents: [
@@ -42,13 +47,13 @@ client.once(Events.ClientReady, () => {
     registerModules();
 
     if (process.env.NODE_ENV === 'development') {
-      logger.info('[DEVELOPMENT] Isabelle is running in development mode.');
+      developmentLogger.info('Isabelle is running in development mode.');
 
       if (client.guilds.cache.size > 1) {
-        logger.error(
-          '[DEVELOPMENT] Isabelle is connected to multiple servers while in development mode. To avoid any errors, the program will now terminate.',
+        developmentLogger.error(
+          'Isabelle is connected to multiple servers while in development mode. To avoid any errors, the program will now terminate.',
         );
-        logger.error(
+        developmentLogger.error(
           'Namely, the following servers: ',
           client.guilds.cache.map((guild) => guild.name).join(', '),
         );
@@ -57,14 +62,14 @@ client.once(Events.ClientReady, () => {
 
       const developmentGuild = client.guilds.cache.first();
       if (!developmentGuild) {
-        logger.info(
-          '[DEVELOPMENT] No guild found. Invite Isabelle to a server to continue.',
+        developmentLogger.info(
+          'No guild found. Invite Isabelle to a server to continue.',
         );
         return;
       }
 
-      logger.info(
-        `[DEVELOPMENT] Isabelle is connected to the ${developmentGuild.name} development server.`,
+      developmentLogger.info(
+        `Isabelle is connected to the ${developmentGuild.name} development server.`,
       );
 
       client.user?.setActivity({
@@ -73,25 +78,25 @@ client.once(Events.ClientReady, () => {
         url: 'https://github.com/MAXOUXAX/Isabelle',
       });
 
-      logger.info('[DEVELOPMENT] Deploying commands for this single guild...');
+      developmentLogger.info('Deploying commands for this single guild...');
 
       await commandManager
         .deployCommandsForGuild(developmentGuild.id)
         .then(() => {
-          logger.info(
-            `[DEVELOPMENT] Commands deployed for the ${developmentGuild.name} server!`,
+          developmentLogger.info(
+            `Commands deployed for the ${developmentGuild.name} server!`,
           );
         })
         .catch((error: unknown) => {
-          logger.error('[DEVELOPMENT] Failed to deploy commands:', error);
+          developmentLogger.error('Failed to deploy commands:', error);
         });
     } else if (process.env.NODE_ENV === undefined) {
-      logger.info('[PRODUCTION] Isabelle is running in production mode.');
+      productionLogger.info('Isabelle is running in production mode.');
 
-      logger.info('[PRODUCTION] Deploying global commands...');
+      productionLogger.info('Deploying global commands...');
       await commandManager.deployCommandsGlobally();
-      logger.info(
-        '[PRODUCTION] Global commands deployed! If this is the first time you deploy commands, it may take up to an hour before they are available.',
+      productionLogger.info(
+        'Global commands deployed! If this is the first time you deploy commands, it may take up to an hour before they are available.',
       );
     } else {
       logger.error(
@@ -110,6 +115,8 @@ client.once(Events.ClientReady, () => {
     );
   });
 });
+
+const interactionLogger = createLogger('interactions');
 
 client.on(Events.InteractionCreate, (interaction) => {
   if (!interaction.isCommand()) {
@@ -133,7 +140,7 @@ client.on(Events.InteractionCreate, (interaction) => {
 
   handler().catch((error: unknown) => {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error(
+    interactionLogger.error(
       'An error occurred while handling an interaction:',
       errorMessage,
     );
@@ -145,14 +152,14 @@ client.on(Events.InteractionCreate, (interaction) => {
           content: `Une erreur est survenue lors du traitement de l'interaction.\n${errorMessage}`,
           ephemeral: true,
         })
-        .catch((err: unknown) => logger.error('Failed to send followup message:', err));
+        .catch((err: unknown) => interactionLogger.error('Failed to send followup message:', err));
     } else {
       interaction
         .reply({
           content: `Une erreur est survenue lors du traitement de l'interaction.\n${errorMessage}`,
           ephemeral: true,
         })
-        .catch((err: unknown) => logger.error('Failed to reply to interaction:', err));
+        .catch((err: unknown) => interactionLogger.error('Failed to reply to interaction:', err));
     }
   });
 });
@@ -170,7 +177,7 @@ function registerModules(): void {
   const results: ModuleResult[] = [];
 
   for (const module of MODULES) {
-    logger.info(`[Modules] Initializing module ${module.name}`);
+    modulesLogger.info(`Initializing module ${module.name}`);
     const startTime = performance.now();
     let success = false;
 
@@ -182,11 +189,11 @@ function registerModules(): void {
       );
       success = true;
     } catch (error) {
-      logger.error(
-        `[Modules] Failed to initialize module ${module.name}:`,
+      modulesLogger.error(
+        `Failed to initialize module ${module.name}:`,
         error,
       );
-      logger.error(`[Modules] Module ${module.name} will be disabled`);
+      modulesLogger.error(`Module ${module.name} will be disabled`);
     } finally {
       const endTime = performance.now();
       const loadTime = endTime - startTime;
@@ -195,12 +202,12 @@ function registerModules(): void {
       const timeMessage = `${loadTime.toFixed(2)}ms`;
       if (success) {
         if (loadTime > 1000) {
-          logger.warn(
-            `[Modules] WARNING! Module ${module.name} took ${timeMessage} to initialize! This may impact bot startup time.`,
+          modulesLogger.warn(
+            `WARNING! Module ${module.name} took ${timeMessage} to initialize! This may impact bot startup time.`,
           );
         } else {
-          logger.info(
-            `[Modules] Module ${module.name} initialized in ${timeMessage}`,
+          modulesLogger.info(
+            `Module ${module.name} initialized in ${timeMessage}`,
           );
         }
       }
@@ -209,33 +216,33 @@ function registerModules(): void {
 
   const totalTime = performance.now() - globalStartTime;
   const successCount = results.filter((r) => r.success).length;
-  logger.info(
-    `[Modules] Finished initializing ${successCount.toString()}/${MODULES.length.toString()} modules in ${totalTime.toFixed(2)}ms`,
+  modulesLogger.info(
+    `Finished initializing ${successCount.toString()}/${MODULES.length.toString()} modules in ${totalTime.toFixed(2)}ms`,
   );
 }
 
 client.on(Events.GuildCreate, (guild) => {
   if (process.env.NODE_ENV === 'development') {
     if (client.guilds.cache.size > 1) {
-      logger.error(
-        '[DEVELOPMENT] Isabelle is already connected to a guild. To avoid any errors, the program will not deploy commands for the new guild.',
+      developmentLogger.error(
+        'Isabelle is already connected to a guild. To avoid any errors, the program will not deploy commands for the new guild.',
       );
       return;
     }
 
-    logger.info(
-      `[DEVELOPMENT] New guild joined: ${guild.name} (id: ${guild.id}). Deploying commands for this guild...`,
+    developmentLogger.info(
+      `New guild joined: ${guild.name} (id: ${guild.id}). Deploying commands for this guild...`,
     );
     commandManager
       .deployCommandsForGuild(guild.id)
       .then(() => {
-        logger.info(
-          `[DEVELOPMENT] Commands deployed for the ${guild.name} server!`,
+        developmentLogger.info(
+          `Commands deployed for the ${guild.name} server!`,
         );
       })
       .catch((error: unknown) => {
-        logger.error(
-          `[DEVELOPMENT] Failed to deploy commands for new guild:`,
+        developmentLogger.error(
+          `Failed to deploy commands for new guild:`,
           error,
         );
       });

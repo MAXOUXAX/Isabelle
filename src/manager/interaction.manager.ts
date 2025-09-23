@@ -1,6 +1,8 @@
 import { Interaction } from 'discord.js';
-import { logger } from '@/utils/logger.js';
+import { createLogger } from '@/utils/logger.js';
 import { InteractionHandler } from '../modules/bot-module.js';
+
+const logger = createLogger('interactions');
 
 export class InteractionManager {
   private handlers = new Map<string, InteractionHandler>();

@@ -1,6 +1,8 @@
 import { sutomGameManager } from '@/modules/sutom/core/game-manager.js';
 import { ChatInputCommandInteraction } from 'discord.js';
-import { logger } from '@/utils/logger.js';
+import { createLogger } from '@/utils/logger.js';
+
+const logger = createLogger('sutom-start');
 
 export default function startSutomSubcommand(
   interaction: ChatInputCommandInteraction,

@@ -1,13 +1,15 @@
 import { sutomGameManager } from '@/modules/sutom/core/game-manager.js';
 import { AttemptOutcome } from '@/modules/sutom/core/sutom-game.js';
-import { logger } from '@/utils/logger.js';
+import { createLogger } from '@/utils/logger.js';
 import { ChatInputCommandInteraction } from 'discord.js';
+
+const logger = createLogger('sutom-guess');
 
 export default async function guessWordSubcommand(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   const { user } = interaction;
-  logger.debug('[Sutom] Word to test:', interaction.options.get('mot'));
+  logger.debug('Word to test:', interaction.options.get('mot'));
 
   const game = sutomGameManager.getGame(user.id);
   if (!game) {
@@ -16,7 +18,7 @@ export default async function guessWordSubcommand(
         "Tu n'as pas de partie en cours ! Utilise la commande `/sutom start` pour en commencer une.",
       )
       .catch((e: unknown) => {
-        logger.error('[Sutom] Failed to reply to interaction:', e);
+        logger.error('Failed to reply to interaction:', e);
       });
     return;
   }

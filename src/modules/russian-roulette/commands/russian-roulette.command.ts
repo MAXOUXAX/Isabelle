@@ -1,7 +1,9 @@
 import { IsabelleCommand } from '@/manager/commands/command.interface.js';
 import { mentionId } from '@/utils/mention.js';
-import { logger } from '@/utils/logger.js';
+import { createLogger } from '@/utils/logger.js';
 import { CommandInteraction, Guild, SlashCommandBuilder } from 'discord.js';
+
+const logger = createLogger('russian-roulette');
 
 export class RussianRouletteCommand implements IsabelleCommand {
   commandData: SlashCommandBuilder = new SlashCommandBuilder()
@@ -33,7 +35,7 @@ export class RussianRouletteCommand implements IsabelleCommand {
         .catch(() => guild.members.cache.get(targetId));
 
       if (!member) {
-        logger.warn('[RussianRoulette] Impossible de récupérer le membre');
+        logger.warn('Impossible de récupérer le membre');
         numberOfGamesSinceLastKill++; // pas de kill finalement
         await interaction.reply(
           'Click ! Tu as survécu à la roulette russe, GG',
@@ -46,7 +48,7 @@ export class RussianRouletteCommand implements IsabelleCommand {
         await interaction.reply(
           `Bang...? ${mentionId(targetId)} était trop puissant pour être affecté. Le canon a fondu et tout le monde s'en sort vivant cette fois-ci !`,
         );
-        logger.debug('[RussianRoulette] Target not moderatable', targetId);
+        logger.debug('Target not moderatable', targetId);
         return;
       }
 
@@ -62,12 +64,12 @@ export class RussianRouletteCommand implements IsabelleCommand {
         `Bang ! ${mentionId(targetId)} a été mis en timeout pendant 5 minutes.`,
       );
       logger.debug(
-        '[RussianRoulette] Timed-out user',
+        'Timed-out user',
         targetId,
         mentionId(targetId),
       );
     } catch (e) {
-      logger.error('[RussianRoulette] Error while timing out user', e);
+      logger.error('Error while timing out user', e);
       numberOfGamesSinceLastKill++;
       await interaction.reply(
         `Le pistolet s'enraye... Personne ne meurt cette fois-ci (erreur: ${(e as Error).name}).`,
@@ -98,7 +100,7 @@ function getGunTarget(userID: string, guild: Guild) {
     0.7,
   );
 
-  logger.debug('[RussianRoulette] dynamicFireChance', dynamicFireChance);
+  logger.debug('dynamicFireChance', dynamicFireChance);
 
   // Gun does not fire
   if (Math.random() >= dynamicFireChance) return null;

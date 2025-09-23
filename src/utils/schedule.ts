@@ -1,8 +1,10 @@
 import { config } from '@/config.js';
 import { cacheStore } from '@/utils/cache.js';
-import { logger } from '@/utils/logger.js';
+import { createLogger } from '@/utils/logger.js';
 import { VEvent, fromURL } from 'node-ical';
 import * as dateUtils from './date.js';
+
+const logger = createLogger('schedule');
 
 // Interface pour afficher les cours avec seulement les informations nécessaires
 interface Lesson {

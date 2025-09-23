@@ -1,8 +1,10 @@
 import { config } from '@/config.js';
 import { IsabelleCommand } from '@/manager/commands/command.interface.js';
 import { IsabelleModule } from '@/modules/bot-module.js';
-import { logger } from '@/utils/logger.js';
+import { createLogger } from '@/utils/logger.js';
 import { REST, Routes } from 'discord.js';
+
+const logger = createLogger('commands');
 
 export class CommandManager {
   private commands = new Map<IsabelleModule, IsabelleCommand[]>();
