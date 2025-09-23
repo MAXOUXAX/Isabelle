@@ -34,7 +34,9 @@
   "scripts": {
     "start:dev": "tsx watch src/index.ts",
     "dev": "cross-env NODE_ENV=development npm-run-all --serial db:migrate start:dev",
-    "build": "tsup",
+    "build": "npm-run-all --serial build:ts build:copy-migrations",
+    "build:ts": "tsup",
+    "build:copy-migrations": "cp -r drizzle dist/",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prettier": "prettier --ignore-path .gitignore --write \"./src/**/*.+(js|ts|json)\"",
