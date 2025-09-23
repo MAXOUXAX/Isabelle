@@ -1,4 +1,5 @@
 import { Interaction } from 'discord.js';
+import { logger } from '@/utils/logger.js';
 import { InteractionHandler } from '../modules/bot-module.js';
 
 export class InteractionManager {
@@ -12,7 +13,7 @@ export class InteractionManager {
 
   async handleInteraction(interaction: Interaction) {
     if (!interaction.isMessageComponent()) {
-      console.log('Interaction is not a message component');
+      logger.debug('Interaction is not a message component');
       return;
     }
 
@@ -20,7 +21,7 @@ export class InteractionManager {
     if (handler) {
       await handler.handle(interaction);
     } else {
-      console.warn(
+      logger.warn(
         `No handler found for interaction with customId ${interaction.customId}`,
       );
     }

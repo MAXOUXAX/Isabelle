@@ -1,5 +1,6 @@
 import { sutomGameManager } from '@/modules/sutom/core/game-manager.js';
 import { ChatInputCommandInteraction } from 'discord.js';
+import { logger } from '@/utils/logger.js';
 
 export default function startSutomSubcommand(
   interaction: ChatInputCommandInteraction,
@@ -13,7 +14,7 @@ export default function startSutomSubcommand(
         'Oups, on dirait que tu as déjà une partie en cours ! Propose un mot avec /sutom mot.',
       )
       .catch((e: unknown) => {
-        console.error(e);
+        logger.error(e);
       });
     return;
   }
@@ -30,7 +31,7 @@ export default function startSutomSubcommand(
           files: [attachment],
         })
         .catch((e: unknown) => {
-          console.error(e);
+          logger.error(e);
         });
     } else {
       interaction
@@ -38,7 +39,7 @@ export default function startSutomSubcommand(
           'Mince alors, une erreur est survenue lors de la création de ta partie.',
         )
         .catch((e: unknown) => {
-          console.error(e);
+          logger.error(e);
         });
     }
   }

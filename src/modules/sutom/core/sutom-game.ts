@@ -1,5 +1,6 @@
 import { renderSutomBoardImage } from '@/modules/sutom/canvas/sutom-board-image.js';
 import { WordRepository } from '@/modules/sutom/core/word-repository.js';
+import { logger } from '@/utils/logger.js';
 import { AttachmentBuilder, EmbedBuilder } from 'discord.js';
 
 export class SutomGame {
@@ -9,7 +10,7 @@ export class SutomGame {
 
   constructor(wordRepository: WordRepository) {
     this.word = wordRepository.getRandomWord();
-    console.log('[SutomGame] Word to guess: ' + this.word);
+    logger.debug('[SutomGame] Word to guess: ' + this.word);
     this.wordRepository = wordRepository;
   }
 

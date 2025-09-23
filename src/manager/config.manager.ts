@@ -1,3 +1,5 @@
+import { logger } from '@/utils/logger.js';
+
 class ConfigManager {
   private guilds: Record<string, GuildConfig> = {};
 
@@ -5,7 +7,7 @@ class ConfigManager {
     // 1. Load guild configs from database
     // 2. Set guilds to the loaded guild configs
     // TODO: Implement this
-    console.log('ConfigManager initialized');
+    logger.info('ConfigManager initialized');
   }
 
   getGuild(guildId: string): GuildConfig {

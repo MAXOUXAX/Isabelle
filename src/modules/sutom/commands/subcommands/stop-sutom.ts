@@ -1,5 +1,6 @@
 import { sutomGameManager } from '@/modules/sutom/core/game-manager.js';
 import { CommandInteraction } from 'discord.js';
+import { logger } from '@/utils/logger.js';
 
 export default async function stopSutomSubcommand(
   interaction: CommandInteraction,
@@ -13,7 +14,7 @@ export default async function stopSutomSubcommand(
         "Tu n'as pas de partie en cours ! Utilise la commande /sutom start pour en commencer une.",
       )
       .catch((e: unknown) => {
-        console.error(e);
+        logger.error(e);
       });
     return;
   }
@@ -26,7 +27,7 @@ export default async function stopSutomSubcommand(
     await interaction
       .reply({ embeds: [embed], files: [attachment] })
       .catch((e: unknown) => {
-        console.error(e);
+        logger.error(e);
       });
     sutomGameManager.deleteGame(user.id);
   }

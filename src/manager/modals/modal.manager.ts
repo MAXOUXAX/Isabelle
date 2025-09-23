@@ -1,4 +1,5 @@
 import { client } from '@/index.js';
+import { logger } from '@/utils/logger.js';
 import { Client } from 'discord.js';
 import { BaseModal } from './modal.base.js';
 
@@ -18,7 +19,7 @@ export class ModalManager {
       };
 
       handler().catch((error: unknown) => {
-        console.error(
+        logger.error(
           `An error occurred while handling a modal interaction: ${error as string}`,
         );
       });

@@ -1,12 +1,13 @@
 import { sutomGameManager } from '@/modules/sutom/core/game-manager.js';
 import { AttemptOutcome } from '@/modules/sutom/core/sutom-game.js';
+import { logger } from '@/utils/logger.js';
 import { ChatInputCommandInteraction } from 'discord.js';
 
 export default async function guessWordSubcommand(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   const { user } = interaction;
-  console.debug('[Sutom] Word to test:', interaction.options.get('mot'));
+  logger.debug('[Sutom] Word to test:', interaction.options.get('mot'));
 
   const game = sutomGameManager.getGame(user.id);
   if (!game) {
@@ -15,7 +16,7 @@ export default async function guessWordSubcommand(
         "Tu n'as pas de partie en cours ! Utilise la commande `/sutom start` pour en commencer une.",
       )
       .catch((e: unknown) => {
-        console.error(e);
+        logger.error('[Sutom] Failed to reply to interaction:', e);
       });
     return;
   }
@@ -27,14 +28,14 @@ export default async function guessWordSubcommand(
   switch (wordOutcome) {
     case AttemptOutcome.WORD_REPEATED:
       interaction.reply('Tu as déjà essayé ce mot !').catch((e: unknown) => {
-        console.error(e);
+        logger.error(e);
       });
       break;
     case AttemptOutcome.WORD_LENGTH_MISMATCH:
       interaction
         .reply("Le mot que tu as proposé n'a pas la bonne longueur !")
         .catch((e: unknown) => {
-          console.error(e);
+          logger.error(e);
         });
       break;
     case AttemptOutcome.ATTEMPTS_EXHAUSTED: {
@@ -44,7 +45,7 @@ export default async function guessWordSubcommand(
       await interaction
         .reply({ embeds: [embed], files: [attachment] })
         .catch((e: unknown) => {
-          console.error(e);
+          logger.error(e);
         });
       sutomGameManager.deleteGame(user.id);
       break;
@@ -53,7 +54,7 @@ export default async function guessWordSubcommand(
       interaction
         .reply("Le mot que tu as proposé n'existe pas dans le dictionnaire !")
         .catch((e: unknown) => {
-          console.error(e);
+          logger.error(e);
         });
       break;
     case AttemptOutcome.WORD_SUCCESSFULLY_GUESSED: {
@@ -63,7 +64,7 @@ export default async function guessWordSubcommand(
       await interaction
         .reply({ embeds: [embed], files: [attachment] })
         .catch((e: unknown) => {
-          console.error(e);
+          logger.error(e);
         });
       sutomGameManager.deleteGame(user.id);
       break;
@@ -76,13 +77,13 @@ export default async function guessWordSubcommand(
       interaction
         .reply({ embeds: [embed], files: [attachment] })
         .catch((e: unknown) => {
-          console.error(e);
+          logger.error(e);
         });
       break;
     }
     default:
       interaction.reply('Erreur inconnue !').catch((e: unknown) => {
-        console.error(e);
+        logger.error(e);
       });
       break;
   }
