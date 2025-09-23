@@ -1,5 +1,6 @@
 import { config } from '@/config.js';
 import { cacheStore } from '@/utils/cache.js';
+import { logger } from '@/utils/logger.js';
 import { VEvent, fromURL } from 'node-ical';
 import * as dateUtils from './date.js';
 
@@ -128,7 +129,7 @@ export async function getTodaysLessons(): Promise<Lesson[]> {
   const today = dateUtils.startOfToday();
 
   if (!calendarData) {
-    console.error('Calendar data is undefined');
+    logger.error('Calendar data is undefined');
     return [];
   }
 
@@ -161,7 +162,7 @@ export async function getLessonsFromDate(date: Date): Promise<Lesson[]> {
   const targetDate = dateUtils.startOfDay(date);
 
   if (!calendarData) {
-    console.error('Calendar data is undefined');
+    logger.error('Calendar data is undefined');
     return [];
   }
 
@@ -198,7 +199,7 @@ export async function getWeekLessons(): Promise<Record<string, Lesson[]>> {
   const endOfWeek = dateUtils.endOfCurrentWeek();
 
   if (!calendarData) {
-    console.error('Calendar data is undefined');
+    logger.error('Calendar data is undefined');
     return {};
   }
 

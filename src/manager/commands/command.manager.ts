@@ -1,6 +1,7 @@
 import { config } from '@/config.js';
 import { IsabelleCommand } from '@/manager/commands/command.interface.js';
 import { IsabelleModule } from '@/modules/bot-module.js';
+import { logger } from '@/utils/logger.js';
 import { REST, Routes } from 'discord.js';
 
 export class CommandManager {
@@ -30,7 +31,7 @@ export class CommandManager {
 
   async deployCommandsGlobally() {
     try {
-      console.log(
+      logger.info(
         'Registering global application commands (/) via REST API...',
       );
 
@@ -43,17 +44,17 @@ export class CommandManager {
         },
       );
 
-      console.log(
+      logger.info(
         'Successfully registered global application commands (/) via REST API.',
       );
     } catch (error) {
-      console.error(error);
+      logger.error('Failed to register global commands:', error);
     }
   }
 
   async deployCommandsForGuild(guildId: string) {
     try {
-      console.log(
+      logger.info(
         `Started registering application commands (/) for guild ${guildId}.`,
       );
 
@@ -66,11 +67,11 @@ export class CommandManager {
         },
       );
 
-      console.log(
+      logger.info(
         'Successfully registered application commands (/) for guild via REST API.',
       );
     } catch (error) {
-      console.error(error);
+      logger.error('Failed to register guild commands:', error);
     }
   }
 }

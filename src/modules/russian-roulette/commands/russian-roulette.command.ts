@@ -1,4 +1,5 @@
 import { IsabelleCommand } from '@/manager/commands/command.interface.js';
+import { logger } from '@/utils/logger.js';
 import { mentionId } from '@/utils/mention.js';
 import {
   CommandInteraction,
@@ -43,8 +44,8 @@ export class RussianRouletteCommand implements IsabelleCommand {
         .catch(() => guild.members.cache.get(targetId));
 
       if (!member) {
-        console.warn('[RussianRoulette] Impossible de récupérer le membre');
-        numberOfGamesSinceLastKill++; // pas de sanction finalement
+        logger.warn('[RussianRoulette] Impossible de récupérer le membre');
+        numberOfGamesSinceLastKill++; // pas de kill finalement
         await interaction.reply(randomSafeMessage);
         return;
       }
@@ -54,7 +55,7 @@ export class RussianRouletteCommand implements IsabelleCommand {
         await interaction.reply(
           `Bang...? ${mentionId(targetId)} était trop puissant pour être affecté. Le canon a fondu et tout le monde s'en sort vivant cette fois-ci !`,
         );
-        console.debug('[RussianRoulette] Target not moderatable', targetId);
+        logger.debug('[RussianRoulette] Target not moderatable', targetId);
         return;
       }
 
@@ -87,13 +88,13 @@ export class RussianRouletteCommand implements IsabelleCommand {
       } else {
         await interaction.reply(finalMessage);
       }
-      console.debug(
+      logger.debug(
         '[RussianRoulette] Timed-out user',
         targetId,
         mentionId(targetId),
       );
     } catch (e) {
-      console.error('[RussianRoulette] Error while timing out user', e);
+      logger.error('[RussianRoulette] Error while timing out user', e);
       numberOfGamesSinceLastKill++;
       await interaction.reply(
         `Le pistolet s'enraye... Personne n'est sanctionné cette fois-ci (erreur : ${(e as Error).name}).`,
@@ -275,11 +276,11 @@ function getGunTarget(userID: string, guild: Guild) {
     PERCENTAGES.is_killing, // base - starting chance
   );
 
-  console.debug(
+  logger.debug(
     '[RussianRoulette] numberOfGamesSinceLastKill:',
     numberOfGamesSinceLastKill,
   );
-  console.debug('[RussianRoulette] dynamicFireChance:', dynamicFireChance);
+  logger.debug('[RussianRoulette] dynamicFireChance', dynamicFireChance);
 
   // Gun does not fire
   if (Math.random() >= dynamicFireChance) return null;
