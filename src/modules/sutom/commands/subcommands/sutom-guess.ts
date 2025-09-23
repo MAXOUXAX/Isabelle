@@ -9,7 +9,8 @@ export default async function guessWordSubcommand(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   const { user } = interaction;
-  logger.debug('Word to test:', interaction.options.get('mot'));
+  const guessedWord = interaction.options.get('mot')?.value as string;
+  logger.debug(`User ${user.username} (${user.id}) guessed word: "${guessedWord}"`);
 
   const game = sutomGameManager.getGame(user.id);
   if (!game) {
@@ -18,7 +19,7 @@ export default async function guessWordSubcommand(
         "Tu n'as pas de partie en cours ! Utilise la commande `/sutom start` pour en commencer une.",
       )
       .catch((e: unknown) => {
-        logger.error('Failed to reply to interaction:', e);
+        logger.error(`Failed to reply to ${user.username} about missing game:`, e);
       });
     return;
   }

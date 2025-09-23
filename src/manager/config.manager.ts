@@ -9,7 +9,7 @@ class ConfigManager {
     // 1. Load guild configs from database
     // 2. Set guilds to the loaded guild configs
     // TODO: Implement this
-    logger.info('ConfigManager initialized');
+    logger.info('ConfigManager initialized - guild configs loading not yet implemented');
   }
 
   getGuild(guildId: string): GuildConfig {

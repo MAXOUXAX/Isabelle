@@ -46,7 +46,9 @@ export class RussianRouletteCommand implements IsabelleCommand {
         .catch(() => guild.members.cache.get(targetId));
 
       if (!member) {
-        logger.warn('Impossible de récupérer le membre');
+        logger.warn(
+          `Failed to fetch member ${targetId} for timeout - skipping execution`,
+        );
         numberOfGamesSinceLastKill++; // pas de kill finalement
         await interaction.reply(randomSafeMessage);
         return;
@@ -57,7 +59,9 @@ export class RussianRouletteCommand implements IsabelleCommand {
         await interaction.reply(
           `Bang...? ${mentionId(targetId)} était trop puissant pour être affecté. Le canon a fondu et tout le monde s'en sort vivant cette fois-ci !`,
         );
-        logger.debug('Target not moderatable', targetId);
+        logger.debug(
+          `Target ${targetId} (${member.displayName}) is not moderatable - cannot timeout`,
+        );
         return;
       }
 
@@ -90,9 +94,18 @@ export class RussianRouletteCommand implements IsabelleCommand {
       } else {
         await interaction.reply(finalMessage);
       }
-      logger.debug('Timed-out user', targetId, mentionId(targetId));
+      await interaction.reply(
+        `Bang ! ${mentionId(targetId)} a été mis en timeout pendant 5 minutes.`,
+      );
+      logger.debug(
+        `Successfully timed out user ${targetId} (${member.displayName}) for 5 minutes`,
+        { reason: 'Russian Roulette', duration: label },
+      );
     } catch (e) {
-      logger.error('Error while timing out user', e);
+      logger.error(
+        `Failed to timeout user ${targetId} in Russian Roulette:`,
+        e,
+      );
       numberOfGamesSinceLastKill++;
       await interaction.reply(
         `Le pistolet s'enraye... Personne n'est sanctionné cette fois-ci (erreur : ${(e as Error).name}).`,
@@ -274,8 +287,9 @@ function getGunTarget(userID: string, guild: Guild) {
     PERCENTAGES.is_killing, // base - starting chance
   );
 
-  logger.debug('numberOfGamesSinceLastKill:', numberOfGamesSinceLastKill);
-  logger.debug('dynamicFireChance', dynamicFireChance);
+  logger.debug(
+    `Calculated dynamic fire chance: ${dynamicFireChance.toFixed(3)} (${numberOfGamesSinceLastKill.toString()} games since last kill)`,
+  );
 
   // Gun does not fire
   if (Math.random() >= dynamicFireChance) return null;
