@@ -1,126 +1,204 @@
 # Isabelle Discord Bot
 
-Isabelle is a TypeScript Discord bot designed for TELECOM Nancy students. It features various game modules (SUTOM word game, Russian Roulette, Hot Potato), automatic responses, event planning, and schedule integration.
+Isabelle is a TypeScript Discord bot designed for TELECOM Nancy apprentice students. The bot provides both useful modules (schedule integration, event planning) and entertaining modules (SUTOM word game, Russian Roulette, Hot Potato, automatic responses) to enhance the Discord community experience.
 
-Always reference these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.
+## Core Development Principles
 
-## Working Effectively
+### End-User Experience First
+- Prioritize UX in all features - consider how students will actually interact with the bot
+- Use visual feedback when beneficial (e.g., image generation for game states, clear embed formatting)
+- Provide helpful error messages and guidance to users
+- Design features to be intuitive without requiring explanation
 
-### Initial Setup
-- Bootstrap, build, and test the repository:
-  - `npm install` -- takes 15-40 seconds depending on network. Requires Node.js >=22 but works on Node.js 20 with warnings.
-  - `npm run build` -- takes <1 second using tsup (builds to dist/index.mjs)
-  - `npm run lint` -- takes ~5 seconds using ESLint with TypeScript strict config
-  - `npm run prettier` -- takes <1 second for code formatting
-  - `npm run db:migrate` -- takes <1 second to apply database migrations using Drizzle ORM
+### Code Quality Standards
+- Write TypeScript with strict type checking enabled
+- Use ESLint and Prettier for consistent code style
+- Handle errors gracefully - never let the bot crash from user actions
+- Use proper async/await patterns for Discord interactions
 
-### Environment Setup
-- Copy `.env.example` to `.env` and configure required variables:
-  - `DISCORD_TOKEN` - Get from Discord Developer Portal
-  - `DISCORD_CLIENT_ID` - Application ID from Discord Developer Portal
-  - `DB_FILE_NAME` - Database file path (e.g., `file:local.db`)
-  - `SCHEDULE_URL` - URL to .ics calendar file for schedule module
-- Database migrations are applied automatically via `npm run dev`
+## Architecture Patterns
 
-### Development Mode
-- Run development server: `npm run dev` -- runs database migrations then starts dev server with file watching
-- Alternative: `npm run start:dev` -- starts dev server only (assumes DB is migrated)
-- Development mode requires `NODE_ENV=development` environment variable
-- Bot will only work with a single Discord server in development mode
+### Module-Based Design
+All bot functionality is organized into modules that extend `IsabelleModule`. Each module encapsulates related commands and interactions.
 
-### Production Mode
-- Build: `npm run build` -- creates dist/index.mjs
-- Run: `node dist/index.mjs` -- runs in production mode (deploys global Discord commands)
-- Production mode runs when `NODE_ENV` is undefined or not set to "development"
+### Creating a New Command
+```typescript
+import { CommandInteraction, SlashCommandBuilder } from 'discord.js';
+import { IsabelleCommand } from '@/manager/commands/command.interface.js';
 
-## Validation
+export class MyCommand implements IsabelleCommand {
+  commandData = new SlashCommandBuilder()
+    .setName('mycommand')
+    .setDescription('Brief description of what this command does');
 
-### Build and Test Validation
-- ALWAYS run `npm run build` to verify TypeScript compilation
-- Run `npm run prettier` to format code consistently
-- No unit tests exist in this repository
-- WARNING: `npm run lint` has pre-existing errors in hot-potato module and eslint config deprecation - these are not your responsibility to fix unless working on those specific files
-
-### Manual Application Testing
-- The bot cannot be fully tested without valid Discord credentials
-- With valid credentials, test the Discord slash commands:
-  - `/ping` - Basic connectivity test
-  - `/bonjour` - Simple greeting command
-  - `/sutom start` - Start SUTOM word game
-  - `/roulette-russe` - Russian roulette game
-  - `/planifier` - Event planning modal
-- Application startup should show "Isabelle is ready to serve! 🚀" message
-
-### Code Quality Checks
-- Husky pre-commit hooks run lint-staged (ESLint + Prettier) automatically
-- ESLint configuration is strict TypeScript with recommended rules but has pre-existing errors
-- Prettier enforces single quotes, trailing commas, 2-space tabs, semicolons
-- Focus on fixing lint errors only for code you modify, not pre-existing issues
-
-## Build System and Timing
-
-### Command Timing Expectations (measured on standard CI environment)
-- `npm install`: 15-40 seconds (network dependent, requires Node.js >=22 but works on 20 with warnings)
-- `npm run build`: <1 second (tsup is extremely fast)
-- `npm run lint`: ~5-6 seconds (but has pre-existing errors - ignore unless working on affected files)
-- `npm run prettier`: <1 second
-- `npm run db:migrate`: <1 second
-- `npm run dev`: <2 seconds to start (includes migration + attempts Discord connection)
-
-### Build Artifacts
-- TypeScript compiled to `dist/index.mjs` (ESM module)
-- Source maps generated as `dist/index.mjs.map`
-- Resources copied to `dist/resources/` from `public/resources/`
-
-## Common Tasks
-
-### Repository Structure
-```
-src/
-├── config.ts          # Environment configuration
-├── db/                # Drizzle ORM database setup
-├── index.ts           # Main application entry point
-├── manager/           # Command, interaction, and config managers
-├── modules/           # Discord bot modules (games, utilities)
-└── utils/             # Shared utilities (cache, dates, mentions, etc.)
-
-public/resources/      # Static resources (word lists, etc.)
-drizzle/              # Database migration files
-.github/workflows/    # CI/CD pipelines
+  public async executeCommand(interaction: CommandInteraction): Promise<void> {
+    // Always acknowledge the interaction quickly
+    await interaction.reply('Response message');
+    
+    // For longer operations, use deferReply() first
+    // await interaction.deferReply();
+    // await longRunningOperation();
+    // await interaction.editReply('Final result');
+  }
+}
 ```
 
-### Key Modules
-- `CoreModule`: Basic commands (ping, bonjour)
-- `SutomModule`: French word guessing game with canvas rendering
-- `RussianRouletteModule`: Timeout-based roulette game
-- `PlanifierModule`: Event planning with Discord forum integration
-- `AutomaticResponsesModule`: Configurable auto-responses
-- `ScheduleModule`: Calendar integration via .ics files
-- `HotPotato`: Role-passing game
+### Creating a New Module
+```typescript
+import { IsabelleModule } from '@/modules/bot-module.js';
+import { MyCommand } from './commands/my-command.js';
 
-### Database Operations
-- Uses Drizzle ORM with SQLite via libSQL
-- Schema defined in `src/db/schema.ts`
-- Migrations in `drizzle/` directory
-- Two main tables: `automatic_responses`, `guild_configs`
+export class MyModule extends IsabelleModule {
+  readonly name = 'my-module';
 
-### Discord Integration Details
-- Uses discord.js v14 with slash commands
-- Supports both guild-specific (development) and global (production) command deployment
-- Module-based architecture for organizing commands and interactions
-- Canvas-based image generation for games using @napi-rs/canvas
+  init(): void {
+    // Register all commands for this module
+    this.registerCommands([new MyCommand()]);
+    
+    // Register interaction handlers if needed
+    // this.registerInteractionHandlers([new MyModalHandler()]);
+  }
+}
+```
 
-### Development Tips
-- Bot requires Discord server invite with appropriate permissions
-- Development mode limits bot to single server to prevent accidental deployments
-- Production global command deployment can take up to 1 hour to propagate
-- TypeScript paths configured: `@/*` maps to `src/*`, `@modules/*` maps to `src/modules/*`
+Then add your module to the `MODULES` array in `src/index.ts`.
 
-### Common File Locations
-- Main entry: `src/index.ts`
-- Command interfaces: `src/manager/commands/command.interface.ts`
-- Module base class: `src/modules/bot-module.ts`
-- Resource utilities: `src/utils/resources.ts`
-- Database connection: `src/db/index.ts`
+### Database Integration
+Use Drizzle ORM for database operations:
 
-Remember: This is a Discord bot requiring external API credentials. Most functionality cannot be tested without proper Discord server setup and bot permissions.
+```typescript
+import { db } from '@/db/index.js';
+import { myTable } from '@/db/schema.js';
+
+// Always handle database errors gracefully
+try {
+  const result = await db.select().from(myTable).where(eq(myTable.id, userId));
+  return result[0];
+} catch (error) {
+  console.error('Database operation failed:', error);
+  return null;
+}
+```
+
+### Resource Management
+Store static resources in `public/resources/` and access them via the resource utility:
+
+```typescript
+import { resolveResourcePath } from '@/utils/resources.js';
+
+// Resolve path to resource file
+const wordListPath = resolveResourcePath('sutom', 'mots.filtered.txt');
+```
+
+## Discord Integration Best Practices
+
+### Interaction Handling
+- Always respond to interactions within 3 seconds
+- Use `deferReply()` for operations that might take longer
+- Provide meaningful error messages to users
+- Use embeds for rich formatting when appropriate
+
+### Command Design
+- Keep command names short and memorable
+- Use subcommands for related functionality
+- Provide clear descriptions and parameter hints
+- Consider both success and error scenarios
+
+### Modal and Button Interactions
+For complex user input, use modals:
+
+```typescript
+const modal = new ModalBuilder()
+  .setCustomId('my-modal')
+  .setTitle('User Input Form');
+
+const textInput = new TextInputBuilder()
+  .setCustomId('text-field')
+  .setLabel('Enter your text')
+  .setStyle(TextInputStyle.Short)
+  .setPlaceholder('Type here...')
+  .setRequired(true);
+
+modal.addComponents(new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(textInput));
+await interaction.showModal(modal);
+```
+
+## Development Workflow
+
+### Setup and Building
+```bash
+npm install
+npm run build  # Verify TypeScript compilation
+npm run prettier  # Format code
+```
+
+### Testing Changes
+- Use `npm run dev` for development with file watching
+- Test with a Discord server in development mode (single server only)
+- Verify error handling by testing edge cases
+
+### Code Style
+- Use single quotes for strings
+- Include trailing commas in multi-line structures  
+- Use 2-space indentation
+- Add semicolons consistently
+
+## Common Patterns
+
+### Error Handling
+```typescript
+try {
+  await riskyOperation();
+} catch (error) {
+  console.error('Operation failed:', error);
+  await interaction.reply({ 
+    content: 'Sorry, something went wrong. Please try again later.',
+    ephemeral: true 
+  });
+}
+```
+
+### User Feedback
+```typescript
+// For success
+await interaction.reply({
+  embeds: [new EmbedBuilder()
+    .setColor(0x00ff00)
+    .setTitle('Success')
+    .setDescription('Operation completed successfully')]
+});
+
+// For errors  
+await interaction.reply({
+  content: 'Unable to complete that action. Please check your input and try again.',
+  ephemeral: true
+});
+```
+
+### Configuration Management
+Access environment variables through the config module:
+```typescript
+import { config } from '@/config.js';
+
+// config.DISCORD_TOKEN, config.DISCORD_CLIENT_ID, etc.
+```
+
+## UX Considerations
+
+### Visual Design
+- Use consistent embed colors across the bot
+- Include relevant emojis to make responses more engaging
+- Consider image generation for visual feedback (games, charts, etc.)
+- Use formatting (bold, italics, code blocks) appropriately
+
+### User Guidance
+- Provide help commands or information when users are confused
+- Use ephemeral replies for error messages to avoid channel clutter
+- Give clear next steps when an action requires follow-up
+
+### Performance
+- Respond quickly to user interactions
+- Use caching for frequently accessed data
+- Optimize image generation and file operations
+
+Remember: Build features that TELECOM Nancy apprentice students will actually find useful and enjoyable. Focus on creating a positive community experience through thoughtful design and reliable functionality.
