@@ -7,7 +7,6 @@ import { Schedule } from '@/modules/schedule/schedule.module.js';
 import { SutomModule } from '@/modules/sutom/sutom.module.js';
 import { ActivityType, Client, Events, GatewayIntentBits } from 'discord.js';
 import { config } from './config.js';
-import { runMigrations } from './db/migrator.js';
 import { interactionManager } from './manager/interaction.manager.js';
 import { IsabelleModule } from './modules/bot-module.js';
 import { HotPotato } from './modules/hot-potato/hot-potato.module.js';
@@ -37,9 +36,6 @@ const MODULES: IsabelleModule[] = [
 client.once(Events.ClientReady, () => {
   async function handler() {
     console.log("Connected to Discord's Gateway! 🎉");
-
-    // Run database migrations before starting the bot
-    await runMigrations();
 
     console.log('Registering modules...');
     registerModules();
