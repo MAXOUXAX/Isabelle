@@ -1,11 +1,11 @@
 # This workflow runs when a push to main is done, when a pull request targeting main is opened or updated, or when the workflow is manually triggered
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+  # push:
+  #   branches:
+  #     - main
+  # pull_request:
+  #   branches:
+  #     - main
 
   workflow_dispatch:
     inputs:
