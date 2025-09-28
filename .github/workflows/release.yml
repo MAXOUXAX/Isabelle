@@ -29,6 +29,7 @@ jobs:
         with:
           # Required for semantic-release to analyze the ENTIRE commit history
           fetch-depth: 0
+          token: ${{ secrets.ISABELLE_RELEASE_TOKEN }}
 
       - name: ⚙️ Setup Node.js
         uses: actions/setup-node@v5
