@@ -5,25 +5,42 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write # Nécessaire pour créer un tag et une release GitHub
+      issues: write # Nécessaire pour commenter les issues/PRs résolues
+      pull-requests: write # Nécessaire pour commenter les issues/PRs résolues
+
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: false
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@v4
         with:
+          # Nécessaire pour que semantic-release puisse analyser TOUT l'historique des commits
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
+          # Active le cache pour les dépendances npm, accélérant les builds futurs
+          cache: 'npm'
 
-      - name: Install dependencies
-        run: npm install
+      - name: 📦 Install dependencies
+        run: npm ci
 
-      - name: Run semantic-release
+      - name: 🚀 Execute Semantic Release
         env:
+          # Le GITHUB_TOKEN est automatiquement fourni par GitHub Actions
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
