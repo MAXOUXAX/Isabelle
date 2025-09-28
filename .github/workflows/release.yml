@@ -25,13 +25,13 @@ jobs:
 
     steps:
       - name: ⬇️ Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Required for semantic-release to analyze the ENTIRE commit history
           fetch-depth: 0
 
       - name: ⚙️ Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 'lts/*'
           # Enable cache for npm dependencies, speeding up future builds
@@ -42,6 +42,5 @@ jobs:
 
       - name: 🚀 Execute Semantic Release
         env:
-          # The GITHUB_TOKEN is automatically provided by GitHub Actions
           GITHUB_TOKEN: ${{ secrets.ISABELLE_RELEASE_TOKEN }}
         run: npx semantic-release
