@@ -42,5 +42,5 @@ jobs:
       - name: 🚀 Execute Semantic Release
         env:
           # The GITHUB_TOKEN is automatically provided by GitHub Actions
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.ISABELLE_RELEASE_TOKEN }}
         run: npx semantic-release
