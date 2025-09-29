@@ -16,6 +16,11 @@
         "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }
     ],
-    "@semantic-release/github"
+    [
+      "@semantic-release/github",
+      {
+        "successComment": ":tada: This ${issue.pull_request ? 'PR' : 'issue'} was just released in version ${nextRelease.version}!\nCheck out the [GitHub release here!](<github_release_url>"
+      }
+    ]
   ]
 }
