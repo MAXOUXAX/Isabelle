@@ -21,7 +21,7 @@ const cacheEntry = cacheStore.useCache(
   1000 * 60 * 60 * 24,
 );
 
-// Règles d'ajustement des horaires TELECOM Nancy
+// Règles d'ajustement des horaires
 interface TimeAdjustmentRule {
   matchHour: number;
   matchMinute: number;
@@ -64,7 +64,7 @@ const TIME_ADJUSTMENT_RULES: TimeAdjustmentRule[] = [
 ];
 
 /*
- * Ajuste l'heure selon les règles TELECOM Nancy
+ * Ajuste l'heure selon les règles configurées
  */
 function adjustTime(
   date: Date,
@@ -86,9 +86,9 @@ function adjustTime(
 }
 
 /*
- * Ajuste les horaires virtuels du calendrier ICS selon les règles TELECOM Nancy
+ * Ajuste les horaires virtuels du calendrier ICS selon les règles configurées
  */
-function adjustTelecomSchedule(
+function adjustSchedule(
   startDate: Date,
   endDate: Date,
 ): { start: Date; end: Date } {
@@ -106,7 +106,7 @@ function createLessonsFromData(data: VEvent[]): Lesson[] {
     const startDate = new Date(lesson.start);
     const endDate = new Date(lesson.end);
 
-    const { start, end } = adjustTelecomSchedule(startDate, endDate);
+    const { start, end } = adjustSchedule(startDate, endDate);
 
     return {
       name: lesson.summary,
