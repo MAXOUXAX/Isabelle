@@ -1,6 +1,11 @@
 import { IsabelleCommand } from '@/manager/commands/command.interface.js';
 import { mentionId } from '@/utils/mention.js';
-import { CommandInteraction, Guild, SlashCommandBuilder } from 'discord.js';
+import {
+  CommandInteraction,
+  Guild,
+  MessageFlags,
+  SlashCommandBuilder,
+} from 'discord.js';
 
 export class RussianRouletteCommand implements IsabelleCommand {
   commandData: SlashCommandBuilder = new SlashCommandBuilder()
@@ -13,7 +18,10 @@ export class RussianRouletteCommand implements IsabelleCommand {
     const guild = interaction.guild;
 
     if (!guild) {
-      await interaction.reply('Vous ne pouvez pas jouer en DM.');
+      await interaction.reply({
+        content: 'Vous ne pouvez pas jouer en DM.',
+        flags: MessageFlags.Ephemeral,
+      });
       return;
     }
 
