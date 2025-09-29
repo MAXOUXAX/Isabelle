@@ -13,7 +13,7 @@ export class RussianRouletteCommand implements IsabelleCommand {
     const guild = interaction.guild;
 
     if (!guild) {
-      await interaction.reply('Vous ne pouvez pas jouer en DM !');
+      await interaction.reply('Vous ne pouvez pas jouer en DM.');
       return;
     }
 
@@ -36,7 +36,7 @@ export class RussianRouletteCommand implements IsabelleCommand {
 
       if (!member) {
         console.warn('[RussianRoulette] Impossible de récupérer le membre');
-        numberOfGamesSinceLastKill++; // pas de kill finalement
+        numberOfGamesSinceLastKill++; // pas de sanction finalement
         await interaction.reply(randomSafeMessage);
         return;
       }
@@ -72,13 +72,13 @@ export class RussianRouletteCommand implements IsabelleCommand {
       console.error('[RussianRoulette] Error while timing out user', e);
       numberOfGamesSinceLastKill++;
       await interaction.reply(
-        `Le pistolet s'enraye... Personne ne meurt cette fois-ci (erreur: ${(e as Error).name}).`,
+        `Le pistolet s'enraye... Personne n'est sanctionné cette fois-ci (erreur : ${(e as Error).name}).`,
       );
     }
   }
 }
 
-// Probabilities (tweak as needed)
+// Probabilities (adjust if needed)
 const PERCENTAGES = {
   kill_other: 0.1, // 10% chance the gun points to someone else instead of self
   is_killing: 0.1, // Base chance that the trigger actually fires (scaled dynamically)
@@ -123,7 +123,7 @@ const TIMEOUT_OPTIONS = [
     label: '10 minutes',
     messages: [
       "La dernière blague de {user} a fait tellement de bruit qu'on a cru entendre le rire de Bouthier. Fausse alerte. 10 minutes de silence.",
-      "J'ai analysé le profil de {user} et a trouvé des propos... problématiques. Mopty serait fier. 10 minutes pour réfléchir à tes actes cela dit.",
+      "J'ai analysé le profil de {user} et j'ai trouvé des propos... problématiques. Mopty serait fier. 10 minutes pour réfléchir à tes actes cela dit.",
       "J'ai bien compté {user} et je crois je viens de te mettre 10 minutes dans les dents. Profite bien :)",
       "Bonjour Mme Sauvi ! Ah non pardon, il y a mésentente. C'est {user} qui vient de se faire recaler pendant 10 minutes.",
       "{user} est coincé dans une boucle d'entretiens avec Marc Vélocité. Il faut bien 10 minutes pour s'en remettre.",
