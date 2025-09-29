@@ -22,42 +22,52 @@ const cacheEntry = cacheStore.useCache(
 );
 
 /*
- * Crée un tableau de cours à partir des données du fichier ICS
  * Ajuste les horaires virtuels du calendrier ICS selon les règles TELECOM Nancy:
  * - Fin 10h → 9h50 (pause matinale)
  * - Début 10h → 10h10 (après pause matinale)
  * - Fin 16h → 15h50 (pause après-midi)
  * - Début 16h → 16h10 (après pause après-midi)
  */
+function adjustTelecomSchedule(
+  startDate: Date,
+  endDate: Date,
+): { start: Date; end: Date } {
+  const adjustedStart = new Date(startDate);
+  const adjustedEnd = new Date(endDate);
+
+  // Règles pour 10h (pause matinale 9h50-10h10)
+  if (startDate.getHours() === 10 && startDate.getMinutes() === 0) {
+    adjustedStart.setHours(10, 10, 0, 0); // Début 10h → 10h10
+  }
+  if (endDate.getHours() === 10 && endDate.getMinutes() === 0) {
+    adjustedEnd.setHours(9, 50, 0, 0); // Fin 10h → 9h50
+  }
+
+  // Règles pour 16h (pause après-midi 15h50-16h10)
+  if (startDate.getHours() === 16 && startDate.getMinutes() === 0) {
+    adjustedStart.setHours(16, 10, 0, 0); // Début 16h → 16h10
+  }
+  if (endDate.getHours() === 16 && endDate.getMinutes() === 0) {
+    adjustedEnd.setHours(15, 50, 0, 0); // Fin 16h → 15h50
+  }
+
+  return { start: adjustedStart, end: adjustedEnd };
+}
+
+/*
+ * Crée un tableau de cours à partir des données du fichier ICS
+ */
 function createLessonsFromData(data: VEvent[]): Lesson[] {
   return data.map((lesson) => {
     const startDate = new Date(lesson.start);
     const endDate = new Date(lesson.end);
 
-    // Ajustement des horaires selon les règles TELECOM Nancy
-    const adjustedStart = new Date(startDate);
-    const adjustedEnd = new Date(endDate);
-
-    // Règles pour 10h (pause matinale 9h50-10h10)
-    if (startDate.getHours() === 10 && startDate.getMinutes() === 0) {
-      adjustedStart.setHours(10, 10, 0, 0); // Début 10h → 10h10
-    }
-    if (endDate.getHours() === 10 && endDate.getMinutes() === 0) {
-      adjustedEnd.setHours(9, 50, 0, 0); // Fin 10h → 9h50
-    }
-
-    // Règles pour 16h (pause après-midi 15h50-16h10)
-    if (startDate.getHours() === 16 && startDate.getMinutes() === 0) {
-      adjustedStart.setHours(16, 10, 0, 0); // Début 16h → 16h10
-    }
-    if (endDate.getHours() === 16 && endDate.getMinutes() === 0) {
-      adjustedEnd.setHours(15, 50, 0, 0); // Fin 16h → 15h50
-    }
+    const { start, end } = adjustTelecomSchedule(startDate, endDate);
 
     return {
       name: lesson.summary,
-      start: adjustedStart,
-      end: adjustedEnd,
+      start,
+      end,
       room: lesson.location.replaceAll('Remicourt_', '').toUpperCase(), // Balek du Remicourt
       teacher: lesson.description.split('\n')[2], // TODO: Trouver un moyen de récupérer le nom du prof
       color: getLessonColor(lesson.summary),
