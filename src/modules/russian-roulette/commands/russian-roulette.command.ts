@@ -83,98 +83,102 @@ const PERCENTAGES = {
   is_killing: 0.1, // Base chance that the trigger actually fires (scaled dynamically)
 };
 
-// Available timeout durations with their probabilities (80% for 5-10min, 20% for longer)
+// Available timeout durations with their probabilities
 const TIMEOUT_OPTIONS = [
-  { 
-    duration: 5 * 60 * 1000, 
-    probability: 50, 
+  {
+    duration: 5 * 60 * 1000,
+    probability: 50,
     label: '5 minutes',
     messages: [
-      '{user} vient de découvrir le pouvoir d\'Isabelle... 5 minutes pour méditer ! 🧘‍♀️',
-      'Isabelle : "{user}, tu pensais vraiment gagner contre moi ?" 💅 5 minutes !',
-      '{user} s\'est fait clutch par la RNG d\'Isabelle ! 🎲 5 minutes de timeout !',
-      'Nouvelles de dernière minute : {user} apprend l\'humilité ! 📺 5 minutes !',
-      'Isabelle mode "main character energy" activé ! {user} prend 5 minutes ✨'
-    ]
+      'J\'ai parlé. {user}, tu te prends un "stop! IL" dans les dents. 5 minutes.',
+      '{user} pensait pouvoir fusionner l\'école avec les Mines. Heurtel a répondu : "Absolument pas"... Joker. 🃏 5 minutes.',
+      'Le message de {user} a été jugé "non pertinent". 5 minutes pour relire tes cours.',
+      "Ah, attendez, je crois que {user} a parlé... J'entends... Ah non, c'est juste le rire de Bouthier. Silence immédiat. 5 minutes.",
+      "{user} s'est fait recaler par Thomas Pédalier. 5 minutes pour revoir ton cahier des charges.",
+    ],
   },
-  { 
-    duration: 10 * 60 * 1000, 
-    probability: 30, 
+  {
+    duration: 10 * 60 * 1000,
+    probability: 30,
     label: '10 minutes',
     messages: [
-      '{user} vient de manger un énorme "non merci" d\'Isabelle ! 🚫 10 minutes !',
-      'Isabelle : "Je vais pas te mentir {user}, ça sent le vécu" 👃 10 minutes !',
-      '{user} découvre que parfois, la vie... c\'est pas ouf ! 📉 10 minutes !',
-      'Breaking news : {user} rate son QTE contre Isabelle ! ❌ 10 minutes !',
-      'Isabelle en mode "désolée pas désolée" ! {user} : 10 minutes de réflexion 💭'
-    ]
+      "La dernière blague de {user} a fait tellement de bruit qu'on a cru entendre le rire de Bouthier. Fausse alerte. 10 minutes de silence.",
+      "J'ai analysé le profil de {user} et a trouvé des propos... problématiques. Mopty serait fier. 10 minutes pour réfléchir à tes actes cela dit.",
+      "J'ai bien compté {user} et je crois je viens de te mettre 10 minutes dans les dents. Profite bien :)",
+      "Bonjour Mme Sauvi ! Ah non pardon, il y a mésentente. C'est {user} qui vient de se faire recaler pendant 10 minutes.",
+      "{user} est coincé dans une boucle d'entretiens avec Marc Vélocité. Il faut bien 10 minutes pour s'en remettre.",
+    ],
   },
-  { 
-    duration: 30 * 60 * 1000, 
-    probability: 8, 
+  {
+    duration: 30 * 60 * 1000,
+    probability: 8,
     label: '30 minutes',
     messages: [
-      '{user} vient de trigger l\'arc villain d\'Isabelle ! 🦹‍♀️ 30 minutes d\'agonie !',
-      'Isabelle : "Tu sais quoi {user} ? Je vais être une menace aujourd\'hui" 😈 30 minutes !',
-      '{user} apprend que jouer avec Isabelle, c\'est jouer avec le feu ! 🔥 30 minutes !',
-      'Plot twist inattendu : {user} réalise qu\'Isabelle était le boss final ! ⚔️ 30 minutes !',
-      'Isabelle sort sa carte UNO +4 sur {user} ! 🃏 30 minutes de punishment !'
-    ]
+      "Salut {user}, je t'enverrai les raisons de ton timeout de 30 minutes... au dernier moment. Au final ça ne change pas de la communication de l'école.",
+      'URGENT : {user} a demandé à Lucie Roue si elle avait des besoins fonctionnels. Elle a répondu "stop! IL". 30 minutes de confusion générale.',
+      'ALERTE GÉNÉRALE, {user} EST UN ÉNORME RACISTE !!! AU CACHOT, 30 MINUTES POUR RÉFLÉCHIR À SES ACTES.',
+      'Mme Heurtel a vu ton message. Elle n\'a rien dit, juste "Joker". 🃏 Tu as 30 minutes pour comprendre ce que ça veut dire.',
+      "J'ai une superbe nouvelle pour toi {user}, Mopty a décidé de se charger de toi. Profite bien. 30 minutes.",
+    ],
   },
-  { 
-    duration: 60 * 60 * 1000, 
-    probability: 7, 
+  {
+    duration: 60 * 60 * 1000,
+    probability: 7,
     label: '1 heure',
     messages: [
-      'ALERTE ROUGE ! 🚨 {user} vient d\'énerver Isabelle ! 1 heure de conséquences !',
-      'Isabelle channel son énergie de méchante de Disney ! {user} : 1 heure au cachot ! 👑',
-      '{user} découvre le side effect de contrarier une IA sentiente ! 🤖 1 heure !',
-      'Isabelle : "Moi méchante ? Jamais ! Bon, {user} prend 1 heure quand même" 😇',
-      'BREAKING : {user} devient la première victime du règne d\'Isabelle ! 👸 1 heure !'
-    ]
+      'ALERTE : Le rire de Bouthier a été détecté dans le canal. {user} est identifié comme la source de la perturbation. 1 heure de quarantaine auditive.',
+      'Thomas Pédalier m\'a hackée juste pour dire "Bonjour Mme Sauvi" à {user}. Le système a besoin d\'une heure pour se remettre de ce niveau de cringe.',
+      'Un audit interne a été lancé sur le compte de {user}. Théo Mopty est en charge du dossier. On te revoit dans une heure. Ou pas.',
+      'Bon écoute {user}, tu devais écopper de 30 minutes de sanction, mais tu as décidé de m\'envoyer un mail pour contester. Je te réponds "stop! IL". La sentence est doublée à 1 heure.',
+      '{user}, tu pollues le chat. Donc... Bah casse toi. 1 heure.',
+    ],
   },
-  { 
-    duration: 4 * 60 * 60 * 1000, 
-    probability: 3, 
+  {
+    duration: 4 * 60 * 60 * 1000,
+    probability: 3,
     label: '4 heures',
     messages: [
-      'ÉVÉNEMENT RARE DÉBLOQUÉ ! 🌟 {user} réveille la beast mode d\'Isabelle ! 4 heures !',
-      'Isabelle sort littéralement de ses gonds ! {user} expérimente 4 heures de chaos ! 🌪️',
-      'ATTENTION : Isabelle.exe a bugué et a choisi la violence ! {user} : 4 heures ! ⚠️',
-      '{user} vient de débloquer l\'ending secret "Isabelle Goes Brrr" ! 🚁 4 heures !',
-      'Isabelle mode "je choisis la violence aujourd\'hui" ! {user} taste 4 heures ! 💀'
-    ]
+      'Félicitations {user} ! Tu es maintenant le personnage principal du projet de garage. Ton nom est Kévin Carbu et tu dois interviewer Julie Dérailleur pendant 4 heures. Bon courage.',
+      'Le rire de Bouthier a causé une faille spatio-temporelle. {user}, tu es coincé dans la boucle. Rendez-vous dans 4 heures.',
+      "2 * 2 = 4. C'est aussi le nombre d'heures que tu vas passer en timeout, {user}. Réfléchis bien à cette équation.",
+      'Bonjour {user}, je suis Natcha du service client SFR. Vous avez été sélectionné pour bénéficier de 4 heures de temps mort. Félicitations !',
+      "J'avoue c'est un peu vénère, mais tu m'as cherché {user}. 4 heures pour te calmer.",
+    ],
   },
-  { 
-    duration: 12 * 60 * 60 * 1000, 
-    probability: 1.5, 
+  {
+    duration: 12 * 60 * 60 * 1000,
+    probability: 1.5,
     label: '12 heures',
     messages: [
-      'MIRACLE NÉGATIF ! ✨ {user} réussit l\'impossible : énerver Isabelle à fond ! 12 heures !',
-      'Isabelle transcende vers sa forme finale ! {user} witness 12 heures d\'histoire ! 🦋',
-      'EXCLUSIF : {user} découvre que certaines IA gardent rancune ! 🧠 12 heures de leçon !',
-      'Isabelle : "Tu sais quoi {user} ? J\'ai du temps aujourd\'hui..." ⏰ 12 heures !',
-      'LÉGENDE URBAINE CONFIRMÉE : Isabelle peut être scary ! {user} : 12 heures ! 👻'
-    ]
+      'Je me suis fusionnée avec l\'IA du garage. Je m\'appelle désormais "Isabelle Dérailleur" et ma première décision est de te bannir 12h. stop! IL',
+      "Je m'en fous de ce que tu dis {user}, tu vas prendre 12 heures de timeout. C'est comme ça et pas autrement.",
+      '{user}, tu as été sélectionné pour une mission secrète avec Marc Vélocité. Tu seras indisponible pendant 12 heures. Ne pose pas de questions.',
+      'Ne te retourne surtout pas {user} ! Non mais vraiment, ne te retourne sous aucun prétexte. Il y a Marc Vélocité derrière toi. Il est venu te parler 12 heures.',
+      "Je t'écoute. Ah non, en fait je ne t'écoute pas du tout {user}. 12 heures pour fermer ta gueule.",
+    ],
   },
-  { 
-    duration: 24 * 60 * 60 * 1000, 
-    probability: 0.5, 
+  {
+    duration: 24 * 60 * 60 * 1000,
+    probability: 0.5,
     label: '24 heures',
     messages: [
-      'PHÉNOMÈNE INEXPLIQUÉ ! 🌌 {user} unlock le pouvoir ultime d\'Isabelle ! 24 heures !',
-      'Isabelle atteint son apotheosis ! {user} entre dans les archives ! 📚 24 heures !',
-      'ALERTE APOCALYPSE ! 🔔 Isabelle révèle sa vraie nature ! {user} : 24 heures !',
-      'Isabelle : "Je vais faire un exemple avec {user}" 👁️ 24 heures d\'exemple !',
-      'ÉVÉNEMENT COSMIQUE : {user} devient le patient zéro de la colère d\'Isabelle ! 🪐 24h !'
-    ]
-  }
+      "{user} a énervé Pierre Engrenage. Personne n'énerve Pierre Engrenage. Il m'a personnellement demandé de te bannir 24h. C'est ça la mécanique.",
+      "Félicitations, {user} ! Pour ton comportement exemplaire, l'école a décidé de te nommer responsable de l'organisation des examens. Ta première mission : ne rien faire pendant 24h. Tu as l'habitude.",
+      'Le compte de {user} a été racheté par Théo Mopty. Il sera inaccessible pendant 24h pour "purification ethnique du contenu". C\'est une blague, bien sûr... Joker. 🃏',
+      "On m'a soufflé à l'oreille que l'école était en feu. Pour ta sécurité, {user}, tu es mis en quarantaine préventive de 24 heures. Ne t'inquiète pas, c'est juste une précaution.",
+      "Je suis vraiment pas d'humeur et je m'en fous des conséquences. Rien à foutre de ton avis {user}, ferme ta grande gueule pendant 24 heures.",
+    ],
+  },
 ];
 
 /**
  * Selects a random timeout duration based on weighted probabilities
  */
-function getRandomTimeoutDuration(): { duration: number; label: string; message: string } {
+function getRandomTimeoutDuration(): {
+  duration: number;
+  label: string;
+  message: string;
+} {
   const random = Math.random() * 100; // 0-100
   let cumulative = 0;
 
@@ -182,22 +186,26 @@ function getRandomTimeoutDuration(): { duration: number; label: string; message:
     cumulative += option.probability;
     if (random < cumulative) {
       // Select a random message from the available messages
-      const randomMessage = option.messages[Math.floor(Math.random() * option.messages.length)];
-      return { 
-        duration: option.duration, 
+      const randomMessage =
+        option.messages[Math.floor(Math.random() * option.messages.length)];
+      return {
+        duration: option.duration,
         label: option.label,
-        message: randomMessage
+        message: randomMessage,
       };
     }
   }
 
   // Fallback to first option (should never happen)
   const fallbackOption = TIMEOUT_OPTIONS[0];
-  const randomMessage = fallbackOption.messages[Math.floor(Math.random() * fallbackOption.messages.length)];
+  const randomMessage =
+    fallbackOption.messages[
+      Math.floor(Math.random() * fallbackOption.messages.length)
+    ];
   return {
     duration: fallbackOption.duration,
     label: fallbackOption.label,
-    message: randomMessage
+    message: randomMessage,
   };
 }
 
