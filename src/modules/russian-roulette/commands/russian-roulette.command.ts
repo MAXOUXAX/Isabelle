@@ -6,7 +6,7 @@ export class RussianRouletteCommand implements IsabelleCommand {
   commandData: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('roulette-russe')
     .setDescription(
-      "Joue à la roulette russe pour avoir une chance d'être banni !",
+      "Joue à la roulette russe pour avoir une chance d'être touché !",
     );
 
   async executeCommand(interaction: CommandInteraction) {
