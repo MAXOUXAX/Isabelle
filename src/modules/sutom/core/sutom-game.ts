@@ -82,39 +82,46 @@ export class SutomGame {
   }
 
   evaluateGuess(word: string): LetterState[] {
-    const letterStates = [];
-    const lettersOccurence = new Map<string, number>();
+    const letterStates: (LetterState | null)[] = [];
+    const targetLetterCounts = new Map<string, number>();
 
-    word.split('').forEach((letterStates) => {
-      const numberOfOccurence = lettersOccurence.get(letterStates);
-      if (numberOfOccurence != null) {
-        lettersOccurence.set(letterStates, numberOfOccurence + 1);
+    // Count letter occurrences in the target word
+    this.word.split('').forEach((letter) => {
+      const count = targetLetterCounts.get(letter);
+      if (count != null) {
+        targetLetterCounts.set(letter, count + 1);
       } else {
-        lettersOccurence.set(letterStates, 1);
+        targetLetterCounts.set(letter, 1);
       }
     });
 
+    // First pass: mark correct letters and decrement their counts
     for (let i = 0; i < this.word.length; i++) {
       if (word[i] === this.word[i]) {
         letterStates.push(LetterState.CORRECT);
-        lettersOccurence.set(word[i], (lettersOccurence.get(word[i]) ?? 0) - 1);
+        const currentCount = targetLetterCounts.get(word[i]) ?? 0;
+        targetLetterCounts.set(word[i], currentCount - 1);
       } else {
-        if (
-          lettersOccurence.has(this.word[i]) &&
-          (lettersOccurence.get(this.word[i]) ?? 0) > 0
-        ) {
-          letterStates.push(LetterState.MISPLACED);
-          lettersOccurence.set(
-            this.word[i],
-            (lettersOccurence.get(this.word[i]) ?? 0) - 1,
-          );
+        letterStates.push(null); // Placeholder for non-matching letters
+      }
+    }
+
+    // Second pass: mark misplaced and incorrect letters
+    for (let i = 0; i < this.word.length; i++) {
+      if (letterStates[i] === null) {
+        const guessedLetter = word[i];
+        const remainingCount = targetLetterCounts.get(guessedLetter) ?? 0;
+
+        if (remainingCount > 0) {
+          letterStates[i] = LetterState.MISPLACED;
+          targetLetterCounts.set(guessedLetter, remainingCount - 1);
         } else {
-          letterStates.push(LetterState.INCORRECT);
+          letterStates[i] = LetterState.INCORRECT;
         }
       }
     }
 
-    return letterStates;
+    return letterStates as LetterState[];
   }
 }
 
