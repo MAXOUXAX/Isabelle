@@ -21,15 +21,97 @@ const cacheEntry = cacheStore.useCache(
   1000 * 60 * 60 * 24,
 );
 
+// Règles d'ajustement des horaires
+interface TimeAdjustmentRule {
+  matchHour: number;
+  matchMinute: number;
+  appliesTo: 'start' | 'end';
+  setHour: number;
+  setMinute: number;
+}
+
+const TIME_ADJUSTMENT_RULES: TimeAdjustmentRule[] = [
+  // Pause matinale
+  {
+    matchHour: 10,
+    matchMinute: 0,
+    appliesTo: 'start',
+    setHour: 10,
+    setMinute: 10,
+  }, // Début 10h → 10h10
+  {
+    matchHour: 10,
+    matchMinute: 0,
+    appliesTo: 'end',
+    setHour: 9,
+    setMinute: 50,
+  }, // Fin 10h → 9h50
+  // Pause après-midi
+  {
+    matchHour: 16,
+    matchMinute: 0,
+    appliesTo: 'start',
+    setHour: 16,
+    setMinute: 10,
+  }, // Début 16h → 16h10
+  {
+    matchHour: 16,
+    matchMinute: 0,
+    appliesTo: 'end',
+    setHour: 15,
+    setMinute: 50,
+  }, // Fin 16h → 15h50
+];
+
+/*
+ * Ajuste l'heure selon les règles configurées
+ */
+function adjustTime(
+  date: Date,
+  type: 'start' | 'end',
+  rules: TimeAdjustmentRule[],
+): Date {
+  for (const rule of rules) {
+    if (
+      rule.appliesTo === type &&
+      date.getHours() === rule.matchHour &&
+      date.getMinutes() === rule.matchMinute
+    ) {
+      const adjusted = new Date(date);
+      adjusted.setHours(rule.setHour, rule.setMinute, 0, 0);
+      return adjusted;
+    }
+  }
+  return new Date(date);
+}
+
+/*
+ * Ajuste les horaires virtuels du calendrier ICS selon les règles configurées
+ */
+function adjustSchedule(
+  startDate: Date,
+  endDate: Date,
+): { start: Date; end: Date } {
+  const adjustedStart = adjustTime(startDate, 'start', TIME_ADJUSTMENT_RULES);
+  const adjustedEnd = adjustTime(endDate, 'end', TIME_ADJUSTMENT_RULES);
+
+  return { start: adjustedStart, end: adjustedEnd };
+}
+
 /*
  * Crée un tableau de cours à partir des données du fichier ICS
  */
 function createLessonsFromData(data: VEvent[]): Lesson[] {
   return data.map((lesson) => {
+    const startDate = new Date(lesson.start);
+    const endDate = new Date(lesson.end);
+
+    const { start, end } = adjustSchedule(startDate, endDate);
+
     return {
       name: lesson.summary,
-      start: new Date(lesson.start),
-      end: new Date(lesson.end),
+      start,
+      end,
       room: lesson.location.replaceAll('Remicourt_', '').toUpperCase(), // Balek du Remicourt
       teacher: lesson.description.split('\n')[2], // TODO: Trouver un moyen de récupérer le nom du prof
       color: getLessonColor(lesson.summary),
