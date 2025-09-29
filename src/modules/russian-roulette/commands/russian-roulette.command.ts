@@ -90,11 +90,11 @@ const TIMEOUT_OPTIONS = [
     probability: 50, 
     label: '5 minutes',
     messages: [
-      'Bang ! {user} a été mis en timeout pendant 5 minutes.',
-      'Clac ! {user} s\'est pris une petite pause de 5 minutes.',
-      'Oups ! {user} fait une sieste forcée de 5 minutes.',
-      'Bim ! {user} prend un petit temps mort de 5 minutes.',
-      'Paf ! {user} va réfléchir 5 minutes à ses actions.'
+      'RIP {user} 💀 5 minutes de timeout !',
+      'Oups ! {user} s\'est fait no-scope par Isabelle... 5 minutes !',
+      '{user} vient de se faire sus impostor 📮 5 minutes de penalty !',
+      'Skill issue ! {user} prend 5 minutes pour git gud 🎮',
+      'Isabelle t\'a vraiment fumée sur ce coup {user} ! 5 minutes de pause ☕'
     ]
   },
   { 
@@ -102,11 +102,11 @@ const TIMEOUT_OPTIONS = [
     probability: 30, 
     label: '10 minutes',
     messages: [
-      'Bang ! {user} a été mis en timeout pendant 10 minutes.',
-      'Badaboum ! {user} fait une pause de 10 minutes pour se calmer.',
-      'Plouf ! {user} s\'offre 10 minutes de méditation forcée.',
-      'Tchac ! {user} va compter jusqu\'à 600... lentement.',
-      'Vlan ! {user} prend 10 minutes pour réfléchir à sa vie.'
+      'F in the chat pour {user} ! 10 minutes de timeout 😭',
+      '{user} vient de découvrir que la vie c\'est pas un tuto YouTube... 10 minutes !',
+      'Bruh moment 💀 {user} se tape 10 minutes de réflexion !',
+      'Ratio + L + {user} prend 10 minutes 📉',
+      'Isabelle : "Et c\'est là que {user} a compris qu\'il avait merdé" 🎭 10 minutes !'
     ]
   },
   { 
@@ -114,11 +114,11 @@ const TIMEOUT_OPTIONS = [
     probability: 8, 
     label: '30 minutes',
     messages: [
-      'BANG ! {user} a été mis en timeout pendant 30 minutes.',
-      'Oh là là ! {user} va avoir le temps de faire une vraie sieste de 30 minutes !',
-      'Aïe aïe aïe ! {user} a touché le mauvais numéro... 30 minutes de réflexion !',
-      'Saperlipopette ! {user} va pouvoir regarder un épisode entier en attendant ses 30 minutes.',
-      'Ma foi ! {user} a décroché le gros lot... 30 minutes de silence radio !'
+      'EMOTIONAL DAMAGE ! 😱 {user} mange 30 minutes de timeout !',
+      '{user} vient de pull une branche en prod... 30 minutes pour réfléchir ! 🐛',
+      'Mamma mia ! {user} s\'est fait spaghetti code par Isabelle ! 🍝 30 minutes !',
+      'Plot twist : {user} pensait être le main character... 30 minutes de side quest ! 🎮',
+      'Isabelle mode hacker activé 👩‍💻 {user} debug pendant 30 minutes !'
     ]
   },
   { 
@@ -126,11 +126,11 @@ const TIMEOUT_OPTIONS = [
     probability: 7, 
     label: '1 heure',
     messages: [
-      'BOOM ! {user} a été mis en timeout pendant 1 heure entière !',
-      'Sacrée déveine ! {user} va avoir le temps de préparer le dîner... 1 heure de pause !',
-      'Quel malheur ! {user} vient de gagner 1 heure de contemplation existentielle !',
-      'Par tous les diables ! {user} a tiré le mauvais numéro... 1 heure de pénitence !',
-      'Tonnerre de Brest ! {user} va pouvoir faire une longue promenade... dans sa tête, pendant 1 heure !'
+      'GAME OVER ! 🎮 {user} respawn dans 1 heure !',
+      '{user} vient de commit sans tests... 1 heure de CI/CD en panne ! 🚨',
+      'Porco dio ! {user} s\'est fait rekt by Isabelle ! 🇮🇹 1 heure !',
+      'Achievement unlocked : "How did we get here?" {user} - 1 heure de timeout ! 🏆',
+      'Isabelle en mode "I\'m about to end this person\'s whole career" 😎 {user} : 1 heure !'
     ]
   },
   { 
@@ -138,11 +138,11 @@ const TIMEOUT_OPTIONS = [
     probability: 3, 
     label: '4 heures',
     messages: [
-      'EXPLOSION ! {user} a été mis en timeout pendant 4 HEURES ! Quelle catastrophe !',
-      'Nom d\'une pipe ! {user} vient de gagner un demi-journée de vacances... forcées ! 4 heures !',
-      'Sacré tonnerre ! {user} a décroché le jackpot de la malchance... 4 heures de silence !',
-      'Mille sabords ! {user} va avoir le temps de lire un livre entier... 4 heures de timeout !',
-      'Crénom de crénom ! {user} vient de découvrir ce que ça fait de vraiment perdre à la roulette... 4 heures !'
+      'CRITICAL ERROR 🔥 {user} needs 4 hours to recompile his life !',
+      '{user} a try-catch son existence mais a oublié le catch... 4 heures ! 💻',
+      'Madonna mia ! {user} s\'est fait carbonara par la roulette ! 🍝 4 heures !',
+      '{user} vient de découvrir le sens du mot "segfault" IRL... 4 heures ! ⚠️',
+      'Isabelle : "Some people just want to watch the world burn" 🔥 {user} : 4 heures !'
     ]
   },
   { 
@@ -150,11 +150,11 @@ const TIMEOUT_OPTIONS = [
     probability: 1.5, 
     label: '12 heures',
     messages: [
-      'CATACLYSME ! {user} a été mis en timeout pendant 12 HEURES ! Isabelle n\'en revient pas !',
-      'Grands dieux ! {user} vient de battre le record de la malchance... 12 heures de solitude !',
-      'Fichtre et foutre ! {user} va pouvoir dormir, manger, et dormir encore... 12 heures de pénitence !',
-      'Ventrebleu ! {user} vient de découvrir le vrai sens du mot "timeout"... 12 heures !',
-      'Sacré mille millions de mille sabords ! {user} a touché le gros lot de la déveine... 12 heures !'
+      'LEGENDARY FAIL ! 🏆 {user} entre dans le hall of fame des loosers ! 12 heures !',
+      '{user} vient de rm -rf sa chance... 12 heures de recovery ! 💾',
+      'Che cazzo ! {user} s\'est fait destroy par Isabelle ! 🇮🇹 12 heures !',
+      'Boss fight final : {user} vs Reality - Spoiler : Reality wins ! 12 heures ! ⚔️',
+      'Isabelle mode "I choose violence" activated 😈 {user} : 12 heures de souffrance !'
     ]
   },
   { 
@@ -162,11 +162,11 @@ const TIMEOUT_OPTIONS = [
     probability: 0.5, 
     label: '24 heures',
     messages: [
-      'APOCALYPSE ! {user} a été mis en timeout pendant 24 HEURES COMPLÈTES ! Isabelle est en état de choc !',
-      'Par la barbe de Neptune ! {user} vient de gagner une journée entière de réflexion... 24 heures !',
-      'Sapristi de sapristi ! {user} va avoir le temps de réviser toute sa vie... 24 heures de timeout !',
-      'Jarnidieu ! {user} vient de découvrir ce que veut dire "malchance légendaire"... 24 heures !',
-      'Corbleu et palsambleu ! {user} entre dans les annales de la roulette russe... 24 heures de bannissement temporaire !'
+      'ULTRA RARE ACHIEVEMENT UNLOCKED ! 🌟 {user} : "Touched grass... NOT" - 24 heures !',
+      '{user} vient de sudo rm -rf /life... 24 heures de kernel panic ! 💀',
+      'PORCO DIO SANTO ! {user} s\'est fait annihiler ! 🇮🇹 24 heures de punizione !',
+      'Speedrun World Record : {user} "How to lose at life%" - 24 heures ! 🏃‍♂️💨',
+      'Isabelle mode final boss activated ! {user} découvre le true ending : 24 heures ! 👑'
     ]
   }
 ];
