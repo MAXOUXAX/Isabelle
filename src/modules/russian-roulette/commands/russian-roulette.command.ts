@@ -50,6 +50,18 @@ export class RussianRouletteCommand implements IsabelleCommand {
         return;
       }
 
+      // If the target is someone else than the shooter, announce the gun jumped hands
+      if (targetId !== interaction.user.id) {
+        const preTargetMessage = RIPPED_OFF_MESSAGES[
+          Math.floor(Math.random() * RIPPED_OFF_MESSAGES.length)
+        ]
+          .replace('{shooter}', mentionId(interaction.user.id))
+          .replace('{target}', mentionId(targetId));
+
+        // reply first (acknowledge) then follow up with the pre-target message so it appears before the timeout message
+        await interaction.reply(preTargetMessage);
+      }
+
       // Get random timeout duration and message
       const { duration, label, message } = getRandomTimeoutDuration();
 
@@ -62,7 +74,12 @@ export class RussianRouletteCommand implements IsabelleCommand {
 
       // Replace {user} placeholder with actual mention
       const finalMessage = message.replace('{user}', mentionId(targetId));
-      await interaction.reply(finalMessage);
+      // If we already replied with the pre-target message (when target != shooter), followUp with the final timeout message
+      if (targetId !== interaction.user.id) {
+        await interaction.followUp(finalMessage);
+      } else {
+        await interaction.reply(finalMessage);
+      }
       console.debug(
         '[RussianRoulette] Timed-out user',
         targetId,
@@ -101,6 +118,15 @@ const SAFE_MESSAGES: string[] = [
   'Tu remportes cette manche — pas de sanction, juste des frissons.',
   "Personne n'est touché. Le chaos attendra un autre jour.",
   "Click ! Fiou, tout va bien. Tu es sûr de vouloir continuer à jouer ? Qui te dit que tu t'en sortiras la prochaine fois ?",
+];
+
+// Messages to announce when the gun rips out of the shooter's hands and targets someone else
+const RIPPED_OFF_MESSAGES: string[] = [
+  "Le pistolet s'est échappé des mains de {shooter} et vise maintenant {target} !",
+  'Surprise ! Le canon a glissé de {shooter} vers {target}. Attention...',
+  'OOPS ! {shooter} a laissé tomber le pistolet. Il vise désormais {target} !',
+  "{shooter} n'a pas fait attention et le pistolet pointe maintenant vers {target}. Glaçant !",
+  '{target}, tu mérites des excuses de {shooter}... Le pistolet est maintenant pointé vers toi.',
 ];
 
 // Available timeout durations with their probabilities
