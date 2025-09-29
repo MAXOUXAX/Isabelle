@@ -66,7 +66,6 @@ export class RussianRouletteCommand implements IsabelleCommand {
           .replace('{shooter}', mentionId(interaction.user.id))
           .replace('{target}', mentionId(targetId));
 
-        // reply first (acknowledge) then follow up with the pre-target message so it appears before the timeout message
         await interaction.reply(preTargetMessage);
       }
 
