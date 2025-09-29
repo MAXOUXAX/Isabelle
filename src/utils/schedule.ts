@@ -21,35 +21,79 @@ const cacheEntry = cacheStore.useCache(
   1000 * 60 * 60 * 24,
 );
 
+// Règles d'ajustement des horaires TELECOM Nancy
+interface TimeAdjustmentRule {
+  matchHour: number;
+  matchMinute: number;
+  appliesTo: 'start' | 'end';
+  setHour: number;
+  setMinute: number;
+}
+
+const TIME_ADJUSTMENT_RULES: TimeAdjustmentRule[] = [
+  // Pause matinale
+  {
+    matchHour: 10,
+    matchMinute: 0,
+    appliesTo: 'start',
+    setHour: 10,
+    setMinute: 10,
+  }, // Début 10h → 10h10
+  {
+    matchHour: 10,
+    matchMinute: 0,
+    appliesTo: 'end',
+    setHour: 9,
+    setMinute: 50,
+  }, // Fin 10h → 9h50
+  // Pause après-midi
+  {
+    matchHour: 16,
+    matchMinute: 0,
+    appliesTo: 'start',
+    setHour: 16,
+    setMinute: 10,
+  }, // Début 16h → 16h10
+  {
+    matchHour: 16,
+    matchMinute: 0,
+    appliesTo: 'end',
+    setHour: 15,
+    setMinute: 50,
+  }, // Fin 16h → 15h50
+];
+
 /*
- * Ajuste les horaires virtuels du calendrier ICS selon les règles TELECOM Nancy:
- * - Fin 10h → 9h50 (pause matinale)
- * - Début 10h → 10h10 (après pause matinale)
- * - Fin 16h → 15h50 (pause après-midi)
- * - Début 16h → 16h10 (après pause après-midi)
+ * Ajuste l'heure selon les règles TELECOM Nancy
+ */
+function adjustTime(
+  date: Date,
+  type: 'start' | 'end',
+  rules: TimeAdjustmentRule[],
+): Date {
+  for (const rule of rules) {
+    if (
+      rule.appliesTo === type &&
+      date.getHours() === rule.matchHour &&
+      date.getMinutes() === rule.matchMinute
+    ) {
+      const adjusted = new Date(date);
+      adjusted.setHours(rule.setHour, rule.setMinute, 0, 0);
+      return adjusted;
+    }
+  }
+  return new Date(date);
+}
+
+/*
+ * Ajuste les horaires virtuels du calendrier ICS selon les règles TELECOM Nancy
  */
 function adjustTelecomSchedule(
   startDate: Date,
   endDate: Date,
 ): { start: Date; end: Date } {
-  const adjustedStart = new Date(startDate);
-  const adjustedEnd = new Date(endDate);
-
-  // Règles pour 10h (pause matinale 9h50-10h10)
-  if (startDate.getHours() === 10 && startDate.getMinutes() === 0) {
-    adjustedStart.setHours(10, 10, 0, 0); // Début 10h → 10h10
-  }
-  if (endDate.getHours() === 10 && endDate.getMinutes() === 0) {
-    adjustedEnd.setHours(9, 50, 0, 0); // Fin 10h → 9h50
-  }
-
-  // Règles pour 16h (pause après-midi 15h50-16h10)
-  if (startDate.getHours() === 16 && startDate.getMinutes() === 0) {
-    adjustedStart.setHours(16, 10, 0, 0); // Début 16h → 16h10
-  }
-  if (endDate.getHours() === 16 && endDate.getMinutes() === 0) {
-    adjustedEnd.setHours(15, 50, 0, 0); // Fin 16h → 15h50
-  }
+  const adjustedStart = adjustTime(startDate, 'start', TIME_ADJUSTMENT_RULES);
+  const adjustedEnd = adjustTime(endDate, 'end', TIME_ADJUSTMENT_RULES);
 
   return { start: adjustedStart, end: adjustedEnd };
 }
