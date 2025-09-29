@@ -19,10 +19,13 @@ export class RussianRouletteCommand implements IsabelleCommand {
 
     const targetId = getGunTarget(interaction.user.id, guild);
 
+    const randomSafeMessage =
+      SAFE_MESSAGES[Math.floor(Math.random() * SAFE_MESSAGES.length)];
+
     // No one got hit this round.
     if (targetId == null) {
       numberOfGamesSinceLastKill++;
-      await interaction.reply('Click ! Tu as survécu à la roulette russe, GG');
+      await interaction.reply(randomSafeMessage);
       return;
     }
 
@@ -34,9 +37,7 @@ export class RussianRouletteCommand implements IsabelleCommand {
       if (!member) {
         console.warn('[RussianRoulette] Impossible de récupérer le membre');
         numberOfGamesSinceLastKill++; // pas de kill finalement
-        await interaction.reply(
-          'Click ! Tu as survécu à la roulette russe, GG',
-        );
+        await interaction.reply(randomSafeMessage);
         return;
       }
 
@@ -82,6 +83,25 @@ const PERCENTAGES = {
   kill_other: 0.1, // 10% chance the gun points to someone else instead of self
   is_killing: 0.1, // Base chance that the trigger actually fires (scaled dynamically)
 };
+
+const SAFE_MESSAGES: string[] = [
+  'Click ! Tu as survécu à la roulette russe, bien joué 🎯',
+  "*tic* Ouf, tout va bien, tu t'en sors cette fois-ci 😅",
+  "Click ! Le canon était vide. Respire, tu es sauf pour l'instant.",
+  'Tu as tiré dans le vide. Quelle chance ! 🍀',
+  "Le pistolet n'a pas tiré. Sauvé. Profite de ton silence.",
+  'La chambre était vide. Tu t’en sors sans une égratignure.',
+  'Bang manqué. Cette fois, c’est une victoire pour toi 👍',
+  'La chance est de ton côté aujourd’hui. Ne la gaspille pas 😉',
+  'Coup évité de justesse, fait gaffe, on se calme et on respire 🫡',
+  'Le canon a déraillé. Pas de timeout pour toi cette fois.',
+  'Suspense... click. Tu es sauf, mais reste prudent.',
+  'Un hasard bienveillant t’a épargné. Raconte pas trop, ça attire la malchance 🤫',
+  'Le sort t’a oublié cette fois-ci. Profite de ta liberté temporaire.',
+  'Tu remportes cette manche — pas de sanction, juste des frissons.',
+  "Personne n'est touché. Le chaos attendra un autre jour.",
+  "Click ! Fiou, tout va bien. Tu es sûr de vouloir continuer à jouer ? Qui te dit que tu t'en sortiras la prochaine fois ?",
+];
 
 // Available timeout durations with their probabilities
 const TIMEOUT_OPTIONS = [
