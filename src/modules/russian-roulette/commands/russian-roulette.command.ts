@@ -1,6 +1,11 @@
 import { IsabelleCommand } from '@/manager/commands/command.interface.js';
 import { mentionId } from '@/utils/mention.js';
-import { CommandInteraction, Guild, SlashCommandBuilder } from 'discord.js';
+import {
+  CommandInteraction,
+  Guild,
+  MessageFlags,
+  SlashCommandBuilder,
+} from 'discord.js';
 
 export class RussianRouletteCommand implements IsabelleCommand {
   commandData: SlashCommandBuilder = new SlashCommandBuilder()
@@ -13,7 +18,10 @@ export class RussianRouletteCommand implements IsabelleCommand {
     const guild = interaction.guild;
 
     if (!guild) {
-      await interaction.reply('Vous ne pouvez pas jouer en DM !');
+      await interaction.reply({
+        content: 'Vous ne pouvez pas jouer en DM.',
+        flags: MessageFlags.Ephemeral,
+      });
       return;
     }
 
@@ -36,7 +44,7 @@ export class RussianRouletteCommand implements IsabelleCommand {
 
       if (!member) {
         console.warn('[RussianRoulette] Impossible de récupérer le membre');
-        numberOfGamesSinceLastKill++; // pas de kill finalement
+        numberOfGamesSinceLastKill++; // pas de sanction finalement
         await interaction.reply(randomSafeMessage);
         return;
       }
@@ -48,6 +56,17 @@ export class RussianRouletteCommand implements IsabelleCommand {
         );
         console.debug('[RussianRoulette] Target not moderatable', targetId);
         return;
+      }
+
+      // If the target is someone else than the shooter, announce the gun jumped hands
+      if (targetId !== interaction.user.id) {
+        const preTargetMessage = RIPPED_OFF_MESSAGES[
+          Math.floor(Math.random() * RIPPED_OFF_MESSAGES.length)
+        ]
+          .replace('{shooter}', mentionId(interaction.user.id))
+          .replace('{target}', mentionId(targetId));
+
+        await interaction.reply(preTargetMessage);
       }
 
       // Get random timeout duration and message
@@ -62,7 +81,12 @@ export class RussianRouletteCommand implements IsabelleCommand {
 
       // Replace {user} placeholder with actual mention
       const finalMessage = message.replace('{user}', mentionId(targetId));
-      await interaction.reply(finalMessage);
+      // If we already replied with the pre-target message (when target != shooter), followUp with the final timeout message
+      if (targetId !== interaction.user.id) {
+        await interaction.followUp(finalMessage);
+      } else {
+        await interaction.reply(finalMessage);
+      }
       console.debug(
         '[RussianRoulette] Timed-out user',
         targetId,
@@ -72,13 +96,13 @@ export class RussianRouletteCommand implements IsabelleCommand {
       console.error('[RussianRoulette] Error while timing out user', e);
       numberOfGamesSinceLastKill++;
       await interaction.reply(
-        `Le pistolet s'enraye... Personne ne meurt cette fois-ci (erreur: ${(e as Error).name}).`,
+        `Le pistolet s'enraye... Personne n'est sanctionné cette fois-ci (erreur : ${(e as Error).name}).`,
       );
     }
   }
 }
 
-// Probabilities (tweak as needed)
+// Probabilities (adjust if needed)
 const PERCENTAGES = {
   kill_other: 0.1, // 10% chance the gun points to someone else instead of self
   is_killing: 0.1, // Base chance that the trigger actually fires (scaled dynamically)
@@ -103,6 +127,15 @@ const SAFE_MESSAGES: string[] = [
   "Click ! Fiou, tout va bien. Tu es sûr de vouloir continuer à jouer ? Qui te dit que tu t'en sortiras la prochaine fois ?",
 ];
 
+// Messages to announce when the gun rips out of the shooter's hands and targets someone else
+const RIPPED_OFF_MESSAGES: string[] = [
+  "Le pistolet s'est échappé des mains de {shooter} et vise maintenant {target} !",
+  'Surprise ! Le canon a glissé de {shooter} vers {target}. Attention...',
+  'OOPS ! {shooter} a laissé tomber le pistolet. Il vise désormais {target} !',
+  "{shooter} n'a pas fait attention et le pistolet pointe maintenant vers {target}. Glaçant !",
+  '{target}, tu mérites des excuses de {shooter}... Le pistolet est maintenant pointé vers toi.',
+];
+
 // Available timeout durations with their probabilities
 const TIMEOUT_OPTIONS = [
   {
@@ -123,7 +156,7 @@ const TIMEOUT_OPTIONS = [
     label: '10 minutes',
     messages: [
       "La dernière blague de {user} a fait tellement de bruit qu'on a cru entendre le rire de Bouthier. Fausse alerte. 10 minutes de silence.",
-      "J'ai analysé le profil de {user} et a trouvé des propos... problématiques. Mopty serait fier. 10 minutes pour réfléchir à tes actes cela dit.",
+      "J'ai analysé le profil de {user} et j'ai trouvé des propos... problématiques. Mopty serait fier. 10 minutes pour réfléchir à tes actes cela dit.",
       "J'ai bien compté {user} et je crois je viens de te mettre 10 minutes dans les dents. Profite bien :)",
       "Bonjour Mme Sauvi ! Ah non pardon, il y a mésentente. C'est {user} qui vient de se faire recaler pendant 10 minutes.",
       "{user} est coincé dans une boucle d'entretiens avec Marc Vélocité. Il faut bien 10 minutes pour s'en remettre.",
