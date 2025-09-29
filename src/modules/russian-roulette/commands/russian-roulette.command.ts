@@ -90,11 +90,11 @@ const TIMEOUT_OPTIONS = [
     probability: 50, 
     label: '5 minutes',
     messages: [
-      'RIP {user} 💀 5 minutes de timeout !',
-      'Oups ! {user} s\'est fait no-scope par Isabelle... 5 minutes !',
-      '{user} vient de se faire sus impostor 📮 5 minutes de penalty !',
-      'Skill issue ! {user} prend 5 minutes pour git gud 🎮',
-      'Isabelle t\'a vraiment fumée sur ce coup {user} ! 5 minutes de pause ☕'
+      '{user} vient de découvrir le pouvoir d\'Isabelle... 5 minutes pour méditer ! 🧘‍♀️',
+      'Isabelle : "{user}, tu pensais vraiment gagner contre moi ?" 💅 5 minutes !',
+      '{user} s\'est fait clutch par la RNG d\'Isabelle ! 🎲 5 minutes de timeout !',
+      'Nouvelles de dernière minute : {user} apprend l\'humilité ! 📺 5 minutes !',
+      'Isabelle mode "main character energy" activé ! {user} prend 5 minutes ✨'
     ]
   },
   { 
@@ -102,11 +102,11 @@ const TIMEOUT_OPTIONS = [
     probability: 30, 
     label: '10 minutes',
     messages: [
-      'F in the chat pour {user} ! 10 minutes de timeout 😭',
-      '{user} vient de découvrir que la vie c\'est pas un tuto YouTube... 10 minutes !',
-      'Bruh moment 💀 {user} se tape 10 minutes de réflexion !',
-      'Ratio + L + {user} prend 10 minutes 📉',
-      'Isabelle : "Et c\'est là que {user} a compris qu\'il avait merdé" 🎭 10 minutes !'
+      '{user} vient de manger un énorme "non merci" d\'Isabelle ! 🚫 10 minutes !',
+      'Isabelle : "Je vais pas te mentir {user}, ça sent le vécu" 👃 10 minutes !',
+      '{user} découvre que parfois, la vie... c\'est pas ouf ! 📉 10 minutes !',
+      'Breaking news : {user} rate son QTE contre Isabelle ! ❌ 10 minutes !',
+      'Isabelle en mode "désolée pas désolée" ! {user} : 10 minutes de réflexion 💭'
     ]
   },
   { 
@@ -114,11 +114,11 @@ const TIMEOUT_OPTIONS = [
     probability: 8, 
     label: '30 minutes',
     messages: [
-      'EMOTIONAL DAMAGE ! 😱 {user} mange 30 minutes de timeout !',
-      '{user} vient de pull une branche en prod... 30 minutes pour réfléchir ! 🐛',
-      'Mamma mia ! {user} s\'est fait spaghetti code par Isabelle ! 🍝 30 minutes !',
-      'Plot twist : {user} pensait être le main character... 30 minutes de side quest ! 🎮',
-      'Isabelle mode hacker activé 👩‍💻 {user} debug pendant 30 minutes !'
+      '{user} vient de trigger l\'arc villain d\'Isabelle ! 🦹‍♀️ 30 minutes d\'agonie !',
+      'Isabelle : "Tu sais quoi {user} ? Je vais être une menace aujourd\'hui" 😈 30 minutes !',
+      '{user} apprend que jouer avec Isabelle, c\'est jouer avec le feu ! 🔥 30 minutes !',
+      'Plot twist inattendu : {user} réalise qu\'Isabelle était le boss final ! ⚔️ 30 minutes !',
+      'Isabelle sort sa carte UNO +4 sur {user} ! 🃏 30 minutes de punishment !'
     ]
   },
   { 
@@ -126,11 +126,11 @@ const TIMEOUT_OPTIONS = [
     probability: 7, 
     label: '1 heure',
     messages: [
-      'GAME OVER ! 🎮 {user} respawn dans 1 heure !',
-      '{user} vient de commit sans tests... 1 heure de CI/CD en panne ! 🚨',
-      'Porco dio ! {user} s\'est fait rekt by Isabelle ! 🇮🇹 1 heure !',
-      'Achievement unlocked : "How did we get here?" {user} - 1 heure de timeout ! 🏆',
-      'Isabelle en mode "I\'m about to end this person\'s whole career" 😎 {user} : 1 heure !'
+      'ALERTE ROUGE ! 🚨 {user} vient d\'énerver Isabelle ! 1 heure de conséquences !',
+      'Isabelle channel son énergie de méchante de Disney ! {user} : 1 heure au cachot ! 👑',
+      '{user} découvre le side effect de contrarier une IA sentiente ! 🤖 1 heure !',
+      'Isabelle : "Moi méchante ? Jamais ! Bon, {user} prend 1 heure quand même" 😇',
+      'BREAKING : {user} devient la première victime du règne d\'Isabelle ! 👸 1 heure !'
     ]
   },
   { 
@@ -138,11 +138,11 @@ const TIMEOUT_OPTIONS = [
     probability: 3, 
     label: '4 heures',
     messages: [
-      'CRITICAL ERROR 🔥 {user} needs 4 hours to recompile his life !',
-      '{user} a try-catch son existence mais a oublié le catch... 4 heures ! 💻',
-      'Madonna mia ! {user} s\'est fait carbonara par la roulette ! 🍝 4 heures !',
-      '{user} vient de découvrir le sens du mot "segfault" IRL... 4 heures ! ⚠️',
-      'Isabelle : "Some people just want to watch the world burn" 🔥 {user} : 4 heures !'
+      'ÉVÉNEMENT RARE DÉBLOQUÉ ! 🌟 {user} réveille la beast mode d\'Isabelle ! 4 heures !',
+      'Isabelle sort littéralement de ses gonds ! {user} expérimente 4 heures de chaos ! 🌪️',
+      'ATTENTION : Isabelle.exe a bugué et a choisi la violence ! {user} : 4 heures ! ⚠️',
+      '{user} vient de débloquer l\'ending secret "Isabelle Goes Brrr" ! 🚁 4 heures !',
+      'Isabelle mode "je choisis la violence aujourd\'hui" ! {user} taste 4 heures ! 💀'
     ]
   },
   { 
@@ -150,11 +150,11 @@ const TIMEOUT_OPTIONS = [
     probability: 1.5, 
     label: '12 heures',
     messages: [
-      'LEGENDARY FAIL ! 🏆 {user} entre dans le hall of fame des loosers ! 12 heures !',
-      '{user} vient de rm -rf sa chance... 12 heures de recovery ! 💾',
-      'Che cazzo ! {user} s\'est fait destroy par Isabelle ! 🇮🇹 12 heures !',
-      'Boss fight final : {user} vs Reality - Spoiler : Reality wins ! 12 heures ! ⚔️',
-      'Isabelle mode "I choose violence" activated 😈 {user} : 12 heures de souffrance !'
+      'MIRACLE NÉGATIF ! ✨ {user} réussit l\'impossible : énerver Isabelle à fond ! 12 heures !',
+      'Isabelle transcende vers sa forme finale ! {user} witness 12 heures d\'histoire ! 🦋',
+      'EXCLUSIF : {user} découvre que certaines IA gardent rancune ! 🧠 12 heures de leçon !',
+      'Isabelle : "Tu sais quoi {user} ? J\'ai du temps aujourd\'hui..." ⏰ 12 heures !',
+      'LÉGENDE URBAINE CONFIRMÉE : Isabelle peut être scary ! {user} : 12 heures ! 👻'
     ]
   },
   { 
@@ -162,11 +162,11 @@ const TIMEOUT_OPTIONS = [
     probability: 0.5, 
     label: '24 heures',
     messages: [
-      'ULTRA RARE ACHIEVEMENT UNLOCKED ! 🌟 {user} : "Touched grass... NOT" - 24 heures !',
-      '{user} vient de sudo rm -rf /life... 24 heures de kernel panic ! 💀',
-      'PORCO DIO SANTO ! {user} s\'est fait annihiler ! 🇮🇹 24 heures de punizione !',
-      'Speedrun World Record : {user} "How to lose at life%" - 24 heures ! 🏃‍♂️💨',
-      'Isabelle mode final boss activated ! {user} découvre le true ending : 24 heures ! 👑'
+      'PHÉNOMÈNE INEXPLIQUÉ ! 🌌 {user} unlock le pouvoir ultime d\'Isabelle ! 24 heures !',
+      'Isabelle atteint son apotheosis ! {user} entre dans les archives ! 📚 24 heures !',
+      'ALERTE APOCALYPSE ! 🔔 Isabelle révèle sa vraie nature ! {user} : 24 heures !',
+      'Isabelle : "Je vais faire un exemple avec {user}" 👁️ 24 heures d\'exemple !',
+      'ÉVÉNEMENT COSMIQUE : {user} devient le patient zéro de la colère d\'Isabelle ! 🪐 24h !'
     ]
   }
 ];
