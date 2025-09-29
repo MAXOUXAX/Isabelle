@@ -49,16 +49,18 @@ export class RussianRouletteCommand implements IsabelleCommand {
         return;
       }
 
-      // 5 minutes timeout
+      // Get random timeout duration
+      const { duration, label } = getRandomTimeoutDuration();
+
       await member.timeout(
-        TIMEOUT_DURATION_MS,
-        'Perdu à la roulette russe (timeout 5 min)',
+        duration,
+        `Perdu à la roulette russe (timeout ${label})`,
       );
 
       numberOfGamesSinceLastKill = 0;
 
       await interaction.reply(
-        `Bang ! ${mentionId(targetId)} a été mis en timeout pendant 5 minutes.`,
+        `Bang ! ${mentionId(targetId)} a été mis en timeout pendant ${label}.`,
       );
       console.debug(
         '[RussianRoulette] Timed-out user',
@@ -81,8 +83,37 @@ const PERCENTAGES = {
   is_killing: 0.1, // Base chance that the trigger actually fires (scaled dynamically)
 };
 
-// Duration of the timeout applied when a player "dies" (5 minutes)
-const TIMEOUT_DURATION_MS = 5 * 60 * 1000;
+// Available timeout durations with their probabilities
+const TIMEOUT_OPTIONS = [
+  { duration: 5 * 60 * 1000, probability: 25, label: '5 minutes' }, // 25%
+  { duration: 10 * 60 * 1000, probability: 20, label: '10 minutes' }, // 20%
+  { duration: 30 * 60 * 1000, probability: 15, label: '30 minutes' }, // 15%
+  { duration: 60 * 60 * 1000, probability: 15, label: '1 heure' }, // 15%
+  { duration: 4 * 60 * 60 * 1000, probability: 15, label: '4 heures' }, // 15%
+  { duration: 12 * 60 * 60 * 1000, probability: 5, label: '12 heures' }, // 5%
+  { duration: 24 * 60 * 60 * 1000, probability: 5, label: '24 heures' }, // 5%
+];
+
+/**
+ * Selects a random timeout duration based on weighted probabilities
+ */
+function getRandomTimeoutDuration(): { duration: number; label: string } {
+  const random = Math.random() * 100; // 0-100
+  let cumulative = 0;
+
+  for (const option of TIMEOUT_OPTIONS) {
+    cumulative += option.probability;
+    if (random < cumulative) {
+      return { duration: option.duration, label: option.label };
+    }
+  }
+
+  // Fallback to first option (should never happen)
+  return {
+    duration: TIMEOUT_OPTIONS[0].duration,
+    label: TIMEOUT_OPTIONS[0].label,
+  };
+}
 
 let numberOfGamesSinceLastKill = 0;
 
