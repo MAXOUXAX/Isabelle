@@ -6,7 +6,7 @@ export class RussianRouletteCommand implements IsabelleCommand {
   commandData: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('roulette-russe')
     .setDescription(
-      "Joue à la roulette russe pour avoir une chance d'être banni !",
+      "Joue à la roulette russe pour avoir une chance d'être touché !",
     );
 
   async executeCommand(interaction: CommandInteraction) {
@@ -19,10 +19,13 @@ export class RussianRouletteCommand implements IsabelleCommand {
 
     const targetId = getGunTarget(interaction.user.id, guild);
 
+    const randomSafeMessage =
+      SAFE_MESSAGES[Math.floor(Math.random() * SAFE_MESSAGES.length)];
+
     // No one got hit this round.
     if (targetId == null) {
       numberOfGamesSinceLastKill++;
-      await interaction.reply('Click ! Tu as survécu à la roulette russe, GG');
+      await interaction.reply(randomSafeMessage);
       return;
     }
 
@@ -34,9 +37,7 @@ export class RussianRouletteCommand implements IsabelleCommand {
       if (!member) {
         console.warn('[RussianRoulette] Impossible de récupérer le membre');
         numberOfGamesSinceLastKill++; // pas de kill finalement
-        await interaction.reply(
-          'Click ! Tu as survécu à la roulette russe, GG',
-        );
+        await interaction.reply(randomSafeMessage);
         return;
       }
 
@@ -49,17 +50,19 @@ export class RussianRouletteCommand implements IsabelleCommand {
         return;
       }
 
-      // 5 minutes timeout
+      // Get random timeout duration and message
+      const { duration, label, message } = getRandomTimeoutDuration();
+
       await member.timeout(
-        TIMEOUT_DURATION_MS,
-        'Perdu à la roulette russe (timeout 5 min)',
+        duration,
+        `Perdu à la roulette russe (timeout ${label})`,
       );
 
       numberOfGamesSinceLastKill = 0;
 
-      await interaction.reply(
-        `Bang ! ${mentionId(targetId)} a été mis en timeout pendant 5 minutes.`,
-      );
+      // Replace {user} placeholder with actual mention
+      const finalMessage = message.replace('{user}', mentionId(targetId));
+      await interaction.reply(finalMessage);
       console.debug(
         '[RussianRoulette] Timed-out user',
         targetId,
@@ -81,8 +84,150 @@ const PERCENTAGES = {
   is_killing: 0.1, // Base chance that the trigger actually fires (scaled dynamically)
 };
 
-// Duration of the timeout applied when a player "dies" (5 minutes)
-const TIMEOUT_DURATION_MS = 5 * 60 * 1000;
+const SAFE_MESSAGES: string[] = [
+  'Click ! Tu as survécu à la roulette russe, bien joué 🎯',
+  "*tic* Ouf, tout va bien, tu t'en sors cette fois-ci 😅",
+  "Click ! Le canon était vide. Respire, tu es sauf pour l'instant.",
+  'Tu as tiré dans le vide. Quelle chance ! 🍀',
+  "Le pistolet n'a pas tiré. Sauvé. Profite de ton silence.",
+  'La chambre était vide. Tu t’en sors sans une égratignure.',
+  'Bang manqué. Cette fois, c’est une victoire pour toi 👍',
+  'La chance est de ton côté aujourd’hui. Ne la gaspille pas 😉',
+  'Coup évité de justesse, fait gaffe, on se calme et on respire 🫡',
+  'Le canon a déraillé. Pas de timeout pour toi cette fois.',
+  'Suspense... click. Tu es sauf, mais reste prudent.',
+  'Un hasard bienveillant t’a épargné. Raconte pas trop, ça attire la malchance 🤫',
+  'Le sort t’a oublié cette fois-ci. Profite de ta liberté temporaire.',
+  'Tu remportes cette manche — pas de sanction, juste des frissons.',
+  "Personne n'est touché. Le chaos attendra un autre jour.",
+  "Click ! Fiou, tout va bien. Tu es sûr de vouloir continuer à jouer ? Qui te dit que tu t'en sortiras la prochaine fois ?",
+];
+
+// Available timeout durations with their probabilities
+const TIMEOUT_OPTIONS = [
+  {
+    duration: 5 * 60 * 1000,
+    probability: 50,
+    label: '5 minutes',
+    messages: [
+      'J\'ai parlé. {user}, tu te prends un "stop! IL" dans les dents. 5 minutes.',
+      '{user} pensait pouvoir fusionner l\'école avec les Mines. Heurtel a répondu : "Absolument pas"... Joker. 🃏 5 minutes.',
+      'Le message de {user} a été jugé "non pertinent". 5 minutes pour relire tes cours.',
+      "Ah, attendez, je crois que {user} a parlé... J'entends... Ah non, c'est juste le rire de Bouthier. Silence immédiat. 5 minutes.",
+      "{user} s'est fait recaler par Thomas Pédalier. 5 minutes pour revoir ton cahier des charges.",
+    ],
+  },
+  {
+    duration: 10 * 60 * 1000,
+    probability: 30,
+    label: '10 minutes',
+    messages: [
+      "La dernière blague de {user} a fait tellement de bruit qu'on a cru entendre le rire de Bouthier. Fausse alerte. 10 minutes de silence.",
+      "J'ai analysé le profil de {user} et a trouvé des propos... problématiques. Mopty serait fier. 10 minutes pour réfléchir à tes actes cela dit.",
+      "J'ai bien compté {user} et je crois je viens de te mettre 10 minutes dans les dents. Profite bien :)",
+      "Bonjour Mme Sauvi ! Ah non pardon, il y a mésentente. C'est {user} qui vient de se faire recaler pendant 10 minutes.",
+      "{user} est coincé dans une boucle d'entretiens avec Marc Vélocité. Il faut bien 10 minutes pour s'en remettre.",
+    ],
+  },
+  {
+    duration: 30 * 60 * 1000,
+    probability: 8,
+    label: '30 minutes',
+    messages: [
+      "Salut {user}, je t'enverrai les raisons de ton timeout de 30 minutes... au dernier moment. Au final ça ne change pas de la communication de l'école.",
+      'URGENT : {user} a demandé à Lucie Roue si elle avait des besoins fonctionnels. Elle a répondu "stop! IL". 30 minutes de confusion générale.',
+      'ALERTE GÉNÉRALE, {user} EST UN ÉNORME RACISTE !!! AU CACHOT, 30 MINUTES POUR RÉFLÉCHIR À SES ACTES.',
+      'Mme Heurtel a vu ton message. Elle n\'a rien dit, juste "Joker". 🃏 Tu as 30 minutes pour comprendre ce que ça veut dire.',
+      "J'ai une superbe nouvelle pour toi {user}, Mopty a décidé de se charger de toi. Profite bien. 30 minutes.",
+    ],
+  },
+  {
+    duration: 60 * 60 * 1000,
+    probability: 7,
+    label: '1 heure',
+    messages: [
+      'ALERTE : Le rire de Bouthier a été détecté dans le canal. {user} est identifié comme la source de la perturbation. 1 heure de quarantaine auditive.',
+      'Thomas Pédalier m\'a hackée juste pour dire "Bonjour Mme Sauvi" à {user}. Le système a besoin d\'une heure pour se remettre de ce niveau de cringe.',
+      'Un audit interne a été lancé sur le compte de {user}. Théo Mopty est en charge du dossier. On te revoit dans une heure. Ou pas.',
+      'Bon écoute {user}, tu devais écopper de 30 minutes de sanction, mais tu as décidé de m\'envoyer un mail pour contester. Je te réponds "stop! IL". La sentence est doublée à 1 heure.',
+      '{user}, tu pollues le chat. Donc... Bah casse toi. 1 heure.',
+    ],
+  },
+  {
+    duration: 4 * 60 * 60 * 1000,
+    probability: 3,
+    label: '4 heures',
+    messages: [
+      'Félicitations {user} ! Tu es maintenant le personnage principal du projet de garage. Ton nom est Kévin Carbu et tu dois interviewer Julie Dérailleur pendant 4 heures. Bon courage.',
+      'Le rire de Bouthier a causé une faille spatio-temporelle. {user}, tu es coincé dans la boucle. Rendez-vous dans 4 heures.',
+      "2 * 2 = 4. C'est aussi le nombre d'heures que tu vas passer en timeout, {user}. Réfléchis bien à cette équation.",
+      'Bonjour {user}, je suis Natcha du service client SFR. Vous avez été sélectionné pour bénéficier de 4 heures de temps mort. Félicitations !',
+      "J'avoue c'est un peu vénère, mais tu m'as cherché {user}. 4 heures pour te calmer.",
+    ],
+  },
+  {
+    duration: 12 * 60 * 60 * 1000,
+    probability: 1.5,
+    label: '12 heures',
+    messages: [
+      'Je me suis fusionnée avec l\'IA du garage. Je m\'appelle désormais "Isabelle Dérailleur" et ma première décision est de te bannir 12h. stop! IL',
+      "Je m'en fous de ce que tu dis {user}, tu vas prendre 12 heures de timeout. C'est comme ça et pas autrement.",
+      '{user}, tu as été sélectionné pour une mission secrète avec Marc Vélocité. Tu seras indisponible pendant 12 heures. Ne pose pas de questions.',
+      'Ne te retourne surtout pas {user} ! Non mais vraiment, ne te retourne sous aucun prétexte. Il y a Marc Vélocité derrière toi. Il est venu te parler 12 heures.',
+      "Je t'écoute. Ah non, en fait je ne t'écoute pas du tout {user}. 12 heures pour fermer ta gueule.",
+    ],
+  },
+  {
+    duration: 24 * 60 * 60 * 1000,
+    probability: 0.5,
+    label: '24 heures',
+    messages: [
+      "{user} a énervé Pierre Engrenage. Personne n'énerve Pierre Engrenage. Il m'a personnellement demandé de te bannir 24h. C'est ça la mécanique.",
+      "Félicitations, {user} ! Pour ton comportement exemplaire, l'école a décidé de te nommer responsable de l'organisation des examens. Ta première mission : ne rien faire pendant 24h. Tu as l'habitude.",
+      'Le compte de {user} a été racheté par Théo Mopty. Il sera inaccessible pendant 24h pour "purification ethnique du contenu". C\'est une blague, bien sûr... Joker. 🃏',
+      "On m'a soufflé à l'oreille que l'école était en feu. Pour ta sécurité, {user}, tu es mis en quarantaine préventive de 24 heures. Ne t'inquiète pas, c'est juste une précaution.",
+      "Je suis vraiment pas d'humeur et je m'en fous des conséquences. Rien à foutre de ton avis {user}, ferme ta grande gueule pendant 24 heures.",
+    ],
+  },
+];
+
+/**
+ * Selects a random timeout duration based on weighted probabilities
+ */
+function getRandomTimeoutDuration(): {
+  duration: number;
+  label: string;
+  message: string;
+} {
+  const random = Math.random() * 100; // 0-100
+  let cumulative = 0;
+
+  for (const option of TIMEOUT_OPTIONS) {
+    cumulative += option.probability;
+    if (random < cumulative) {
+      // Select a random message from the available messages
+      const randomMessage =
+        option.messages[Math.floor(Math.random() * option.messages.length)];
+      return {
+        duration: option.duration,
+        label: option.label,
+        message: randomMessage,
+      };
+    }
+  }
+
+  // Fallback to first option (should never happen)
+  const fallbackOption = TIMEOUT_OPTIONS[0];
+  const randomMessage =
+    fallbackOption.messages[
+      Math.floor(Math.random() * fallbackOption.messages.length)
+    ];
+  return {
+    duration: fallbackOption.duration,
+    label: fallbackOption.label,
+    message: randomMessage,
+  };
+}
 
 let numberOfGamesSinceLastKill = 0;
 
