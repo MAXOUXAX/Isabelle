@@ -15,6 +15,13 @@
       "when": 1758571826097,
       "tag": "0001_seed-automatic-responses",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1759213279608,
+      "tag": "0002_opposite_firedrake",
+      "breakpoints": true
     }
   ]
 }
