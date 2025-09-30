@@ -26,13 +26,21 @@ export default async function guessWordSubcommand(
 
   switch (wordOutcome) {
     case AttemptOutcome.WORD_REPEATED:
-      interaction.reply('Tu as déjà essayé ce mot !').catch((e: unknown) => {
-        console.error(e);
-      });
+      interaction
+        .reply({
+          content: 'Tu as déjà essayé ce mot !',
+          ephemeral: game.isDailyWord,
+        })
+        .catch((e: unknown) => {
+          console.error(e);
+        });
       break;
     case AttemptOutcome.WORD_LENGTH_MISMATCH:
       interaction
-        .reply("Le mot que tu as proposé n'a pas la bonne longueur !")
+        .reply({
+          content: "Le mot que tu as proposé n'a pas la bonne longueur !",
+          ephemeral: game.isDailyWord,
+        })
         .catch((e: unknown) => {
           console.error(e);
         });
@@ -42,7 +50,11 @@ export default async function guessWordSubcommand(
         `❌ Tu as utilisé toutes tes tentatives ! Le mot était: **${game.word.toUpperCase()}**`,
       );
       await interaction
-        .reply({ embeds: [embed], files: [attachment] })
+        .reply({
+          embeds: [embed],
+          files: [attachment],
+          ephemeral: game.isDailyWord,
+        })
         .catch((e: unknown) => {
           console.error(e);
         });
@@ -51,7 +63,11 @@ export default async function guessWordSubcommand(
     }
     case AttemptOutcome.UNKNOWN_WORD:
       interaction
-        .reply("Le mot que tu as proposé n'existe pas dans le dictionnaire !")
+        .reply({
+          content:
+            "Le mot que tu as proposé n'existe pas dans le dictionnaire !",
+          ephemeral: game.isDailyWord,
+        })
         .catch((e: unknown) => {
           console.error(e);
         });
@@ -61,7 +77,11 @@ export default async function guessWordSubcommand(
         `🎉 Bravo, tu as trouvé le mot: **${game.word.toUpperCase()}**`,
       );
       await interaction
-        .reply({ embeds: [embed], files: [attachment] })
+        .reply({
+          embeds: [embed],
+          files: [attachment],
+          ephemeral: game.isDailyWord,
+        })
         .catch((e: unknown) => {
           console.error(e);
         });
@@ -71,19 +91,28 @@ export default async function guessWordSubcommand(
     case AttemptOutcome.VALID_WORD: {
       const remaining = 6 - game.wordHistory.length;
       const { embed, attachment } = game.buildBoard(
-        `Il te reste **${String(remaining)}** tentative${remaining > 1 ? 's' : ''}.`,
+        `Il te reste **${remaining.toString()}** tentative${remaining > 1 ? 's' : ''}.`,
       );
       interaction
-        .reply({ embeds: [embed], files: [attachment] })
+        .reply({
+          embeds: [embed],
+          files: [attachment],
+          ephemeral: game.isDailyWord,
+        })
         .catch((e: unknown) => {
           console.error(e);
         });
       break;
     }
     default:
-      interaction.reply('Erreur inconnue !').catch((e: unknown) => {
-        console.error(e);
-      });
+      interaction
+        .reply({
+          content: 'Erreur inconnue !',
+          ephemeral: game.isDailyWord,
+        })
+        .catch((e: unknown) => {
+          console.error(e);
+        });
       break;
   }
 }

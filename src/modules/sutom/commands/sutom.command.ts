@@ -1,5 +1,6 @@
 import { IsabelleCommand } from '@/manager/commands/command.interface.js';
 import startSutomSubcommand from '@/modules/sutom/commands/subcommands/start-sutom.js';
+import startDailySutomSubcommand from '@/modules/sutom/commands/subcommands/start-daily-sutom.js';
 import stopSutomSubcommand from '@/modules/sutom/commands/subcommands/stop-sutom.js';
 import guessWordSubcommand from '@/modules/sutom/commands/subcommands/sutom-guess.js';
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
@@ -14,6 +15,11 @@ export class SutomCommand implements IsabelleCommand {
       subcommand
         .setName('start')
         .setDescription('Commence une partie de SUTOM'),
+    )
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName('mot-du-jour')
+        .setDescription('Commence une partie de SUTOM avec le mot du jour'),
     )
     .addSubcommand((subcommand) =>
       subcommand
@@ -37,6 +43,9 @@ export class SutomCommand implements IsabelleCommand {
         break;
       case 'start':
         startSutomSubcommand(interaction);
+        break;
+      case 'mot-du-jour':
+        startDailySutomSubcommand(interaction);
         break;
       case 'stop':
         void stopSutomSubcommand(interaction);

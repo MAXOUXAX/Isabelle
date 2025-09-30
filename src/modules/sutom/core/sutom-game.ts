@@ -6,11 +6,17 @@ export class SutomGame {
   word = '';
   wordHistory: string[] = [];
   wordRepository: WordRepository;
+  isDailyWord: boolean;
 
-  constructor(wordRepository: WordRepository) {
-    this.word = wordRepository.getRandomWord();
+  constructor(
+    wordRepository: WordRepository,
+    specificWord?: string,
+    isDailyWord = false,
+  ) {
+    this.word = specificWord ?? wordRepository.getRandomWord();
     console.log('[SutomGame] Word to guess: ' + this.word);
     this.wordRepository = wordRepository;
+    this.isDailyWord = isDailyWord;
   }
 
   getRemainingAttempts(): number {

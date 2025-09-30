@@ -16,6 +16,18 @@ class GameManager {
     return true;
   }
 
+  createDailyGame(userId: string): boolean {
+    if (this.gameInstances.has(userId)) {
+      return false;
+    }
+    const dailyWord = wordRepository.getDailyWord();
+    this.gameInstances.set(
+      userId,
+      new SutomGame(wordRepository, dailyWord, true),
+    );
+    return true;
+  }
+
   getGame(userId: string): SutomGame | undefined {
     return this.gameInstances.get(userId);
   }
