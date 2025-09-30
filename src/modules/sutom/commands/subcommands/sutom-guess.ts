@@ -8,7 +8,7 @@ const logger = createLogger('sutom-guess');
 export default async function guessWordSubcommand(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
-  const { user } = interaction;
+  const { user, channel } = interaction;
   if (interaction.options.get('mot') === null) {
     interaction
       .reply('Tu dois fournir un mot à deviner !')
@@ -25,10 +25,44 @@ export default async function guessWordSubcommand(
 
   const game = sutomGameManager.getGame(user.id);
   if (!game) {
-    interaction
-      .reply(
-        "Tu n'as pas de partie en cours ! Utilise la commande `/sutom start` pour en commencer une.",
-      )
+    await interaction
+      .reply({
+        content:
+          "Tu n'as pas de partie en cours ! Utilise la commande `/sutom start` pour en commencer une.",
+        ephemeral: true,
+      })
+      .catch((e: unknown) => {
+        logger.error(e);
+      });
+    return;
+  }
+
+  const userThreadId = sutomGameManager.getGameThreadId(user.id);
+
+  // Check if the command is being used in the correct thread
+  if (!channel || !userThreadId || channel.id !== userThreadId) {
+    const threadMention = userThreadId
+      ? `<#${userThreadId}>`
+      : 'ton thread de jeu';
+    await interaction
+      .reply({
+        content: `❌ Tu ne peux proposer des mots que dans ${threadMention} !`,
+        ephemeral: true,
+      })
+      .catch((e: unknown) => {
+        logger.error(e);
+      });
+    return;
+  }
+
+  // Additional validation: check if there's a game associated with this thread
+  const threadGame = sutomGameManager.getGameByThreadId(channel.id);
+  if (!threadGame || threadGame.userId !== user.id) {
+    await interaction
+      .reply({
+        content: 'Ce thread ne correspond pas à ta partie actuelle.',
+        ephemeral: true,
+      })
       .catch((e: unknown) => {
         logger.error(
           { error: e },
@@ -39,18 +73,25 @@ export default async function guessWordSubcommand(
   }
 
   const word = interaction.options.get('mot')?.value as string;
-
   const wordOutcome = game.addWord(word);
 
   switch (wordOutcome) {
     case AttemptOutcome.WORD_REPEATED:
-      interaction.reply('Tu as déjà essayé ce mot !').catch((e: unknown) => {
-        logger.error(e);
-      });
+      await interaction
+        .reply({
+          content: 'Tu as déjà essayé ce mot !',
+          ephemeral: true,
+        })
+        .catch((e: unknown) => {
+          logger.error(e);
+        });
       break;
     case AttemptOutcome.WORD_LENGTH_MISMATCH:
-      interaction
-        .reply("Le mot que tu as proposé n'a pas la bonne longueur !")
+      await interaction
+        .reply({
+          content: "Le mot que tu as proposé n'a pas la bonne longueur !",
+          ephemeral: true,
+        })
         .catch((e: unknown) => {
           logger.error(e);
         });
@@ -64,12 +105,24 @@ export default async function guessWordSubcommand(
         .catch((e: unknown) => {
           logger.error(e);
         });
+
+      // Close the thread (archive it but don't lock it)
+      if (channel.isThread()) {
+        await channel.setArchived(true).catch((e: unknown) => {
+          logger.error({ error: e }, 'Failed to archive thread');
+        });
+      }
+
       sutomGameManager.deleteGame(user.id);
       break;
     }
     case AttemptOutcome.UNKNOWN_WORD:
-      interaction
-        .reply("Le mot que tu as proposé n'existe pas dans le dictionnaire !")
+      await interaction
+        .reply({
+          content:
+            "Le mot que tu as proposé n'existe pas dans le dictionnaire !",
+          ephemeral: true,
+        })
         .catch((e: unknown) => {
           logger.error(e);
         });
@@ -83,6 +136,14 @@ export default async function guessWordSubcommand(
         .catch((e: unknown) => {
           logger.error(e);
         });
+
+      // Close the thread (archive it but don't lock it)
+      if (channel.isThread()) {
+        await channel.setArchived(true).catch((e: unknown) => {
+          logger.error({ error: e }, 'Failed to archive thread');
+        });
+      }
+
       sutomGameManager.deleteGame(user.id);
       break;
     }
@@ -91,7 +152,7 @@ export default async function guessWordSubcommand(
       const { embed, attachment } = game.buildBoard(
         `Il te reste **${String(remaining)}** tentative${remaining > 1 ? 's' : ''}.`,
       );
-      interaction
+      await interaction
         .reply({ embeds: [embed], files: [attachment] })
         .catch((e: unknown) => {
           logger.error(e);
@@ -99,9 +160,14 @@ export default async function guessWordSubcommand(
       break;
     }
     default:
-      interaction.reply('Erreur inconnue !').catch((e: unknown) => {
-        logger.error(e);
-      });
+      await interaction
+        .reply({
+          content: 'Erreur inconnue !',
+          ephemeral: true,
+        })
+        .catch((e: unknown) => {
+          logger.error(e);
+        });
       break;
   }
 }
