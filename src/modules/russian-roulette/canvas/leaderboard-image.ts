@@ -76,7 +76,7 @@ function drawTitle(ctx: SKRSContext2D, config: LeaderboardConfig): void {
   ctx.font = `bold 48px ${config.fontFamily}`;
   ctx.fillStyle = LEADERBOARD_COLORS.ACCENT;
   ctx.fillText(
-    '🎯 Roulette Russe - Classement',
+    'Roulette Russe - Record de Streaks',
     config.width / 2,
     config.margin + 30,
   );
@@ -193,17 +193,17 @@ async function drawLeaderboardEntry(
       : player.username;
   ctx.fillText(displayName, x, avatarY + avatarSize + 20);
 
-  // Stats
+  // Stats - use text symbols instead of emojis
   ctx.fillStyle = LEADERBOARD_COLORS.TEXT_SECONDARY;
   const statsFontSize = isTopThree ? 16 : 14;
   ctx.font = `${String(statsFontSize)}px ${config.fontFamily}`;
   ctx.fillText(
-    `💀 ${String(player.entry.deaths)}`,
+    `Streak: ${String(player.entry.highestStreak)}`,
     x,
     avatarY + avatarSize + 45,
   );
   ctx.fillText(
-    `🔫 ${String(player.entry.shotsFired)}`,
+    `Current: ${String(player.entry.currentStreak)}`,
     x,
     avatarY + avatarSize + 65,
   );

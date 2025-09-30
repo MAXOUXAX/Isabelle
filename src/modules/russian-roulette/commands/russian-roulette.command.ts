@@ -184,14 +184,14 @@ export class RussianRouletteCommand implements IsabelleCommand {
 
       // Create embed
       const embed = new EmbedBuilder()
-        .setTitle('🎯 Roulette Russe - Classement')
+        .setTitle('Roulette Russe - Record de Streaks')
         .setDescription(
-          `Voici les ${String(leaderboardData.length)} joueurs les plus touchés par la roulette russe !`,
+          `Voici les ${String(leaderboardData.length)} joueurs avec les meilleures séries de survie !`,
         )
         .setColor(0xff4444)
         .setImage('attachment://russian-roulette-leaderboard.png')
         .setFooter({
-          text: 'Le classement est basé sur le nombre total de morts/timeouts reçus',
+          text: 'Le classement est basé sur la plus longue série de tirs sans être touché',
         })
         .setTimestamp();
 
