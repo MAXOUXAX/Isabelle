@@ -271,11 +271,15 @@ let numberOfGamesSinceLastKill = 0;
 function getGunTarget(userID: string, guild: Guild) {
   const targetSelf = Math.random() > PERCENTAGES.kill_other;
   const dynamicFireChance = increasePercentageWithLog(
-    PERCENTAGES.is_killing,
-    0.7,
+    0.7, // maxPercentage - maximum chance we can reach
+    PERCENTAGES.is_killing, // base - starting chance
   );
 
-  console.debug('[RussianRoulette] dynamicFireChance', dynamicFireChance);
+  console.debug(
+    '[RussianRoulette] numberOfGamesSinceLastKill:',
+    numberOfGamesSinceLastKill,
+  );
+  console.debug('[RussianRoulette] dynamicFireChance:', dynamicFireChance);
 
   // Gun does not fire
   if (Math.random() >= dynamicFireChance) return null;
