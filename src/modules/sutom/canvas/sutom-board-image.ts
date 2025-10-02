@@ -1,4 +1,5 @@
 import { LetterState, SutomGame } from '@/modules/sutom/core/sutom-game.js';
+import { createLogger } from '@/utils/logger.js';
 import { resolveResourcePath } from '@/utils/resources.js';
 import { createCanvas, GlobalFonts, type SKRSContext2D } from '@napi-rs/canvas';
 import { AttachmentBuilder } from 'discord.js';
@@ -9,6 +10,8 @@ import {
   RenderConfig,
   TILE_COLORS,
 } from './sutom-theme.js';
+
+const logger = createLogger('sutom-canvas');
 
 interface Dimensions {
   width: number;
@@ -318,6 +321,6 @@ function registerFontOnce(): void {
     GlobalFonts.registerFromPath(fontPath, 'Outfit');
     fontRegistered = true;
   } catch (error) {
-    console.error('[SUTOM] Failed to register Outfit font:', error);
+    logger.error({ error }, 'Failed to register Outfit font!');
   }
 }

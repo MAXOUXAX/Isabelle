@@ -3,6 +3,9 @@ import startSutomSubcommand from '@/modules/sutom/commands/subcommands/start-sut
 import stopSutomSubcommand from '@/modules/sutom/commands/subcommands/stop-sutom.js';
 import guessWordSubcommand from '@/modules/sutom/commands/subcommands/sutom-guess.js';
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
+import { createLogger } from '@/utils/logger.js';
+
+const logger = createLogger('sutom-command');
 
 export class SutomCommand implements IsabelleCommand {
   commandData = new SlashCommandBuilder()
@@ -43,7 +46,7 @@ export class SutomCommand implements IsabelleCommand {
         break;
       default:
         interaction.reply('not a valid subcommand').catch((e: unknown) => {
-          console.error(e);
+          logger.error(e);
         });
         break;
     }

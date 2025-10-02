@@ -1,4 +1,5 @@
 import { IsabelleCommand } from '@/manager/commands/command.interface.js';
+import { createLogger } from '@/utils/logger.js';
 import { mentionId } from '@/utils/mention.js';
 import {
   CommandInteraction,
@@ -6,6 +7,8 @@ import {
   MessageFlags,
   SlashCommandBuilder,
 } from 'discord.js';
+
+const logger = createLogger('russian-roulette');
 
 export class RussianRouletteCommand implements IsabelleCommand {
   commandData: SlashCommandBuilder = new SlashCommandBuilder()
@@ -43,8 +46,10 @@ export class RussianRouletteCommand implements IsabelleCommand {
         .catch(() => guild.members.cache.get(targetId));
 
       if (!member) {
-        console.warn('[RussianRoulette] Impossible de récupérer le membre');
-        numberOfGamesSinceLastKill++; // pas de sanction finalement
+        logger.warn(
+          `Failed to fetch member ${targetId} for timeout - skipping execution`,
+        );
+        numberOfGamesSinceLastKill++; // pas de kill finalement
         await interaction.reply(randomSafeMessage);
         return;
       }
@@ -54,7 +59,9 @@ export class RussianRouletteCommand implements IsabelleCommand {
         await interaction.reply(
           `Bang...? ${mentionId(targetId)} était trop puissant pour être affecté. Le canon a fondu et tout le monde s'en sort vivant cette fois-ci !`,
         );
-        console.debug('[RussianRoulette] Target not moderatable', targetId);
+        logger.debug(
+          `Target ${targetId} (${member.displayName}) is not moderatable - cannot timeout`,
+        );
         return;
       }
 
@@ -87,13 +94,15 @@ export class RussianRouletteCommand implements IsabelleCommand {
       } else {
         await interaction.reply(finalMessage);
       }
-      console.debug(
-        '[RussianRoulette] Timed-out user',
-        targetId,
-        mentionId(targetId),
+      logger.debug(
+        { reason: 'Russian Roulette', duration: label },
+        `Successfully timed out user ${targetId} (${member.displayName}) for 5 minutes`,
       );
     } catch (e) {
-      console.error('[RussianRoulette] Error while timing out user', e);
+      logger.error(
+        { error: e },
+        `Failed to timeout user ${targetId} in Russian Roulette:`,
+      );
       numberOfGamesSinceLastKill++;
       await interaction.reply(
         `Le pistolet s'enraye... Personne n'est sanctionné cette fois-ci (erreur : ${(e as Error).name}).`,
@@ -275,11 +284,9 @@ function getGunTarget(userID: string, guild: Guild) {
     PERCENTAGES.is_killing, // base - starting chance
   );
 
-  console.debug(
-    '[RussianRoulette] numberOfGamesSinceLastKill:',
-    numberOfGamesSinceLastKill,
+  logger.debug(
+    `Calculated dynamic fire chance: ${dynamicFireChance.toFixed(3)} (${numberOfGamesSinceLastKill.toString()} games since last kill)`,
   );
-  console.debug('[RussianRoulette] dynamicFireChance:', dynamicFireChance);
 
   // Gun does not fire
   if (Math.random() >= dynamicFireChance) return null;
