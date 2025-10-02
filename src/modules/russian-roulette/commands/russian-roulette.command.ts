@@ -109,22 +109,22 @@ const PERCENTAGES = {
 };
 
 const SAFE_MESSAGES: string[] = [
-  'Click ! Tu as survécu à la roulette russe, bien joué 🎯',
+  'Clic ! Tu as survécu à la roulette russe, bien joué 🎯',
   "*tic* Ouf, tout va bien, tu t'en sors cette fois-ci 😅",
-  "Click ! Le canon était vide. Respire, tu es sauf pour l'instant.",
+  "Clic ! Le canon était vide. Respire, tu es sauf pour l'instant.",
   'Tu as tiré dans le vide. Quelle chance ! 🍀',
   "Le pistolet n'a pas tiré. Sauvé. Profite de ton silence.",
   'La chambre était vide. Tu t’en sors sans une égratignure.',
   'Bang manqué. Cette fois, c’est une victoire pour toi 👍',
   'La chance est de ton côté aujourd’hui. Ne la gaspille pas 😉',
-  'Coup évité de justesse, fait gaffe, on se calme et on respire 🫡',
+  'Coup évité de justesse, fais gaffe, on se calme et on respire 🫡.',
   'Le canon a déraillé. Pas de timeout pour toi cette fois.',
   'Suspense... click. Tu es sauf, mais reste prudent.',
   'Un hasard bienveillant t’a épargné. Raconte pas trop, ça attire la malchance 🤫',
   'Le sort t’a oublié cette fois-ci. Profite de ta liberté temporaire.',
   'Tu remportes cette manche — pas de sanction, juste des frissons.',
   "Personne n'est touché. Le chaos attendra un autre jour.",
-  "Click ! Fiou, tout va bien. Tu es sûr de vouloir continuer à jouer ? Qui te dit que tu t'en sortiras la prochaine fois ?",
+  "Clic ! Fiou, tout va bien. Tu es sûr de vouloir continuer à jouer ? Qui te dit que tu t'en sortiras la prochaine fois ?",
 ];
 
 // Messages to announce when the gun rips out of the shooter's hands and targets someone else
@@ -157,7 +157,7 @@ const TIMEOUT_OPTIONS = [
     messages: [
       "La dernière blague de {user} a fait tellement de bruit qu'on a cru entendre le rire de Bouthier. Fausse alerte. 10 minutes de silence.",
       "J'ai analysé le profil de {user} et j'ai trouvé des propos... problématiques. Mopty serait fier. 10 minutes pour réfléchir à tes actes cela dit.",
-      "J'ai bien compté {user} et je crois je viens de te mettre 10 minutes dans les dents. Profite bien :)",
+      "J'ai bien compté {user} et je crois que je viens de te mettre 10 minutes dans les dents. Profite bien :)",
       "Bonjour Mme Sauvi ! Ah non pardon, il y a mésentente. C'est {user} qui vient de se faire recaler pendant 10 minutes.",
       "{user} est coincé dans une boucle d'entretiens avec Marc Vélocité. Il faut bien 10 minutes pour s'en remettre.",
     ],
@@ -183,7 +183,7 @@ const TIMEOUT_OPTIONS = [
       'Thomas Pédalier m\'a hackée juste pour dire "Bonjour Mme Sauvi" à {user}. Le système a besoin d\'une heure pour se remettre de ce niveau de cringe.',
       'Un audit interne a été lancé sur le compte de {user}. Théo Mopty est en charge du dossier. On te revoit dans une heure. Ou pas.',
       'Bon écoute {user}, tu devais écopper de 30 minutes de sanction, mais tu as décidé de m\'envoyer un mail pour contester. Je te réponds "stop! IL". La sentence est doublée à 1 heure.',
-      '{user}, tu pollues le chat. Donc... Bah casse toi. 1 heure.',
+      '{user}, tu pollues le chat. Donc... bah casse-toi. 1 heure.',
     ],
   },
   {
@@ -195,7 +195,7 @@ const TIMEOUT_OPTIONS = [
       'Le rire de Bouthier a causé une faille spatio-temporelle. {user}, tu es coincé dans la boucle. Rendez-vous dans 4 heures.',
       "2 * 2 = 4. C'est aussi le nombre d'heures que tu vas passer en timeout, {user}. Réfléchis bien à cette équation.",
       'Bonjour {user}, je suis Natcha du service client SFR. Vous avez été sélectionné pour bénéficier de 4 heures de temps mort. Félicitations !',
-      "J'avoue c'est un peu vénère, mais tu m'as cherché {user}. 4 heures pour te calmer.",
+      "J'avoue, c'est un peu vénère, mais tu m'as cherché {user}. 4 heures pour te calmer.",
     ],
   },
   {
@@ -203,7 +203,7 @@ const TIMEOUT_OPTIONS = [
     probability: 1.5,
     label: '12 heures',
     messages: [
-      'Je me suis fusionnée avec l\'IA du garage. Je m\'appelle désormais "Isabelle Dérailleur" et ma première décision est de te bannir 12h. stop! IL',
+      'Je me suis fusionnée avec l\'IA du garage. Je m\'appelle désormais "Isabelle Dérailleur" et ma première décision est de te bannir 12 heures. stop! IL',
       "Je m'en fous de ce que tu dis {user}, tu vas prendre 12 heures de timeout. C'est comme ça et pas autrement.",
       '{user}, tu as été sélectionné pour une mission secrète avec Marc Vélocité. Tu seras indisponible pendant 12 heures. Ne pose pas de questions.',
       'Ne te retourne surtout pas {user} ! Non mais vraiment, ne te retourne sous aucun prétexte. Il y a Marc Vélocité derrière toi. Il est venu te parler 12 heures.',
@@ -215,11 +215,11 @@ const TIMEOUT_OPTIONS = [
     probability: 0.5,
     label: '24 heures',
     messages: [
-      "{user} a énervé Pierre Engrenage. Personne n'énerve Pierre Engrenage. Il m'a personnellement demandé de te bannir 24h. C'est ça la mécanique.",
-      "Félicitations, {user} ! Pour ton comportement exemplaire, l'école a décidé de te nommer responsable de l'organisation des examens. Ta première mission : ne rien faire pendant 24h. Tu as l'habitude.",
+      "{user} a énervé Pierre Engrenage. Personne n'énerve Pierre Engrenage. Il m'a personnellement demandé de te bannir 24 heures. C'est ça la mécanique.",
+      "Félicitations, {user} ! Pour ton comportement exemplaire, l'école a décidé de te nommer responsable de l'organisation des examens. Ta première mission : ne rien faire pendant 24 heures. Tu as l'habitude.",
       'Le compte de {user} a été racheté par Théo Mopty. Il sera inaccessible pendant 24h pour "purification ethnique du contenu". C\'est une blague, bien sûr... Joker. 🃏',
-      "On m'a soufflé à l'oreille que l'école était en feu. Pour ta sécurité, {user}, tu es mis en quarantaine préventive de 24 heures. Ne t'inquiète pas, c'est juste une précaution.",
-      "Je suis vraiment pas d'humeur et je m'en fous des conséquences. Rien à foutre de ton avis {user}, ferme ta grande gueule pendant 24 heures.",
+      "On m'a soufflé à l'oreille que l'école était en feu. Pour ta sécurité, {user}, tu es mis en quarantaine préventive de 24 heures. Ne t'inquiète pas : c'est juste une précaution.",
+      "Je ne suis vraiment pas d'humeur et je m'en fous des conséquences. Rien à foutre de ton avis {user}, ferme ta grande gueule pendant 24 heures.",
     ],
   },
 ];
