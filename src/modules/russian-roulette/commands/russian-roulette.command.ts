@@ -94,9 +94,6 @@ export class RussianRouletteCommand implements IsabelleCommand {
       } else {
         await interaction.reply(finalMessage);
       }
-      await interaction.reply(
-        `Bang ! ${mentionId(targetId)} a été mis en timeout pendant 5 minutes.`,
-      );
       logger.debug(
         { reason: 'Russian Roulette', duration: label },
         `Successfully timed out user ${targetId} (${member.displayName}) for 5 minutes`,
