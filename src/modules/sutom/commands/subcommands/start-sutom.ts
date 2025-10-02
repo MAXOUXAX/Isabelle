@@ -60,12 +60,9 @@ export default async function startSutomSubcommand(
     // Create a thread for the game
     const thread = await channel.threads.create({
       name: `🎯 SUTOM - ${user.displayName}`,
-      type: ChannelType.PrivateThread,
-      reason: `Partie SUTOM privée pour ${user.displayName}`,
+      type: ChannelType.PublicThread,
+      reason: `Partie SUTOM pour ${user.displayName}`,
     });
-
-    // Add the user to the thread
-    await thread.members.add(user.id);
 
     // Create the game with the thread ID
     const gameCreated = sutomGameManager.createGame(user.id, thread.id);
@@ -100,7 +97,7 @@ export default async function startSutomSubcommand(
       // Send the game board in the thread
       await thread
         .send({
-          content: `Bienvenue dans ta partie SUTOM privée, ${user.toString()}! 🎯\nOn cherche un mot de **${String(game.word.length)} lettres**.\n\nUtilise \`/sutom mot\` pour proposer tes mots.`,
+          content: `Bienvenue dans ta partie SUTOM, ${user.toString()}! 🎯\nOn cherche un mot de **${String(game.word.length)} lettres**.\n\nUtilise \`/sutom mot\` pour proposer tes mots.`,
           embeds: [embed],
           files: [attachment],
         })
