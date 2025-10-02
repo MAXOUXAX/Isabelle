@@ -9,6 +9,15 @@ export default async function guessWordSubcommand(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   const { user } = interaction;
+  if (interaction.options.get('mot') === null) {
+    interaction
+      .reply('Tu dois fournir un mot à deviner !')
+      .catch((e: unknown) => {
+        logger.error(e);
+      });
+    return;
+  }
+
   const guessedWord = interaction.options.get('mot')?.value as string;
   logger.debug(
     `User ${user.username} (${user.id}) guessed word: "${guessedWord}"`,
