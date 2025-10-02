@@ -1,6 +1,6 @@
 import { sutomGameManager } from '@/modules/sutom/core/game-manager.js';
-import { CommandInteraction } from 'discord.js';
 import { createLogger } from '@/utils/logger.js';
+import { CommandInteraction } from 'discord.js';
 
 const logger = createLogger('sutom-stop');
 
@@ -53,13 +53,13 @@ export default async function stopSutomSubcommand(
       await interaction
         .reply({ embeds: [embed], files: [attachment] })
         .catch((e: unknown) => {
-          console.error(e);
+          logger.error(e);
         });
 
       // Archive the thread
       if (channel.isThread()) {
         await channel.setArchived(true).catch((e: unknown) => {
-          console.error('[SUTOM] Failed to archive thread:', e);
+          logger.error({ error: e }, 'Failed to archive thread');
         });
       }
     } else {
@@ -70,7 +70,7 @@ export default async function stopSutomSubcommand(
           ephemeral: true,
         })
         .catch((e: unknown) => {
-          console.error(e);
+          logger.error(e);
         });
 
       // Try to archive the thread if it exists
@@ -81,21 +81,21 @@ export default async function stopSutomSubcommand(
             await thread.setArchived(true);
           }
         } catch (error) {
-          console.error('[SUTOM] Failed to archive thread on stop:', error);
+          logger.error({ error }, 'Failed to archive thread on stop');
         }
       }
     }
 
     sutomGameManager.deleteGame(user.id);
   } catch (error) {
-    console.error('[SUTOM] Error stopping game:', error);
+    logger.error({ error }, 'Error stopping game');
     await interaction
       .reply({
         content: "Une erreur est survenue lors de l'arrêt de ta partie.",
         ephemeral: true,
       })
       .catch((e: unknown) => {
-        console.error(e);
+        logger.error(e);
       });
   }
 }

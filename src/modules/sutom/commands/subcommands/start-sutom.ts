@@ -3,8 +3,6 @@ import { createLogger } from '@/utils/logger.js';
 import {
   ChannelType,
   ChatInputCommandInteraction,
-  ForumChannel,
-  NewsChannel,
   TextChannel,
 } from 'discord.js';
 
@@ -39,26 +37,21 @@ export default async function startSutomSubcommand(
         ephemeral: true,
       })
       .catch((e: unknown) => {
-        console.error(e);
+        logger.error(e);
       });
     return;
   }
 
   // Check if the channel supports threads
-  if (
-    !(
-      channel instanceof TextChannel ||
-      channel instanceof NewsChannel ||
-      channel instanceof ForumChannel
-    )
-  ) {
+  if (!(channel instanceof TextChannel)) {
     await interaction
       .reply({
-        content: 'Les threads ne sont pas supportés dans ce type de canal.',
+        content:
+          'Tu ne peux pas jouer dans ce canal, essaye un autre canal textuel.',
         ephemeral: true,
       })
       .catch((e: unknown) => {
-        console.error(e);
+        logger.error(e);
       });
     return;
   }
@@ -75,8 +68,8 @@ export default async function startSutomSubcommand(
     await thread.members.add(user.id);
 
     // Create the game with the thread ID
-    const isNewGame = sutomGameManager.createGame(user.id, thread.id);
-    if (!isNewGame) {
+    const gameCreated = sutomGameManager.createGame(user.id, thread.id);
+    if (!gameCreated) {
       // This shouldn't happen since we checked above, but handle it gracefully
       await thread.delete();
       await interaction
@@ -85,7 +78,7 @@ export default async function startSutomSubcommand(
           ephemeral: true,
         })
         .catch((e: unknown) => {
-          console.error(e);
+          logger.error(e);
         });
       return;
     }
@@ -101,7 +94,7 @@ export default async function startSutomSubcommand(
           ephemeral: true,
         })
         .catch((e: unknown) => {
-          console.error(e);
+          logger.error(e);
         });
 
       // Send the game board in the thread
@@ -127,7 +120,7 @@ export default async function startSutomSubcommand(
         });
     }
   } catch (error) {
-    console.error('[SUTOM] Error creating thread:', error);
+    logger.error({ error }, 'Error creating thread');
     await interaction
       .reply({
         content:
@@ -135,7 +128,7 @@ export default async function startSutomSubcommand(
         ephemeral: true,
       })
       .catch((e: unknown) => {
-        console.error(e);
+        logger.error(e);
       });
   }
 }
