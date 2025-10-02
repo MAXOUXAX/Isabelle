@@ -12,7 +12,9 @@ export class SutomGame {
 
   constructor(wordRepository: WordRepository) {
     this.word = wordRepository.getRandomWord();
-    logger.debug(`New Sutom game created - word: "${this.word}" (${this.word.length} letters)`);
+    logger.debug(
+      `New Sutom game created - word: "${this.word}" (${this.word.length.toString()} letters)`,
+    );
     this.wordRepository = wordRepository;
   }
 

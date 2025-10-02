@@ -1,6 +1,6 @@
 import { LetterState, SutomGame } from '@/modules/sutom/core/sutom-game.js';
-import { resolveResourcePath } from '@/utils/resources.js';
 import { createLogger } from '@/utils/logger.js';
+import { resolveResourcePath } from '@/utils/resources.js';
 import { createCanvas, GlobalFonts, type SKRSContext2D } from '@napi-rs/canvas';
 import { AttachmentBuilder } from 'discord.js';
 import { drawLetter, drawLetterTile, drawRoundedTile } from './canvas-utils.js';
@@ -321,6 +321,6 @@ function registerFontOnce(): void {
     GlobalFonts.registerFromPath(fontPath, 'Outfit');
     fontRegistered = true;
   } catch (error) {
-    logger.error('Failed to register Outfit font:', error);
+    logger.error({ error }, 'Failed to register Outfit font!');
   }
 }

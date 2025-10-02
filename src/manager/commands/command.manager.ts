@@ -50,7 +50,7 @@ export class CommandManager {
         'Successfully registered global application commands (/) via REST API.',
       );
     } catch (error) {
-      logger.error('Failed to register global commands:', error);
+      logger.error({ error }, 'Failed to register global commands:');
     }
   }
 
@@ -73,7 +73,7 @@ export class CommandManager {
         'Successfully registered application commands (/) for guild via REST API.',
       );
     } catch (error) {
-      logger.error('Failed to register guild commands:', error);
+      logger.error({ error }, 'Failed to register guild commands!');
     }
   }
 }

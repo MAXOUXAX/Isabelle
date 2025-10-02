@@ -98,13 +98,13 @@ export class RussianRouletteCommand implements IsabelleCommand {
         `Bang ! ${mentionId(targetId)} a été mis en timeout pendant 5 minutes.`,
       );
       logger.debug(
-        `Successfully timed out user ${targetId} (${member.displayName}) for 5 minutes`,
         { reason: 'Russian Roulette', duration: label },
+        `Successfully timed out user ${targetId} (${member.displayName}) for 5 minutes`,
       );
     } catch (e) {
       logger.error(
+        { error: e },
         `Failed to timeout user ${targetId} in Russian Roulette:`,
-        e,
       );
       numberOfGamesSinceLastKill++;
       await interaction.reply(

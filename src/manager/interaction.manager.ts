@@ -1,5 +1,5 @@
-import { Interaction } from 'discord.js';
 import { createLogger } from '@/utils/logger.js';
+import { Interaction } from 'discord.js';
 import { InteractionHandler } from '../modules/bot-module.js';
 
 const logger = createLogger('interactions');
@@ -15,18 +15,22 @@ export class InteractionManager {
 
   async handleInteraction(interaction: Interaction) {
     if (!interaction.isMessageComponent()) {
-      logger.debug(`Ignoring non-message component interaction (type: ${interaction.type})`);
+      logger.debug(
+        `Ignoring non-message component interaction (type: ${interaction.type.toString()})`,
+      );
       return;
     }
 
     const handler = this.handlers.get(interaction.customId);
     if (handler) {
-      logger.debug(`Handling interaction: ${interaction.customId} from user ${interaction.user.id}`);
+      logger.debug(
+        `Handling interaction: ${interaction.customId} from user ${interaction.user.id}`,
+      );
       await handler.handle(interaction);
     } else {
       logger.warn(
+        { userId: interaction.user.id, guildId: interaction.guildId },
         `No handler registered for interaction customId: "${interaction.customId}"`,
-        { userId: interaction.user.id, guildId: interaction.guildId }
       );
     }
   }

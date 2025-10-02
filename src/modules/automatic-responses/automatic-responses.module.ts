@@ -15,7 +15,7 @@ export class AutomaticResponsesModule extends IsabelleModule {
 
   private handleMessageCreate = (message: Message): void => {
     automaticResponseMessageListener(message).catch((error: unknown) => {
-      logger.error('Error processing message:', error);
+      logger.error({ error }, 'Error processing message:');
     });
   };
 }

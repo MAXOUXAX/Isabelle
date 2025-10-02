@@ -1,98 +1,90 @@
-import pino from 'pino';
-import path from 'path';
 import fs from 'fs';
-
-// Ensure logs directory exists
-const logsDir = path.join(process.cwd(), 'logs');
-if (!fs.existsSync(logsDir)) {
-  fs.mkdirSync(logsDir, { recursive: true });
-}
-
-// Create the base logger configuration
-const baseLoggerConfig = {
-  level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
-  formatters: {
-    time: () => `,"time":"${new Date().toISOString().replace('T', ' ').slice(0, -5)}"`
-  }
-};
-
-// Create the main logger instance for file logging
-const fileLogger = pino(
-  baseLoggerConfig,
-  pino.multistream([
-    { 
-      stream: pino.destination({
-        dest: path.join(logsDir, 'isabelle.log'),
-        sync: false
-      })
-    },
-    { 
-      stream: pino.destination({
-        dest: path.join(logsDir, 'error.log'),
-        sync: false
-      }), 
-      level: 'error' 
-    },
-    ...(process.env.NODE_ENV === 'development' 
-      ? [{ 
-          stream: pino.destination({
-            dest: path.join(logsDir, 'debug.log'),
-            sync: false
-          }), 
-          level: 'debug' 
-        }]
-      : []
-    )
-  ])
-);
-
-// Create the console logger for development with pretty printing
-const consoleLogger = process.env.NODE_ENV === 'development' 
-  ? pino({
-      ...baseLoggerConfig,
-      transport: {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'yyyy-mm-dd HH:MM:ss',
-          ignore: 'pid,hostname'
-        }
-      }
-    })
-  : null;
+import path from 'path';
+import pino from 'pino';
 
 /**
- * Creates a logger instance for a specific module or file
- * @param name - The name of the module/file (will be used as prefix)
- * @returns A Pino logger instance with the name as context
+ * Rotates the current log file to a dated archive folder
  */
-export function createLogger(name: string) {
-  const childContext = { name };
-  
-  // Create child loggers that include the name context
-  const fileChild = fileLogger.child(childContext);
-  const consoleChild = consoleLogger?.child(childContext);
-  
-  // Create a combined logger that logs to both file and console
-  return {
-    debug: (message: string, ...args: any[]) => {
-      fileChild.debug(message, ...args);
-      consoleChild?.debug(message, ...args);
-    },
-    info: (message: string, ...args: any[]) => {
-      fileChild.info(message, ...args);
-      consoleChild?.info(message, ...args);
-    },
-    warn: (message: string, ...args: any[]) => {
-      fileChild.warn(message, ...args);
-      consoleChild?.warn(message, ...args);
-    },
-    error: (message: string, ...args: any[]) => {
-      fileChild.error(message, ...args);
-      consoleChild?.error(message, ...args);
-    }
-  };
+function rotateLogFile(logsDir: string, currentLogPath: string): void {
+  if (!fs.existsSync(currentLogPath)) {
+    return;
+  }
+
+  const now = new Date();
+  const dateFolder = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+  const timestamp = now.toISOString().replace(/[:.]/g, '-').split('.')[0]; // YYYY-MM-DDTHH-MM-SS
+
+  const archiveDir = path.join(logsDir, dateFolder);
+  if (!fs.existsSync(archiveDir)) {
+    fs.mkdirSync(archiveDir, { recursive: true });
+  }
+
+  const archivedLogPath = path.join(archiveDir, `${timestamp}.log`);
+
+  try {
+    fs.renameSync(currentLogPath, archivedLogPath);
+  } catch (error) {
+    console.error('Failed to rotate log file:', error);
+  }
 }
 
-// Export a default logger for general use
-export const logger = createLogger('main');
+/**
+ * Initialize logging system with automatic log rotation
+ */
+function initializeLogging() {
+  const logsDir = path.join(process.cwd(), 'logs');
+
+  // Ensure logs directory exists
+  if (!fs.existsSync(logsDir)) {
+    fs.mkdirSync(logsDir, { recursive: true });
+  }
+
+  const currentLogPath = path.join(logsDir, 'latest.log');
+
+  // Rotate existing log file if it exists
+  rotateLogFile(logsDir, currentLogPath);
+
+  const baseLevel = process.env.NODE_ENV === 'development' ? 'debug' : 'info';
+
+  // Create file logger with clean output
+  const fileTransport: pino.DestinationStream = pino.transport({
+    target: 'pino/file',
+    options: {
+      destination: currentLogPath,
+      mkdir: true,
+    },
+  }) as pino.DestinationStream;
+
+  // Create console logger with pretty printing
+  const consoleTransport: pino.DestinationStream = pino.transport({
+    target: 'pino-pretty',
+    options: {
+      colorize: true,
+      translateTime: 'yyyy-mm-dd HH:MM:ss',
+      ignore: 'pid,hostname,prefix',
+      messageFormat: '{if prefix}[{prefix}]{end} {msg}',
+    },
+  }) as pino.DestinationStream;
+
+  // Create multistream for both file and console
+  const streams = [{ stream: fileTransport }, { stream: consoleTransport }];
+
+  return pino(
+    {
+      level: baseLevel,
+    },
+    pino.multistream(streams),
+  );
+}
+
+// Initialize the base logger
+const baseLogger = initializeLogging();
+
+/**
+ * Creates a logger instance with a specific prefix
+ * @param prefix - The prefix to use for all log messages (e.g., module name)
+ * @returns A Pino logger instance with the prefix as context
+ */
+export function createLogger(prefix: string) {
+  return baseLogger.child({ prefix });
+}
