@@ -121,7 +121,7 @@ client.once(Events.ClientReady, () => {
   }
 
   handler().catch((error: unknown) => {
-    logger.error(
+    logger.fatal(
       {
         error:
           error instanceof Error
