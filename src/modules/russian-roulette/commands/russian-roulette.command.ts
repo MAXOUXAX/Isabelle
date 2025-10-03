@@ -204,7 +204,7 @@ const TIMEOUT_OPTIONS = [
       'Le rire de Bouthier a causé une faille spatio-temporelle. {user}, tu es coincé dans la boucle. Rendez-vous dans 4 heures.',
       "2 * 2 = 4. C'est aussi le nombre d'heures que tu vas passer en timeout, {user}. Réfléchis bien à cette équation.",
       'Bonjour {user}, je suis Natcha du service client SFR. Vous avez été sélectionné pour bénéficier de 4 heures de temps mort. Félicitations !',
-      "J'avoue, c'est un peu vénère, mais tu m'as cherché {user}. 4 heures pour te calmer.",
+      "J'avoue, c'est un peu vénère, mais tu m'as cherchée {user}. 4 heures pour te calmer.",
     ],
   },
   {
@@ -212,7 +212,7 @@ const TIMEOUT_OPTIONS = [
     probability: 1.5,
     label: '12 heures',
     messages: [
-      'Je me suis fusionnée avec l\'IA du garage. Je m\'appelle désormais "Isabelle Dérailleur" et ma première décision est de te bannir 12 heures. stop! IL',
+      "J'ai fusionné avec l'IA du garage. Je m\'appelle désormais \"Isabelle Dérailleur\" et ma première décision est de te bannir 12 heures. stop! IL",
       "Je m'en fous de ce que tu dis {user}, tu vas prendre 12 heures de timeout. C'est comme ça et pas autrement.",
       '{user}, tu as été sélectionné pour une mission secrète avec Marc Vélocité. Tu seras indisponible pendant 12 heures. Ne pose pas de questions.',
       'Ne te retourne surtout pas {user} ! Non mais vraiment, ne te retourne sous aucun prétexte. Il y a Marc Vélocité derrière toi. Il est venu te parler 12 heures.',
