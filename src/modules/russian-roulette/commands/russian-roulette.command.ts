@@ -189,7 +189,7 @@ const TIMEOUT_OPTIONS = [
     label: '1 heure',
     messages: [
       'ALERTE : Le rire de Bouthier a été détecté dans le canal. {user} est identifié comme la source de la perturbation. 1 heure de quarantaine auditive.',
-      'Thomas Pédalier m\'a hackée juste pour dire "Bonjour Mme Sauvi" à {user}. Le système a besoin d\'une heure pour se remettre de ce niveau de cringe.',
+      'Pierre Engrenage m\'a hackée juste pour te dire "Bonjour Mme Sauvi" à {user}. Le système a besoin d\'une heure pour se remettre de ce niveau de cringe.',
       'Un audit interne a été lancé sur le compte de {user}. Théo Mopty est en charge du dossier. On te revoit dans une heure. Ou pas.',
       'Bon écoute {user}, tu devais écopper de 30 minutes de sanction, mais tu as décidé de m\'envoyer un mail pour contester. Je te réponds "stop! IL". La sentence est doublée à 1 heure.',
       '{user}, tu pollues le chat. Donc... bah casse-toi. 1 heure.',
