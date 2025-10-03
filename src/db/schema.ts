@@ -31,3 +31,14 @@ export const guildConfigs = sqliteTable('guild_configs', {
   config: text('config', { mode: 'json' }).$type<GuildConfig>().notNull(),
   ...base(),
 });
+
+export const russianRouletteStats = sqliteTable('russian_roulette_stats', {
+  id: int('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id').notNull(),
+  guildId: text('guild_id').notNull(),
+  shotsFired: int('shots_fired').default(0).notNull(),
+  deaths: int('deaths').default(0).notNull(),
+  currentStreak: int('current_streak').default(0).notNull(),
+  highestStreak: int('highest_streak').default(0).notNull(),
+  ...base(),
+});

@@ -3,21 +3,62 @@ import { createLogger } from '@/utils/logger.js';
 import { mentionId } from '@/utils/mention.js';
 import {
   CommandInteraction,
+  EmbedBuilder,
   Guild,
   MessageFlags,
   SlashCommandBuilder,
 } from 'discord.js';
+import { RussianRouletteRepository } from '../data/russian-roulette.repository.js';
+import { renderRussianRouletteLeaderboard } from '../canvas/leaderboard-image.js';
 
 const logger = createLogger('russian-roulette');
 
 export class RussianRouletteCommand implements IsabelleCommand {
   commandData: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('roulette-russe')
-    .setDescription(
-      "Joue à la roulette russe pour avoir une chance d'être touché !",
+    .setDescription('Commandes de la roulette russe')
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName('jouer')
+        .setDescription(
+          "Joue à la roulette russe pour avoir une chance d'être touché !",
+        ),
+    )
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName('classement')
+        .setDescription('Affiche le classement des joueurs de roulette russe'),
     );
 
+  private repository = new RussianRouletteRepository();
+
   async executeCommand(interaction: CommandInteraction) {
+    if (!interaction.isChatInputCommand()) {
+      await interaction.reply({
+        content: 'Commande non supportée.',
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
+    const subcommand = interaction.options.getSubcommand();
+
+    switch (subcommand) {
+      case 'jouer':
+        await this.executePlayCommand(interaction);
+        break;
+      case 'classement':
+        await this.executeLeaderboardCommand(interaction);
+        break;
+      default:
+        await interaction.reply({
+          content: 'Sous-commande non reconnue.',
+          flags: MessageFlags.Ephemeral,
+        });
+    }
+  }
+
+  private async executePlayCommand(interaction: CommandInteraction) {
     const guild = interaction.guild;
 
     if (!guild) {
@@ -29,6 +70,9 @@ export class RussianRouletteCommand implements IsabelleCommand {
     }
 
     const targetId = getGunTarget(interaction.user.id, guild);
+
+    // Record that the user fired a shot
+    await this.repository.recordShotFired(interaction.user.id, guild.id);
 
     const randomSafeMessage =
       SAFE_MESSAGES[Math.floor(Math.random() * SAFE_MESSAGES.length)];
@@ -84,6 +128,9 @@ export class RussianRouletteCommand implements IsabelleCommand {
         `Perdu à la roulette russe (timeout ${label})`,
       );
 
+      // Record the death/hit
+      await this.repository.recordDeath(targetId, guild.id);
+
       numberOfGamesSinceLastKill = 0;
 
       // Replace {user} placeholder with actual mention
@@ -107,6 +154,67 @@ export class RussianRouletteCommand implements IsabelleCommand {
       await interaction.reply(
         `Le pistolet s'enraye... Personne n'est sanctionné cette fois-ci (erreur : ${(e as Error).name}).`,
       );
+    }
+  }
+
+  private async executeLeaderboardCommand(interaction: CommandInteraction) {
+    if (!interaction.guild) {
+      await interaction.reply({
+        content: "Cette commande ne peut être utilisée qu'en serveur.",
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
+    await interaction.reply({
+      content: 'Génération du classement en cours...',
+    });
+
+    try {
+      // Get leaderboard data
+      const leaderboardData = await this.repository.getLeaderboard(
+        interaction.guild.id,
+        10,
+      );
+
+      if (leaderboardData.length === 0) {
+        await interaction.editReply({
+          content:
+            'Aucune données de roulette russe trouvées pour ce serveur. Commencez à jouer pour voir apparaître le classement !',
+        });
+        return;
+      }
+
+      // Generate leaderboard image
+      const attachment = await renderRussianRouletteLeaderboard(
+        leaderboardData,
+        interaction.guild,
+      );
+
+      // Create embed
+      const embed = new EmbedBuilder()
+        .setTitle('Roulette Russe - Record de Streaks')
+        .setDescription(
+          `Voici les ${String(leaderboardData.length)} joueurs avec les meilleures séries de survie !`,
+        )
+        .setColor(0xff4444)
+        .setImage('attachment://russian-roulette-leaderboard.png')
+        .setFooter({
+          text: 'Le classement est basé sur la plus longue série de tirs sans être touché',
+        })
+        .setTimestamp();
+
+      await interaction.editReply({
+        content: null,
+        embeds: [embed],
+        files: [attachment],
+      });
+    } catch (error) {
+      console.error('Failed to generate leaderboard:', error);
+      await interaction.editReply({
+        content:
+          'Une erreur est survenue lors de la génération du classement. Réessayez plus tard.',
+      });
     }
   }
 }
