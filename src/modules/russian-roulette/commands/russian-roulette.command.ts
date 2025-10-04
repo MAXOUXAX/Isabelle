@@ -212,7 +212,7 @@ const TIMEOUT_OPTIONS = [
     probability: 1.5,
     label: '12 heures',
     messages: [
-      "J'ai fusionné avec l'IA du garage. Je m\'appelle désormais \"Isabelle Dérailleur\" et ma première décision est de te bannir 12 heures. stop! IL",
+      "J'ai fusionné avec l'IA du garage. Je m'appelle désormais \"Isabelle Dérailleur\" et ma première décision est de te bannir 12 heures. stop! IL",
       "Je m'en fous de ce que tu dis {user}, tu vas prendre 12 heures de timeout. C'est comme ça et pas autrement.",
       '{user}, tu as été sélectionné pour une mission secrète avec Marc Vélocité. Tu seras indisponible pendant 12 heures. Ne pose pas de questions.',
       'Ne te retourne surtout pas {user} ! Non mais vraiment, ne te retourne sous aucun prétexte. Il y a Marc Vélocité derrière toi. Il est venu te parler 12 heures.',
