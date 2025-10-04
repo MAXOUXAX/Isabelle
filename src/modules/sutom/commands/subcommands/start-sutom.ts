@@ -3,6 +3,7 @@ import { createLogger } from '@/utils/logger.js';
 import {
   ChannelType,
   ChatInputCommandInteraction,
+  MessageFlags,
   TextChannel,
 } from 'discord.js';
 
@@ -57,6 +58,9 @@ export default async function startSutomSubcommand(
   }
 
   try {
+    // We'll defer the reply to later delete it
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
     // Create a thread for the game
     const thread = await channel.threads.create({
       name: `🎯 SUTOM - ${user.displayName}`,
@@ -67,12 +71,11 @@ export default async function startSutomSubcommand(
     // Create the game with the thread ID
     const gameCreated = sutomGameManager.createGame(user.id, thread.id);
     if (!gameCreated) {
-      // This shouldn't happen since we checked above, but handle it gracefully
+      // Should never happen, but handle it gracefully
       await thread.delete();
       await interaction
-        .reply({
+        .editReply({
           content: 'Une erreur est survenue lors de la création de ta partie.',
-          ephemeral: true,
         })
         .catch((e: unknown) => {
           logger.error(e);
@@ -84,33 +87,27 @@ export default async function startSutomSubcommand(
     if (game) {
       const { embed, attachment } = game.buildBoard();
 
-      // Reply to the original interaction with a link to the thread
-      await interaction
-        .reply({
-          content: `🎉 Ta partie SUTOM a été créée dans ${thread.toString()}!\nOn cherche un mot de **${String(game.word.length)} lettres**.`,
-          ephemeral: true,
-        })
-        .catch((e: unknown) => {
-          logger.error(e);
-        });
-
-      // Send the game board in the thread
+      // Send the game board in the thread as the first message
       await thread
         .send({
-          content: `Bienvenue dans ta partie SUTOM, ${user.toString()}! 🎯\nOn cherche un mot de **${String(game.word.length)} lettres**.\n\nUtilise \`/sutom mot\` pour proposer tes mots.`,
+          content: `Bienvenue dans ta partie de SUTOM, ${user.toString()}! 🎯\nOn cherche un mot de **${String(game.word.length)} lettres**.\n\nUtilise \`/sutom mot\` pour proposer tes mots.`,
           embeds: [embed],
           files: [attachment],
         })
         .catch((e: unknown) => {
           logger.error(e);
         });
+
+      // Delete the deferred reply - Discord's automated message is enough
+      await interaction.deleteReply().catch((e: unknown) => {
+        logger.error(e);
+      });
     } else {
       await thread.delete();
       await interaction
-        .reply({
+        .editReply({
           content:
             'Mince alors, une erreur est survenue lors de la création de ta partie.',
-          ephemeral: true,
         })
         .catch((e: unknown) => {
           logger.error(e);
@@ -119,10 +116,9 @@ export default async function startSutomSubcommand(
   } catch (error) {
     logger.error({ error }, 'Error creating thread');
     await interaction
-      .reply({
+      .editReply({
         content:
           "Impossible de créer un thread pour ta partie. Vérifie que j'ai les permissions nécessaires.",
-        ephemeral: true,
       })
       .catch((e: unknown) => {
         logger.error(e);
