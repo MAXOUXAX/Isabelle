@@ -11,17 +11,19 @@ export class SutomCommand implements IsabelleCommand {
   commandData = new SlashCommandBuilder()
     .setName('sutom')
     .setDescription(
-      'Joue une partie de SUTOM ! Chaque joueur a sa propre instance de jeu.',
+      'Joue une partie de SUTOM dans un thread privé ! Chaque joueur a sa propre instance de jeu.',
     )
     .addSubcommand((subcommand) =>
       subcommand
         .setName('start')
-        .setDescription('Commence une partie de SUTOM'),
+        .setDescription('Commence une partie de SUTOM dans un thread privé'),
     )
     .addSubcommand((subcommand) =>
       subcommand
         .setName('mot')
-        .setDescription('Propose un mot pour la partie de SUTOM')
+        .setDescription(
+          'Propose un mot pour ta partie de SUTOM (uniquement dans ton thread)',
+        )
         .addStringOption((option) =>
           option
             .setName('mot')
@@ -39,7 +41,7 @@ export class SutomCommand implements IsabelleCommand {
         void guessWordSubcommand(interaction);
         break;
       case 'start':
-        startSutomSubcommand(interaction);
+        void startSutomSubcommand(interaction);
         break;
       case 'stop':
         void stopSutomSubcommand(interaction);

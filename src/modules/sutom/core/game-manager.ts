@@ -1,23 +1,46 @@
 import { SutomGame } from '@/modules/sutom/core/sutom-game.js';
 import { wordRepository } from '@/modules/sutom/core/word-repository.js';
 
+interface GameInstance {
+  game: SutomGame;
+  threadId: string;
+}
+
 class GameManager {
-  gameInstances: Map<string, SutomGame>;
+  gameInstances: Map<string, GameInstance>;
 
   constructor() {
-    this.gameInstances = new Map<string, SutomGame>();
+    this.gameInstances = new Map<string, GameInstance>();
   }
 
-  createGame(userId: string): boolean {
+  createGame(userId: string, threadId: string): boolean {
     if (this.gameInstances.has(userId)) {
       return false;
     }
-    this.gameInstances.set(userId, new SutomGame(wordRepository));
+    this.gameInstances.set(userId, {
+      game: new SutomGame(wordRepository),
+      threadId,
+    });
     return true;
   }
 
   getGame(userId: string): SutomGame | undefined {
-    return this.gameInstances.get(userId);
+    return this.gameInstances.get(userId)?.game;
+  }
+
+  getGameThreadId(userId: string): string | undefined {
+    return this.gameInstances.get(userId)?.threadId;
+  }
+
+  getGameByThreadId(
+    threadId: string,
+  ): { userId: string; game: SutomGame } | undefined {
+    for (const [userId, instance] of this.gameInstances.entries()) {
+      if (instance.threadId === threadId) {
+        return { userId, game: instance.game };
+      }
+    }
+    return undefined;
   }
 
   deleteGame(id: string) {
