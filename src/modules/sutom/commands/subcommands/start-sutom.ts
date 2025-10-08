@@ -27,13 +27,6 @@ export default async function startSutomSubcommand(
   }
 
   const { channel } = interaction;
-  if (!channel?.isSendable()) {
-    await interaction.reply({
-      content: 'Impossible de créer une partie dans ce canal.',
-      flags: MessageFlags.Ephemeral,
-    });
-    return;
-  }
 
   // Check if the channel supports threads
   if (!(channel instanceof TextChannel)) {
@@ -46,7 +39,7 @@ export default async function startSutomSubcommand(
   }
 
   try {
-    // We'll defer the reply to later delete it
+    // Defer the reply to provide immediate feedback while the thread is being created (prevents interaction timeout); the reply will be deleted once the game is set up.
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     // Create a thread for the game
@@ -78,7 +71,7 @@ export default async function startSutomSubcommand(
         files: [attachment],
       });
 
-      // Delete the deferred reply - Discord's automated message is enough
+      /* Delete the deferred reply - Discord's automated message for thread creation is enough and will lead the user to the thread directly */
       await interaction.deleteReply();
     } else {
       await thread.delete();
