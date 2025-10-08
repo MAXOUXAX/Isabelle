@@ -22,7 +22,7 @@ export default async function startSutomSubcommand(
     await interaction
       .reply({
         content: `Oups, on dirait que tu as déjà une partie en cours ! Propose un mot dans ${threadMention}.`,
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       })
       .catch((e: unknown) => {
         logger.error(e);
@@ -35,7 +35,7 @@ export default async function startSutomSubcommand(
     await interaction
       .reply({
         content: 'Impossible de créer une partie dans ce canal.',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       })
       .catch((e: unknown) => {
         logger.error(e);
@@ -49,7 +49,7 @@ export default async function startSutomSubcommand(
       .reply({
         content:
           'Tu ne peux pas jouer dans ce canal, essaye un autre canal textuel.',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       })
       .catch((e: unknown) => {
         logger.error(e);
