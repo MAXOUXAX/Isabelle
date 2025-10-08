@@ -1,107 +1,122 @@
 import { sutomGameManager } from '@/modules/sutom/core/game-manager.js';
 import { AttemptOutcome } from '@/modules/sutom/core/sutom-game.js';
 import { createLogger } from '@/utils/logger.js';
-import { ChatInputCommandInteraction } from 'discord.js';
+import { ChatInputCommandInteraction, MessageFlags } from 'discord.js';
 
 const logger = createLogger('sutom-guess');
 
 export default async function guessWordSubcommand(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
-  const { user } = interaction;
-  if (interaction.options.get('mot') === null) {
-    interaction
-      .reply('Tu dois fournir un mot à deviner !')
-      .catch((e: unknown) => {
-        logger.error(e);
-      });
+  const { user, channel } = interaction;
+  const guessedWord = interaction.options.getString('mot');
+  if (!guessedWord) {
+    await interaction.reply('Tu dois fournir un mot à deviner !');
     return;
   }
 
-  const guessedWord = interaction.options.get('mot')?.value as string;
   logger.debug(
     `User ${user.username} (${user.id}) guessed word: "${guessedWord}"`,
   );
 
   const game = sutomGameManager.getGame(user.id);
   if (!game) {
-    interaction
-      .reply(
+    await interaction.reply({
+      content:
         "Tu n'as pas de partie en cours ! Utilise la commande `/sutom start` pour en commencer une.",
-      )
-      .catch((e: unknown) => {
-        logger.error(
-          { error: e },
-          `Failed to reply to ${user.username} about missing game:`,
-        );
-      });
+      flags: MessageFlags.Ephemeral,
+    });
     return;
   }
 
-  const word = interaction.options.get('mot')?.value as string;
+  const sendEphemeral = (content: string) =>
+    interaction.reply({ content, flags: MessageFlags.Ephemeral });
 
-  const wordOutcome = game.addWord(word);
+  const userThreadId = sutomGameManager.getGameThreadId(user.id);
+
+  // Check if the command is being used in the correct thread
+  if (!channel || !userThreadId || channel.id !== userThreadId) {
+    const threadMention = userThreadId
+      ? `<#${userThreadId}>`
+      : 'ton thread de jeu';
+    await sendEphemeral(
+      `❌ Tu ne peux proposer des mots que dans ${threadMention} !`,
+    );
+    return;
+  }
+
+  const gameChannel = channel as NonNullable<typeof channel>;
+
+  // Additional validation: check if there's a game associated with this thread
+  const threadGame = sutomGameManager.getGameByThreadId(gameChannel.id);
+  if (!threadGame || threadGame.userId !== user.id) {
+    await sendEphemeral(
+      'Ce thread ne correspond pas à ta partie actuelle.',
+    ).catch((e: unknown) => {
+      logger.error(
+        { error: e },
+        `Failed to reply to ${user.username} about missing game:`,
+      );
+    });
+    return;
+  }
+
+  const archiveThread = async () => {
+    if (gameChannel.isThread()) {
+      await gameChannel.setArchived(true).catch((e: unknown) => {
+        logger.error({ error: e }, 'Failed to archive thread');
+      });
+    }
+  };
+
+  const replyWithBoard = async (message: string) => {
+    const { embed, attachment } = game.buildBoard(message);
+    await interaction.reply({ embeds: [embed], files: [attachment] });
+  };
+
+  const concludeGame = async (message: string) => {
+    await replyWithBoard(message);
+    await archiveThread();
+    sutomGameManager.deleteGame(user.id);
+  };
+
+  const wordOutcome = game.addWord(guessedWord);
 
   switch (wordOutcome) {
     case AttemptOutcome.WORD_REPEATED:
-      interaction.reply('Tu as déjà essayé ce mot !').catch((e: unknown) => {
-        logger.error(e);
-      });
+      await sendEphemeral('Tu as déjà essayé ce mot !');
       break;
     case AttemptOutcome.WORD_LENGTH_MISMATCH:
-      interaction
-        .reply("Le mot que tu as proposé n'a pas la bonne longueur !")
-        .catch((e: unknown) => {
-          logger.error(e);
-        });
+      await sendEphemeral(
+        "Le mot que tu as proposé n'a pas la bonne longueur !",
+      );
       break;
     case AttemptOutcome.ATTEMPTS_EXHAUSTED: {
-      const { embed, attachment } = game.buildBoard(
+      await concludeGame(
         `❌ Tu as utilisé toutes tes tentatives ! Le mot était: **${game.word.toUpperCase()}**`,
       );
-      await interaction
-        .reply({ embeds: [embed], files: [attachment] })
-        .catch((e: unknown) => {
-          logger.error(e);
-        });
-      sutomGameManager.deleteGame(user.id);
       break;
     }
     case AttemptOutcome.UNKNOWN_WORD:
-      interaction
-        .reply("Le mot que tu as proposé n'existe pas dans le dictionnaire !")
-        .catch((e: unknown) => {
-          logger.error(e);
-        });
+      await sendEphemeral(
+        "Le mot que tu as proposé n'existe pas dans le dictionnaire !",
+      );
       break;
     case AttemptOutcome.WORD_SUCCESSFULLY_GUESSED: {
-      const { embed, attachment } = game.buildBoard(
+      await concludeGame(
         `🎉 Bravo, tu as trouvé le mot: **${game.word.toUpperCase()}**`,
       );
-      await interaction
-        .reply({ embeds: [embed], files: [attachment] })
-        .catch((e: unknown) => {
-          logger.error(e);
-        });
-      sutomGameManager.deleteGame(user.id);
       break;
     }
     case AttemptOutcome.VALID_WORD: {
       const remaining = 6 - game.wordHistory.length;
-      const { embed, attachment } = game.buildBoard(
+      await replyWithBoard(
         `Il te reste **${String(remaining)}** tentative${remaining > 1 ? 's' : ''}.`,
       );
-      interaction
-        .reply({ embeds: [embed], files: [attachment] })
-        .catch((e: unknown) => {
-          logger.error(e);
-        });
       break;
     }
     default:
-      interaction.reply('Erreur inconnue !').catch((e: unknown) => {
-        logger.error(e);
-      });
+      await sendEphemeral('Erreur inconnue !');
       break;
   }
 }
