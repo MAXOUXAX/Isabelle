@@ -1,10 +1,6 @@
 import { sutomGameManager } from '@/modules/sutom/core/game-manager.js';
 import { createLogger } from '@/utils/logger.js';
-import {
-  chatInputApplicationCommandMention,
-  CommandInteraction,
-  MessageFlags,
-} from 'discord.js';
+import { CommandInteraction, MessageFlags } from 'discord.js';
 
 const logger = createLogger('sutom-stop');
 
@@ -16,7 +12,7 @@ export default async function stopSutomSubcommand(
   const game = sutomGameManager.getGame(user.id);
   if (!game) {
     await interaction.reply({
-      content: `Tu n'as pas de partie en cours ! Utilise la commande ${chatInputApplicationCommandMention('sutom', 'start', '0')} pour en commencer une.`,
+      content: `Tu n'as pas de partie en cours ! Utilise la commande /sutom start pour en commencer une.`,
       flags: MessageFlags.Ephemeral,
     });
     return;
