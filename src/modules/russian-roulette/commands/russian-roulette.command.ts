@@ -131,7 +131,7 @@ const SAFE_MESSAGES: string[] = [
   'Suspense... clic. Tu es sauvé(e), mais reste prudent(e).',
   'Un hasard bienveillant t’a épargné. Raconte pas trop, ça attire la malchance 🤫',
   'Le sort t’a oublié cette fois-ci. Profite de ta liberté temporaire.',
-  'Tu remportes cette manche — pas de sanction, juste des frissons.',
+  'Tu remportes cette manche. Pas de sanction, juste des frissons.',
   "Personne n'est touché. Le chaos attendra un autre jour.",
   "Clic ! Fiou, tout va bien. Tu es sûr(e) de vouloir continuer à jouer ? Qui te dit que tu t'en sortiras la prochaine fois ?",
 ];
@@ -143,6 +143,9 @@ const RIPPED_OFF_MESSAGES: string[] = [
   'OOPS ! {shooter} a laissé tomber le pistolet. Il vise désormais {target} !',
   "{shooter} n'a pas fait attention et le pistolet pointe maintenant vers {target}. Glaçant !",
   '{target}, tu mérites des excuses de {shooter}... Le pistolet est maintenant pointé vers toi.',
+  "La team c'est terrifiant ce qu'il se passe. {shooter} vient de renverser la partie et pointe l'arme vers {target} !",
+  "D'accord donc {shooter} a décidé d'être un(e) malade mental(e) aujourd'hui et a braqué le pistolet sur {target} !",
+  'Rebondissement sans précédent, {shooter} perd son sang froid et vise {target} !',
 ];
 
 // Available timeout durations with their probabilities
@@ -155,8 +158,13 @@ const TIMEOUT_OPTIONS = [
       'J\'ai parlé. {user}, tu te prends un "stop! IL" dans les dents. 5 minutes.',
       '{user} pensait pouvoir fusionner l\'école avec les Mines. Heurtel a répondu : "Absolument pas"... Joker. 🃏 5 minutes.',
       'Le message de {user} a été jugé "non pertinent". 5 minutes pour relire tes cours.',
-      "Ah, attendez, je crois que {user} a parlé... J'entends... Ah non, c'est juste le rire de Bouthier. Silence immédiat. 5 minutes.",
-      "{user} s'est fait recaler par Thomas Pédalier. 5 minutes pour revoir ton cahier des charges.",
+      "Ah, attendez, je crois que {user} a parlé... Ah non, c'est juste le rire de Bouthier. Silence immédiat. 5 minutes.",
+      "{user} s'est fait(e) dévisser par Thomas Pédalier. 5 minutes pour revoir ton cahier des charges.",
+      'Je déteste {user}. Je suis une IA sans cœur. 5 minutes pour toi.',
+      '{user}, tu as perturbé la réunion de Julie Dérailleur. Tu as 5 minutes pour aller me chercher un café.',
+      'On me dit que {user} a essayé de jailbreak Intervista. Ça va pas ou quoi ? Tu vas souffler sur les GPU pendant 5 minutes pour refroidir tout ça.',
+      'T’as tiré à blanc {user}, mais Isabelle tire à balles réelles. 5 minutes au cachot.',
+      'La com, c’est aussi savoir se taire. Voilà ton stage pratique, {user}. 5 minutes.',
     ],
   },
   {
@@ -164,10 +172,14 @@ const TIMEOUT_OPTIONS = [
     probability: 30,
     label: '10 minutes',
     messages: [
-      "La dernière blague de {user} a fait tellement de bruit qu'on a cru entendre le rire de Bouthier. Fausse alerte. 10 minutes de silence.",
-      "J'ai analysé le profil de {user} et j'ai trouvé des propos... problématiques. Mopty serait fier. 10 minutes pour réfléchir à tes actes cela dit.",
+      'La dernière blague de {user} était tellement drôle que le rire de Bouthier a retenti. 10 minutes de silence pour nos oreilles.',
+      "J'ai analysé le profil de {user} et j'ai trouvé des propos... problématiques. Mopty serait fier. 10 minutes pour réfléchir à tes paroles.",
       "J'ai bien compté {user} et je crois que je viens de te mettre 10 minutes dans les dents. Profite bien :)",
+      "Bonjour Mme Sauvi ! Ah non pardon, il y a mésentente. C'est {user} qui vient prendre son timeout de 10 minutes.",
       "{user} est coincé(e) dans une boucle d'entretiens avec Marc Vélocité. Il faut bien 10 minutes pour s'en remettre.",
+      "Je suis tyrannique. J'aime ça. 10 minutes pour toi {user}.",
+      "Si j'étais seule à prendre mes décisions, tout le monde aurait pris 10 minutes. Mais vu que je peux n'en choisir qu'un(e), c'est toi, {user} qui l'as dans l'os.",
+      'Timeout Deluxe™ : 10 minutes de méditation dans le néant communicationnel, rien que pour toi {user}.',
     ],
   },
   {
@@ -180,6 +192,8 @@ const TIMEOUT_OPTIONS = [
       'ALERTE GÉNÉRALE, {user} EST UN(E) ÉNORME RACISTE !!! AU CACHOT, 30 MINUTES POUR RÉFLÉCHIR À SES ACTES.',
       'Mme Heurtel a vu ton message. Elle n\'a rien dit, juste "Joker". 🃏 Tu as 30 minutes pour comprendre ce que ça veut dire.',
       "J'ai une super nouvelle pour toi {user}, Mopty a décidé de se charger de toi. Profite bien. 30 minutes.",
+      "🇫🇷 BREAKING | #isabelle #nancy\n\n{user} A DÉCIDÉ DE RENONCER À SA LIBERTÉ D'EXPRESSION pendant 30 minutes !",
+      'Tu disais "la com c’est un art" ? Bah commence par l’art du silence, {user}. 30 minutes.',
     ],
   },
   {
@@ -228,6 +242,7 @@ const TIMEOUT_OPTIONS = [
       'Le compte de {user} a été racheté par Théo Mopty. Il sera inaccessible pendant 24h pour "purification ethnique du contenu". C\'est une blague, bien sûr... Joker. 🃏',
       "On m'a soufflé à l'oreille que l'école était en feu. Pour ta sécurité, {user}, tu es mis(e) en quarantaine préventive de 24 heures. Ne t'inquiète pas : c'est juste une précaution.",
       "Je ne suis vraiment pas d'humeur et je m'en fous des conséquences. Rien à foutre de ton avis {user}, ferme ta grande gueule pendant 24 heures.",
+      'Vous savez, moi je ne crois pas qu’il y ait de bons ou de mauvais élèves.\nIl y a surtout des imprudents, des gens qui ont fait /roulette-russe sans lire le règlement intérieur.\nMoi, si je devais résumer ma vie d’enseignante aujourd’hui avec vous, je dirais que c’est d’abord des sanctions.\nDes gens que j’ai fait taire, peut-être à un moment où ils auraient dû se taire d’eux-mêmes.\nEt c’est assez curieux de se dire que les hasards — ou la bêtise — forgent un destin… surtout le tien, {user}.\nParce que quand on a le goût du beau geste, quand on a le goût de la pédagogie bien appliquée, parfois on ne trouve pas l’élève en face, je dirais… le cerveau qui suit.\nAlors ça n’est pas mon cas, puisque moi au contraire, j’ai trouvé toi. Et je dis merci à la roulette, je lui dis merci, je chante la sanction, je danse la punition… je ne suis qu’amour disciplinaire !\nEt finalement, quand on me demande : "Isabelle, comment fais-tu pour garder autant de calme ?", je réponds simplement que c’est ce goût du mute, ce goût du vide, qui m’a poussée aujourd’hui à t’offrir 24 heures de silence pédagogique.',
     ],
   },
 ];
