@@ -19,41 +19,29 @@ export default async function startSutomSubcommand(
   if (existingGame) {
     const threadId = sutomGameManager.getGameThreadId(user.id);
     const threadMention = threadId ? `<#${threadId}>` : 'ton thread de jeu';
-    await interaction
-      .reply({
-        content: `Oups, on dirait que tu as déjà une partie en cours ! Propose un mot dans ${threadMention}.`,
-        flags: MessageFlags.Ephemeral,
-      })
-      .catch((e: unknown) => {
-        logger.error(e);
-      });
+    await interaction.reply({
+      content: `Oups, on dirait que tu as déjà une partie en cours ! Propose un mot dans ${threadMention}.`,
+      flags: MessageFlags.Ephemeral,
+    });
     return;
   }
 
   const { channel } = interaction;
   if (!channel?.isSendable()) {
-    await interaction
-      .reply({
-        content: 'Impossible de créer une partie dans ce canal.',
-        flags: MessageFlags.Ephemeral,
-      })
-      .catch((e: unknown) => {
-        logger.error(e);
-      });
+    await interaction.reply({
+      content: 'Impossible de créer une partie dans ce canal.',
+      flags: MessageFlags.Ephemeral,
+    });
     return;
   }
 
   // Check if the channel supports threads
   if (!(channel instanceof TextChannel)) {
-    await interaction
-      .reply({
-        content:
-          'Tu ne peux pas jouer dans ce canal, essaye un autre canal textuel.',
-        flags: MessageFlags.Ephemeral,
-      })
-      .catch((e: unknown) => {
-        logger.error(e);
-      });
+    await interaction.reply({
+      content:
+        'Tu ne peux pas jouer dans ce canal, essaye un autre canal textuel.',
+      flags: MessageFlags.Ephemeral,
+    });
     return;
   }
 
@@ -73,13 +61,9 @@ export default async function startSutomSubcommand(
     if (!gameCreated) {
       // Should never happen, but handle it gracefully
       await thread.delete();
-      await interaction
-        .editReply({
-          content: 'Une erreur est survenue lors de la création de ta partie.',
-        })
-        .catch((e: unknown) => {
-          logger.error(e);
-        });
+      await interaction.editReply({
+        content: 'Une erreur est survenue lors de la création de ta partie.',
+      });
       return;
     }
 
@@ -88,40 +72,26 @@ export default async function startSutomSubcommand(
       const { embed, attachment } = game.buildBoard();
 
       // Send the game board in the thread as the first message
-      await thread
-        .send({
-          content: `Bienvenue dans ta partie de SUTOM, ${user.toString()}! 🎯\nOn cherche un mot de **${String(game.word.length)} lettres**.\n\nUtilise \`/sutom mot\` pour proposer tes mots.`,
-          embeds: [embed],
-          files: [attachment],
-        })
-        .catch((e: unknown) => {
-          logger.error(e);
-        });
+      await thread.send({
+        content: `Bienvenue dans ta partie de SUTOM, ${user.toString()}! 🎯\nOn cherche un mot de **${String(game.word.length)} lettres**.\n\nUtilise \`/sutom mot\` pour proposer tes mots.`,
+        embeds: [embed],
+        files: [attachment],
+      });
 
       // Delete the deferred reply - Discord's automated message is enough
-      await interaction.deleteReply().catch((e: unknown) => {
-        logger.error(e);
-      });
+      await interaction.deleteReply();
     } else {
       await thread.delete();
-      await interaction
-        .editReply({
-          content:
-            'Mince alors, une erreur est survenue lors de la création de ta partie.',
-        })
-        .catch((e: unknown) => {
-          logger.error(e);
-        });
+      await interaction.editReply({
+        content:
+          'Mince alors, une erreur est survenue lors de la création de ta partie.',
+      });
     }
   } catch (error) {
     logger.error({ error }, 'Error creating thread');
-    await interaction
-      .editReply({
-        content:
-          "Impossible de créer un thread pour ta partie. Vérifie que j'ai les permissions nécessaires.",
-      })
-      .catch((e: unknown) => {
-        logger.error(e);
-      });
+    await interaction.editReply({
+      content:
+        "Impossible de créer un thread pour ta partie. Vérifie que j'ai les permissions nécessaires.",
+    });
   }
 }
