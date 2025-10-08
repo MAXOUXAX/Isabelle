@@ -11,6 +11,7 @@ import { interactionManager } from './manager/interaction.manager.js';
 import { IsabelleModule } from './modules/bot-module.js';
 import { HotPotato } from './modules/hot-potato/hot-potato.module.js';
 import { createLogger } from './utils/logger.js';
+import { Trashtalk } from '@/modules/trashtalk/trashtalk.module.js';
 
 const logger = createLogger('core');
 const modulesLogger = createLogger('modules');
@@ -35,6 +36,7 @@ const MODULES: IsabelleModule[] = [
   new RussianRoulette(),
   new SutomModule(),
   new Schedule(),
+  new Trashtalk(),
 ];
 
 client.once(Events.ClientReady, () => {
