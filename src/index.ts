@@ -1,5 +1,6 @@
 import { commandManager } from '@/manager/commands/command.manager.js';
 import { AutomaticResponsesModule } from '@/modules/automatic-responses/automatic-responses.module.js';
+import { BirthdaysModule } from '@/modules/birthdays/birthdays.module.js';
 import { CoreModule } from '@/modules/core/core.module.js';
 import { PlanifierModule } from '@/modules/planifier/planifier.module.js';
 import { RussianRoulette } from '@/modules/russian-roulette/russian-roulette.module.js';
@@ -35,6 +36,7 @@ const MODULES: IsabelleModule[] = [
   new RussianRoulette(),
   new SutomModule(),
   new Schedule(),
+  new BirthdaysModule(),
 ];
 
 client.once(Events.ClientReady, () => {
