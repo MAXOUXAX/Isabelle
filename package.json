@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "isabelle",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "description": "Isabelle est un BOT Discord à destination des élèves de TELECOM Nancy, et plus particulièrement aux étudiants de la promotion 2027 des FISA",
   "author": "MAXOUXAX",
   "engines": {
