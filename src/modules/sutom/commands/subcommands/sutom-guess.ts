@@ -9,7 +9,7 @@ export default async function guessWordSubcommand(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   const { user, channel } = interaction;
-  const guessedWord = interaction.options.getString('mot');
+  const guessedWord = interaction.options.getString('tentative');
   if (!guessedWord) {
     await interaction.reply('Tu dois fournir un mot à deviner !');
     return;
