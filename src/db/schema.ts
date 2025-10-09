@@ -31,3 +31,13 @@ export const guildConfigs = sqliteTable('guild_configs', {
   config: text('config', { mode: 'json' }).$type<GuildConfig>().notNull(),
   ...base(),
 });
+
+export const birthdays = sqliteTable('birthdays', {
+  id: int('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id').notNull().unique(),
+  guildId: text('guild_id').notNull(),
+  day: int('day').notNull(), // 1-31
+  month: int('month').notNull(), // 1-12
+  year: int('year'), // Optional, for age calculation
+  ...base(),
+});
