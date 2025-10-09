@@ -19,6 +19,7 @@ export class Bonjour implements IsabelleCommand {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const promotedCommands = [
       commandManager.findByName('planifier'),
+      commandManager.findByName('anniversaire'),
       commandManager.findByName('bonjour'),
     ].filter((command) => command !== undefined);
 
