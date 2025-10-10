@@ -31,3 +31,10 @@ export const guildConfigs = sqliteTable('guild_configs', {
   config: text('config', { mode: 'json' }).$type<GuildConfig>().notNull(),
   ...base(),
 });
+
+export const roastUsage = sqliteTable('roast_usage', {
+  id: int('id').primaryKey({ autoIncrement: true }),
+  guildId: text('guild_id').notNull(),
+  userId: text('user_id').notNull(),
+  ...base(),
+});
