@@ -31,16 +31,16 @@ const MAX_ROASTS_PER_USER_PER_DAY = Number.isNaN(parsedMaxRoasts)
 
 const isProd = process.env.NODE_ENV === 'production';
 
-const logger = createLogger('trashtalk-command');
+const logger = createLogger('roast-command');
 
-export class TrashTalkCommand implements IsabelleCommand {
+export class RoastCommand implements IsabelleCommand {
   commandData = new SlashCommandBuilder()
     .setName('roast')
-    .setDescription('Trashtalk un camarade')
+    .setDescription('Demande à Isabelle de générer un roast sur un camarade')
     .addUserOption((option) =>
       option
-        .setName('user')
-        .setDescription("L'utilisateur à roast")
+        .setName('cible')
+        .setDescription('Qui est-ce que tu aimerais que je roast ?')
         .setRequired(true),
     );
 

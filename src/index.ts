@@ -2,6 +2,7 @@ import { commandManager } from '@/manager/commands/command.manager.js';
 import { AutomaticResponsesModule } from '@/modules/automatic-responses/automatic-responses.module.js';
 import { CoreModule } from '@/modules/core/core.module.js';
 import { PlanifierModule } from '@/modules/planifier/planifier.module.js';
+import { RoastModule } from '@/modules/roast/roast.module.js';
 import { RussianRoulette } from '@/modules/russian-roulette/russian-roulette.module.js';
 import { Schedule } from '@/modules/schedule/schedule.module.js';
 import { SutomModule } from '@/modules/sutom/sutom.module.js';
@@ -11,7 +12,6 @@ import { interactionManager } from './manager/interaction.manager.js';
 import { IsabelleModule } from './modules/bot-module.js';
 import { HotPotato } from './modules/hot-potato/hot-potato.module.js';
 import { createLogger } from './utils/logger.js';
-import { Trashtalk } from '@/modules/trashtalk/trashtalk.module.js';
 
 const logger = createLogger('core');
 const modulesLogger = createLogger('modules');
@@ -36,7 +36,7 @@ const MODULES: IsabelleModule[] = [
   new RussianRoulette(),
   new SutomModule(),
   new Schedule(),
-  new Trashtalk(),
+  new RoastModule(),
 ];
 
 client.once(Events.ClientReady, () => {
