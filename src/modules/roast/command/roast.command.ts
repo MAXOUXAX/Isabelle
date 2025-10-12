@@ -116,14 +116,7 @@ export class RoastCommand implements IsabelleCommand {
         }
       }
 
-      const user = interaction.options.getUser('user');
-      if (!user) {
-        await interaction.reply({
-          content: 'Utilisateur non trouvé.',
-          flags: MessageFlags.Ephemeral,
-        });
-        return;
-      }
+      const user = interaction.options.getUser('cible', true);
 
       if (user.bot) {
         await interaction.reply(
@@ -152,7 +145,7 @@ export class RoastCommand implements IsabelleCommand {
       }
 
       const result = await generateText({
-        model: google('gemini-flash-lite-latest'),
+        model: google('gemini-flash-latest'),
         messages: [
           {
             role: 'user',
@@ -164,6 +157,11 @@ export class RoastCommand implements IsabelleCommand {
               '\nFais en sorte que ce soit pertinent par rapport à ses messages.',
           },
         ],
+        providerOptions: {
+          google: {
+            thinkingBudget: 8192,
+          },
+        },
       });
 
       logger.debug({ result }, 'AI generation result');
