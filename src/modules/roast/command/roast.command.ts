@@ -183,7 +183,16 @@ export class RoastCommand implements IsabelleCommand {
         });
       }
 
-      await interaction.editReply(roast);
+      // If the roast is 2000 characters long or more, we split it and send the first chunk with editReply, and the rest with followUp
+      const chunks = roast.match(/[\s\S]{1,2000}/g) ?? [roast];
+      for (let i = 0; i < chunks.length; i += 1) {
+        const chunk = chunks[i];
+        if (i === 0) {
+          await interaction.editReply({ content: chunk });
+        } else {
+          await interaction.followUp({ content: chunk });
+        }
+      }
     } catch (error) {
       logger.error({ error }, 'Failed to execute roast command');
 
