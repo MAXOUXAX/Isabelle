@@ -1,3 +1,4 @@
+import { gemini } from '@/ai/models/gemini-flash-latest.wrapped.js';
 import { db } from '@/db/index.js';
 import { roastUsage } from '@/db/schema.js';
 import { IsabelleCommand } from '@/manager/commands/command.interface.js';
@@ -9,7 +10,6 @@ import {
 } from '@/utils/date.js';
 import { createLogger } from '@/utils/logger.js';
 import { fetchLastUserMessages } from '@/utils/message-picker.js';
-import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
 import {
   ChatInputCommandInteraction,
@@ -145,7 +145,7 @@ export class RoastCommand implements IsabelleCommand {
       }
 
       const result = await generateText({
-        model: google('gemini-flash-latest'),
+        model: gemini,
         messages: [
           {
             role: 'user',

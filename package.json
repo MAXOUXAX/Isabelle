@@ -53,11 +53,10 @@
     ]
   },
   "dependencies": {
-    "@ai-sdk/google": "^2.0.17",
-    "@ai-sdk/openai": "^3.0.0-beta.17",
+    "@ai-sdk/google": "^2.0.20",
     "@libsql/client": "^0.15.15",
     "@napi-rs/canvas": "^0.1.80",
-    "ai": "^6.0.0-beta.29",
+    "ai": "^5.0.68",
     "discord.js": "^14.18.0",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.44.6",
