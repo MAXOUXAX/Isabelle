@@ -11,10 +11,16 @@ interface GenerateRoastOptions {
   messages: Message[];
 }
 
+interface GenerateRoastResult {
+  text: string;
+  modelVersion?: string;
+  totalTokens: number;
+}
+
 export async function generateRoast({
   displayName,
   messages,
-}: GenerateRoastOptions): Promise<string> {
+}: GenerateRoastOptions): Promise<GenerateRoastResult> {
   const preparedMessages = messages
     .map((message) => `- ${message.content}`)
     .join('\n');
@@ -48,5 +54,17 @@ export async function generateRoast({
     'Generated roast result',
   );
 
-  return result.text.trim();
+  const modelVersion =
+    result.response.body &&
+    typeof result.response.body === 'object' &&
+    'modelVersion' in result.response.body &&
+    typeof result.response.body.modelVersion === 'string'
+      ? result.response.body.modelVersion
+      : undefined;
+
+  return {
+    text: result.text.trim(),
+    modelVersion,
+    totalTokens: result.usage.totalTokens ?? 0,
+  };
 }

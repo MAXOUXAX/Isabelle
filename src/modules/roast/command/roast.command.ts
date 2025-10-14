@@ -94,12 +94,12 @@ export class RoastCommand implements IsabelleCommand {
         return;
       }
 
-      const roast = await generateRoast({
+      const roastResult = await generateRoast({
         displayName: user.displayName,
         messages: lastUserMessages,
       });
 
-      if (!roast) {
+      if (!roastResult.text) {
         await interaction.editReply(
           "stop! Je n'arrive pas à me concentrer. Impossible de générer un roast pour le moment. Réessaie plus tard !",
         );
@@ -113,13 +113,33 @@ export class RoastCommand implements IsabelleCommand {
           ? '\n-# *Cooldown contourné - environnement de développement*'
           : '';
 
-      await safelySendMessage(interaction, roast + developmentNote);
+      const now = new Date();
+      const generationDateTime = now.toLocaleString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+
+      const modelInfo = roastResult.modelVersion
+        ? ` • ${roastResult.modelVersion}`
+        : '';
+
+      const metadataNote = `\n-# ${generationDateTime}${modelInfo} • ${roastResult.totalTokens.toString()} tokens`;
+
+      await safelySendMessage(
+        interaction,
+        roastResult.text + developmentNote + metadataNote,
+      );
     } catch (error) {
       logger.error({ error }, 'Failed to execute roast command');
       await handleRoastError({
         interaction,
         fallbackContent: ROAST_FALLBACK_MESSAGE,
         hasDeferred,
+        error,
       });
     }
   }
