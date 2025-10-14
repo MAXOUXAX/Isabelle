@@ -51,21 +51,19 @@ export class RoastCommand implements IsabelleCommand {
         return;
       }
 
-      if (isProd) {
-        const block = await checkRoastQuota(
-          guildId,
-          interaction.user.id,
-          MAX_ROASTS_PER_USER_PER_DAY,
-        );
+      const block = await checkRoastQuota(
+        guildId,
+        interaction.user.id,
+        MAX_ROASTS_PER_USER_PER_DAY,
+      );
 
-        if (block) {
-          logger.debug(
-            { guildId, userId: interaction.user.id },
-            'Roast request throttled',
-          );
+      if (block) {
+        if (isProd) {
           await interaction.reply(block);
           return;
         }
+        logger.debug('Development mode - bypassing cooldown');
+        // In development, continue but we'll add a note to the roast message
       }
 
       const user = interaction.options.getUser('cible', true);
@@ -110,11 +108,14 @@ export class RoastCommand implements IsabelleCommand {
 
       logger.debug({ contentLength: roast.length }, 'Generated roast content');
 
-      if (isProd) {
-        await recordRoastUsage(guildId, interaction.user.id);
-      }
+      await recordRoastUsage(guildId, interaction.user.id);
 
-      await sendRoast(interaction, roast);
+      const developmentNote =
+        !isProd && block
+          ? '\n-# *Cooldown contourné - environnement de développement*'
+          : '';
+
+      await sendRoast(interaction, roast, developmentNote);
     } catch (error) {
       logger.error({ error }, 'Failed to execute roast command');
       await handleRoastError({

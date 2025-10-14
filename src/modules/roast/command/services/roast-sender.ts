@@ -4,8 +4,10 @@ import type { ChatInputCommandInteraction } from 'discord.js';
 export async function sendRoast(
   interaction: ChatInputCommandInteraction,
   roast: string,
+  developmentNote = '',
 ): Promise<void> {
-  const chunks = splitMessageIntoChunks(roast);
+  const finalMessage = roast + developmentNote;
+  const chunks = splitMessageIntoChunks(finalMessage);
 
   for (let index = 0; index < chunks.length; index += 1) {
     const chunk = chunks[index];
