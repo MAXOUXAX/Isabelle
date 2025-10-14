@@ -6,13 +6,13 @@ import {
 } from '@/modules/roast/command/config/roast-config.js';
 import { handleRoastError } from '@/modules/roast/command/services/roast-error-handler.js';
 import { generateRoast } from '@/modules/roast/command/services/roast-generator.js';
-import { sendRoast } from '@/modules/roast/command/services/roast-sender.js';
 import {
   checkRoastQuota,
   recordRoastUsage,
 } from '@/modules/roast/command/services/roast-throttle.js';
 import { createLogger } from '@/utils/logger.js';
 import { fetchLastUserMessages } from '@/utils/message-picker.js';
+import { safelySendMessage } from '@/utils/safely-send-message.js';
 import {
   ChatInputCommandInteraction,
   MessageFlags,
@@ -115,7 +115,7 @@ export class RoastCommand implements IsabelleCommand {
           ? '\n-# *Cooldown contourné - environnement de développement*'
           : '';
 
-      await sendRoast(interaction, roast, developmentNote);
+      await safelySendMessage(interaction, roast + developmentNote);
     } catch (error) {
       logger.error({ error }, 'Failed to execute roast command');
       await handleRoastError({
