@@ -106,8 +106,6 @@ export class RoastCommand implements IsabelleCommand {
         return;
       }
 
-      logger.debug({ contentLength: roast.length }, 'Generated roast content');
-
       await recordRoastUsage(guildId, interaction.user.id);
 
       const developmentNote =
