@@ -5,10 +5,10 @@ import { int, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 const base = () => {
   return {
     createdAt: int('created_at', { mode: 'timestamp' }).default(
-      sql`(current_timestamp)`,
+      sql`(unixepoch())`,
     ),
     updatedAt: int('updated_at', { mode: 'timestamp' }).$onUpdate(
-      () => sql`(current_timestamp)`,
+      () => sql`(unixepoch())`,
     ),
   };
 };

@@ -19,8 +19,22 @@
     {
       "idx": 2,
       "version": "6",
-      "when": 1759915664953,
-      "tag": "0002_cultured_thing",
+      "when": 1760424985922,
+      "tag": "0002_colorful_maginty",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1760425005116,
+      "tag": "0003_fix-timestamp-data",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1760425322426,
+      "tag": "0004_normal_hannibal_king",
       "breakpoints": true
     }
   ]
