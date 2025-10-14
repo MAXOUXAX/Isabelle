@@ -41,7 +41,10 @@ const MODULES: IsabelleModule[] = [
 
 client.once(Events.ClientReady, () => {
   async function handler() {
-    logger.info("Connected to Discord's Gateway! 🎉");
+    logger.info(
+      { userTag: client.user?.tag, userId: client.user?.id },
+      "Connected to Discord's Gateway! 🎉",
+    );
 
     logger.info('Registering modules...');
     registerModules();
