@@ -1,45 +1,33 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 async function sendDiscordNotification() {
-  const version = process.env.NEXT_RELEASE_VERSION;
-  const notes = process.env.NEXT_RELEASE_NOTES;
-  const githubRepo = process.env.GITHUB_REPOSITORY;
-  const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+  const requiredEnvVars = {
+    NEXT_RELEASE_VERSION: process.env.NEXT_RELEASE_VERSION,
+    NEXT_RELEASE_NOTES: process.env.NEXT_RELEASE_NOTES,
+    GITHUB_REPOSITORY: process.env.GITHUB_REPOSITORY,
+    DISCORD_WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL,
+  } as const;
 
-  if (!version) {
-    console.error(
-      "Erreur : La variable d'environnement NEXT_RELEASE_VERSION n'est pas définie.",
-    );
-    return;
+  for (const [key, value] of Object.entries(requiredEnvVars)) {
+    if (!value) {
+      console.error(
+        `Erreur : La variable d'environnement ${key} n'est pas définie.`,
+      );
+      return;
+    }
   }
 
-  if (!notes) {
-    console.error(
-      "Erreur : La variable d'environnement NEXT_RELEASE_NOTES n'est pas définie.",
-    );
-    return;
-  }
-
-  if (!githubRepo) {
-    console.error(
-      "Erreur : La variable d'environnement GITHUB_REPOSITORY n'est pas définie.",
-    );
-    return;
-  }
-
-  if (!webhookUrl) {
-    console.error(
-      "Erreur : La variable d'environnement DISCORD_WEBHOOK_URL n'est pas définie.",
-    );
-    return;
-  }
+  const version = requiredEnvVars.NEXT_RELEASE_VERSION!;
+  const notes = requiredEnvVars.NEXT_RELEASE_NOTES!;
+  const githubRepo = requiredEnvVars.GITHUB_REPOSITORY!;
+  const webhookUrl = requiredEnvVars.DISCORD_WEBHOOK_URL!;
 
   if (!notes || notes.trim() === '') {
     console.log('Aucune note de version à envoyer. Notification annulée.');
     return;
   }
 
-  // Construction du message en français avec un "embed" pour une belle mise en forme
   const payload = {
-    content: `# 🚀 Une nouvelle version de \`${githubRepo}\` vient d'être publiée !`,
+    content: `# 🚀 Une nouvelle version d'Isabelle vient d'être publiée !`,
     embeds: [
       {
         title: `🎉 Version ${version}`,
