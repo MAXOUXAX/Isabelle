@@ -17,5 +17,5 @@
       "@modules/*": ["src/modules/*"]
     }
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "bin/**/*.ts", "drizzle.config.ts"]
 }
