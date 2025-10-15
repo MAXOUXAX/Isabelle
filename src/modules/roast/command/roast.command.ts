@@ -116,6 +116,10 @@ export class RoastCommand implements IsabelleCommand {
         await interaction.editReply(
           "stop! Je n'arrive pas à me concentrer. Impossible de générer un roast pour le moment. Réessaie plus tard !",
         );
+        logger.error(
+          { roastResult },
+          'Roast generation returned no text and no error - unexpected',
+        );
         return;
       }
 

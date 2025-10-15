@@ -12,6 +12,28 @@ const logger = createLogger('message-picker');
 
 const MAX_DEPTH = 50;
 const BATCH_SIZE = 100;
+const FRESHNESS_THRESHOLD_MONTHS = 3;
+const MIN_FRESH_PERCENTAGE = 0.8;
+
+/**
+ * Check if a message is considered "fresh" (less than 3 months old)
+ */
+const isMessageFresh = (message: Message): boolean => {
+  const now = Date.now();
+  const millisecondsIn3Months =
+    FRESHNESS_THRESHOLD_MONTHS * 30 * 24 * 60 * 60 * 1000;
+  const thresholdTimestamp = now - millisecondsIn3Months;
+  return message.createdTimestamp >= thresholdTimestamp;
+};
+
+/**
+ * Calculate the percentage of fresh messages in a collection
+ */
+const calculateFreshPercentage = (messages: Message[]): number => {
+  if (messages.length === 0) return 0;
+  const freshCount = messages.filter(isMessageFresh).length;
+  return freshCount / messages.length;
+};
 
 /**
  * Check if a channel is accessible for reading messages
@@ -85,7 +107,6 @@ const processChannelMessages = (
   messages: Message[],
   userId: Snowflake,
   uniqueMessages: Map<Snowflake, Message>,
-  maxMessages: number,
 ): { foundNew: boolean; lastMessageId: Snowflake | undefined } => {
   let foundNew = false;
   let lastMessageId: Snowflake | undefined;
@@ -94,10 +115,6 @@ const processChannelMessages = (
     if (message.author.id === userId && !uniqueMessages.has(message.id)) {
       uniqueMessages.set(message.id, message);
       foundNew = true;
-
-      if (uniqueMessages.size >= maxMessages) {
-        break;
-      }
     }
   }
 
@@ -123,10 +140,6 @@ const searchChannelsAtDepth = async (
   let foundNewMessages = false;
 
   for (const channel of channels) {
-    if (uniqueMessages.size >= maxMessages) {
-      break;
-    }
-
     const lastId = channelLastIds.get(channel.id);
 
     // Skip exhausted channels
@@ -146,7 +159,6 @@ const searchChannelsAtDepth = async (
         messages,
         userId,
         uniqueMessages,
-        maxMessages,
       );
 
       if (foundNew) {
@@ -250,11 +262,30 @@ export const fetchLastUserMessages = async (
       break;
     }
 
+    // Check if we have enough messages and if they meet the freshness requirement
     if (
-      uniqueMessages.size >= minMessages &&
+      uniqueMessages.size >= minMessages ||
       uniqueMessages.size >= maxMessages
     ) {
-      break;
+      const currentMessages = Array.from(uniqueMessages.values());
+      const freshPercentage = calculateFreshPercentage(currentMessages);
+
+      if (freshPercentage >= MIN_FRESH_PERCENTAGE) {
+        // We have enough messages and they're fresh enough
+        break;
+      } else {
+        // We have enough messages but they're not fresh enough, keep searching
+        logger.debug(
+          {
+            userId,
+            guildId: guild.id,
+            freshPercentage: (freshPercentage * 100).toFixed(1),
+            requiredPercentage: (MIN_FRESH_PERCENTAGE * 100).toFixed(1),
+            depth,
+          },
+          'Messages not fresh enough, continuing search',
+        );
+      }
     }
   }
 
@@ -271,18 +302,36 @@ export const fetchLastUserMessages = async (
   }
 
   const sortedMessages = finalizeMessages(uniqueMessages, maxMessages);
+  const freshPercentage = calculateFreshPercentage(sortedMessages);
 
   logger.debug(
     {
       userId,
       guildId: guild.id,
       foundMessages: sortedMessages.length,
+      freshPercentage: (freshPercentage * 100).toFixed(1) + '%',
       minMessages,
       maxMessages,
       depth,
     },
     'Completed message fetching',
   );
+
+  // Warn if freshness requirement wasn't met
+  if (
+    sortedMessages.length >= minMessages &&
+    freshPercentage < MIN_FRESH_PERCENTAGE
+  ) {
+    logger.warn(
+      {
+        userId,
+        guildId: guild.id,
+        freshPercentage: (freshPercentage * 100).toFixed(1) + '%',
+        requiredPercentage: (MIN_FRESH_PERCENTAGE * 100).toFixed(1) + '%',
+      },
+      'Could not meet freshness requirement',
+    );
+  }
 
   return sortedMessages;
 };
