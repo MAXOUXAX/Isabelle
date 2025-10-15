@@ -60,6 +60,8 @@ export async function checkRoastQuota(
   );
 
   if (rows.length >= maxRoastsPerDay) {
+    // Use lastUsage if available (most recent), otherwise use the oldest usage in the 24h window
+    // rows[0] is guaranteed to exist here since rows.length >= maxRoastsPerDay > 0
     const nextEligibleUsage = lastUsage ?? rows[0];
 
     const nextAllowedTimestamp = time(
