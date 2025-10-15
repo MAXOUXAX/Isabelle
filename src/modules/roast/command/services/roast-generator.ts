@@ -6,6 +6,11 @@ import type { Message } from 'discord.js';
 
 const logger = createLogger('roast-generator');
 
+const dateFormatter = new Intl.DateTimeFormat('fr-FR', {
+  dateStyle: 'short',
+  timeStyle: 'short',
+});
+
 interface GenerateRoastOptions {
   displayName: string;
   messages: Message[];
@@ -21,11 +26,6 @@ export async function generateRoast({
   displayName,
   messages,
 }: GenerateRoastOptions): Promise<GenerateRoastResult> {
-  const dateFormatter = new Intl.DateTimeFormat('fr-FR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  });
-
   const preparedMessages = messages
     .map((message) => {
       const formattedDate = dateFormatter.format(message.createdAt);
