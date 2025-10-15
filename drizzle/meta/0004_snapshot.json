@@ -1,9 +1,72 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "680d33ce-fc2c-4746-838c-152ea26ea48e",
+  "id": "e0d74158-a9cc-4f26-b23c-0fdd183b920a",
   "prevId": "95358b9e-13c7-4056-b987-2bb2291b0659",
   "tables": {
+    "audit_legal_consent": {
+      "name": "audit_legal_consent",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "scope": {
+          "name": "scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "consented": {
+          "name": "consented",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "(unixepoch())"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "audit_legal_consent_user_id_scope_created_at_unique": {
+          "name": "audit_legal_consent_user_id_scope_created_at_unique",
+          "columns": [
+            "user_id",
+            "scope",
+            "created_at"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "automatic_responses": {
       "name": "automatic_responses",
       "columns": {

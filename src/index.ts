@@ -1,6 +1,7 @@
 import { commandManager } from '@/manager/commands/command.manager.js';
 import { AutomaticResponsesModule } from '@/modules/automatic-responses/automatic-responses.module.js';
 import { CoreModule } from '@/modules/core/core.module.js';
+import { LegalModule } from '@/modules/legal/legal.module.js';
 import { PlanifierModule } from '@/modules/planifier/planifier.module.js';
 import { RoastModule } from '@/modules/roast/roast.module.js';
 import { RussianRoulette } from '@/modules/russian-roulette/russian-roulette.module.js';
@@ -30,6 +31,7 @@ export const client = new Client({
 
 const MODULES: IsabelleModule[] = [
   new CoreModule(),
+  new LegalModule(),
   new HotPotato(),
   new AutomaticResponsesModule(),
   new PlanifierModule(),
