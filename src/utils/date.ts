@@ -1,3 +1,6 @@
+export const HOUR_IN_MS = 60 * 60 * 1000;
+export const DAY_IN_MS = 24 * HOUR_IN_MS;
+
 const dateFormatter = new Intl.DateTimeFormat('fr', {
   weekday: 'long',
   year: 'numeric',
@@ -56,4 +59,57 @@ export function addDays(date: Date, days: number): Date {
   const result = new Date(date);
   result.setDate(result.getDate() + days);
   return result;
+}
+
+export function fromDrizzleDate(
+  value: Date | number | string | bigint | null | undefined,
+): Date {
+  if (value instanceof Date) {
+    return value;
+  }
+  if (typeof value === 'number') {
+    return new Date(value);
+  }
+  if (typeof value === 'bigint') {
+    const asNumber = Number(value);
+    if (Number.isNaN(asNumber)) {
+      return new Date(0);
+    }
+    return new Date(asNumber);
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+
+    const isoCandidate =
+      trimmed.includes('T') || !trimmed.includes(' ')
+        ? trimmed
+        : trimmed.replace(' ', 'T');
+
+    const parsedIso = Date.parse(isoCandidate);
+    if (!Number.isNaN(parsedIso)) {
+      return new Date(parsedIso);
+    }
+
+    const numeric = Number(trimmed);
+    if (!Number.isNaN(numeric)) {
+      return new Date(numeric);
+    }
+
+    if (!trimmed.endsWith('Z')) {
+      const parsedUtc = Date.parse(`${trimmed.replace(' ', 'T')}Z`);
+      if (!Number.isNaN(parsedUtc)) {
+        return new Date(parsedUtc);
+      }
+    }
+
+    return new Date(0);
+  }
+  return new Date(0);
+}
+
+export function timeUntilNextUse(
+  value: Date | number | string | bigint | null | undefined,
+): Date {
+  const baseDate = fromDrizzleDate(value);
+  return new Date(baseDate.getTime() + HOUR_IN_MS);
 }

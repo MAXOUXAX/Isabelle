@@ -67,7 +67,11 @@ function initializeLogging() {
   }) as pino.DestinationStream;
 
   // Create multistream for both file and console
-  const streams = [{ stream: fileTransport }, { stream: consoleTransport }];
+  // Set level on each stream to control which messages go where
+  const streams = [
+    { stream: fileTransport },
+    { stream: consoleTransport, level: baseLevel },
+  ];
 
   return pino(
     {

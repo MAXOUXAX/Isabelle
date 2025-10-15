@@ -45,6 +45,7 @@
     "prepare": "husky",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
     "sutom:generate-wordlist": "tsx bin/generate-wordlist.ts"
   },
   "lint-staged": {
@@ -54,20 +55,24 @@
     ]
   },
   "dependencies": {
+    "@ai-sdk/google": "^2.0.20",
     "@libsql/client": "^0.15.15",
     "@napi-rs/canvas": "^0.1.80",
+    "ai": "^5.0.68",
     "discord.js": "^14.18.0",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.44.6",
     "node-ical": "^0.21.0",
     "pino": "^10.0.0",
-    "pino-pretty": "^13.1.1"
+    "pino-pretty": "^13.1.1",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^11.0.6",
     "@types/eslint__js": "^9.14.0",
+    "@types/node": "^24.7.0",
     "@typescript-eslint/eslint-plugin": "^8.45.0",
     "@typescript-eslint/parser": "^8.45.0",
     "cross-env": "^10.1.0",
