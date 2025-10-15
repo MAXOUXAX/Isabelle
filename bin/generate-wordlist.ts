@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const config = {
-  lexiquePath: './Lexique383/Lexique383.tsv',
+  lexiquePath: './bin/Lexique383/Lexique383.tsv',
   outputDir: '../public/resources/sutom/',
   wordLengths: [4, 5, 6, 7, 8, 9, 10],
   // Set a minimum usage frequency for a word to be included in the solutions list.
