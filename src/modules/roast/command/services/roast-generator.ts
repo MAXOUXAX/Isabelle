@@ -1,6 +1,7 @@
-import { GEMINI_FLASH_LATEST } from '@/ai/models/gemini-flash-latest.wrapped.js';
+import { GEMINI_2_5_PRO } from '@/ai/models/gemini-models.wrapped.js';
 import { ROAST_PROMPT } from '@/modules/roast/command/templates/roast-prompt.js';
 import { createLogger } from '@/utils/logger.js';
+import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
 import type { Message } from 'discord.js';
 
@@ -38,7 +39,10 @@ export async function generateRoast({
     .join('\n');
 
   const result = await generateText({
-    model: GEMINI_FLASH_LATEST,
+    model: GEMINI_2_5_PRO,
+    tools: {
+      google_search: google.tools.googleSearch({}),
+    },
     messages: [
       {
         role: 'system',
