@@ -21,8 +21,20 @@ export async function generateRoast({
   displayName,
   messages,
 }: GenerateRoastOptions): Promise<GenerateRoastResult> {
+  const dateFormatter = new Intl.DateTimeFormat('fr-FR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  });
+
   const preparedMessages = messages
-    .map((message) => `- ${message.content}`)
+    .map((message) => {
+      const formattedDate = dateFormatter.format(message.createdAt);
+      const channelName =
+        ('name' in message.channel ? message.channel.name : 'DM') ?? 'Inconnu';
+      const { content } = message;
+
+      return `- ${formattedDate} - #${channelName} - ${content}`;
+    })
     .join('\n');
 
   const result = await generateText({
