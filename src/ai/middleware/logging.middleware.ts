@@ -3,6 +3,8 @@ import { LanguageModelMiddleware } from 'ai';
 
 const logger = createLogger('ai');
 
+const MAX_CONTENT_LOG_LENGTH = 200;
+
 export const loggingMiddleware: LanguageModelMiddleware = {
   wrapGenerate: async ({ doGenerate, params }) => {
     const usefulParams = {
@@ -12,8 +14,8 @@ export const loggingMiddleware: LanguageModelMiddleware = {
         return {
           role: p.role,
           content:
-            contentStr.length > 100
-              ? contentStr.slice(0, 100) + '...'
+            contentStr.length > MAX_CONTENT_LOG_LENGTH
+              ? contentStr.slice(0, MAX_CONTENT_LOG_LENGTH) + '...'
               : contentStr,
         };
       }),
@@ -27,7 +29,7 @@ export const loggingMiddleware: LanguageModelMiddleware = {
       firstContent &&
       'text' in firstContent &&
       typeof firstContent.text === 'string'
-        ? firstContent.text.slice(0, 100) + '...'
+        ? firstContent.text.slice(0, MAX_CONTENT_LOG_LENGTH) + '...'
         : undefined;
 
     const usefulResults = {
