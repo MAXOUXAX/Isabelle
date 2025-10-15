@@ -1,5 +1,6 @@
 import { legalManager } from '@/modules/legal/legal.manager.js';
 import {
+  ButtonBuilder,
   ButtonStyle,
   ContainerBuilder,
   SeparatorSpacingSize,
@@ -17,7 +18,7 @@ export const generativeAi = Object.freeze({
       .addTextDisplayComponents((textDisplay) =>
         textDisplay.setContent(
           "# 🚀 Débloquez les fonctionnalités IA d'Isabelle !\n\n" +
-            "Pour accéder aux commandes spéciales (roasts, génération d'images, etc.) et pour que les autres puissent les utiliser sur vous, votre autorisation est nécessaire.",
+            "Pour accéder aux commandes utilisant l'IA générative, et pour que les autres puissent les utiliser sur vous, votre autorisation est nécessaire.",
         ),
       )
       .addSeparatorComponents((separator) =>
@@ -26,43 +27,36 @@ export const generativeAi = Object.freeze({
       .addTextDisplayComponents((textDisplay) =>
         textDisplay.setContent(
           '## 🧐 Comment ça marche ?\n\n' +
-            '**1. Quelles données sont utilisées ?**\n' +
-            "Pour fonctionner, l'IA analysera le contenu de vos messages ou les images que vous postez, **uniquement quand une commande est utilisée**.\n\n" +
-            '**2. Où vont vos données ?**\n' +
-            'Le contenu est envoyé à des services tiers (comme Google Gemini) pour générer une réponse. **Isabelle ne stocke JAMAIS vos messages** : tout est traité à la volée puis immédiatement oublié.\n\n' +
-            '**3. Conditions des services tiers**\n' +
-            "En acceptant, vous reconnaissez que les conditions d'utilisation de ces services externes s'appliquent lors du traitement.",
+            '- Les messages récents envoyés sur ce serveur Discord peuvent être transmis\n' +
+            '- Aucun message privé ne sera transmis, ni les messages en dehors de ce serveur\n' +
+            '- Ils ne seront jamais stockés par Isabelle\n' +
+            '- Ils sont uniquement utilisés pour générer des réponses\n' +
+            "- Les conditions des services tiers s'appliquent\n\n" +
+            "Pour plus de détails, consultez les [conditions d'utilisation de l'API Gemini](https://ai.google.dev/gemini-api/terms?hl=fr#data-use-unpaid)",
         ),
       )
       .addSeparatorComponents((separator) =>
         separator.setSpacing(SeparatorSpacingSize.Large).setDivider(true),
       )
-      .addSectionComponents((section) =>
-        section
-          .addTextDisplayComponents((textDisplay) =>
-            textDisplay.setContent(
-              '## 🔑 Votre consentement est la clé\n\n' +
-                "Sans votre accord, vous ne pourrez **ni utiliser les fonctionnalités d'IA, ni être ciblé par elles**.",
-            ),
-          )
-          .setButtonAccessory((button) =>
-            button
+      .addTextDisplayComponents((textDisplay) =>
+        textDisplay.setContent(
+          '## 🔑 Votre consentement\n\n' +
+            "Sans votre accord, vous ne pourrez **ni utiliser les fonctionnalités d'IA, ni être ciblé par elles**.\n\n" +
+            "Vous pourrez retirer votre consentement à tout moment avec cette même commande. Refuser n'impactera pas les autres fonctions du bot.",
+        ),
+      )
+      .addActionRowComponents((actionRow) =>
+        actionRow
+          .addComponents(
+            new ButtonBuilder()
               .setCustomId(
                 legalManager.buildConsentButtonId('generative-ai', 'accept'),
               )
-              .setLabel("J'accepte et je débloque les fonctionnalités")
+              .setLabel("J'accepte et je débloque les fonctionnalités d'IA")
               .setStyle(ButtonStyle.Success),
-          ),
-      )
-      .addSectionComponents((section) =>
-        section
-          .addTextDisplayComponents((textDisplay) =>
-            textDisplay.setContent(
-              "Vous pourrez retirer votre consentement à tout moment avec cette même commande. Refuser n'impactera pas les autres fonctions du bot.",
-            ),
           )
-          .setButtonAccessory((button) =>
-            button
+          .addComponents(
+            new ButtonBuilder()
               .setCustomId(
                 legalManager.buildConsentButtonId('generative-ai', 'decline'),
               )
