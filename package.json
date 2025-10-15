@@ -45,7 +45,7 @@
     "prepare": "husky",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
     "sutom:generate-wordlist": "tsx bin/generate-wordlist.ts"
   },
   "lint-staged": {
