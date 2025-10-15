@@ -1,4 +1,4 @@
-import { GEMINI_2_5_PRO } from '@/ai/models/gemini-models.wrapped.js';
+import { GEMINI_2_5_FLASH } from '@/ai/models/gemini-models.wrapped.js';
 import { ROAST_PROMPT } from '@/modules/roast/command/templates/roast-prompt.js';
 import { createLogger } from '@/utils/logger.js';
 import { google } from '@ai-sdk/google';
@@ -28,6 +28,7 @@ export async function generateRoast({
   messages,
 }: GenerateRoastOptions): Promise<GenerateRoastResult> {
   const preparedMessages = messages
+    .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
     .map((message) => {
       const formattedDate = dateFormatter.format(message.createdAt);
       const channelName =
@@ -39,7 +40,7 @@ export async function generateRoast({
     .join('\n');
 
   const result = await generateText({
-    model: GEMINI_2_5_PRO,
+    model: GEMINI_2_5_FLASH,
     tools: {
       google_search: google.tools.googleSearch({}),
     },
