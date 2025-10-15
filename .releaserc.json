@@ -25,7 +25,7 @@
     [
       "@semantic-release/exec",
       {
-        "successCmd": "npx tsx ./bin/send-discord-notification.ts"
+        "successCmd": "NEXT_RELEASE_VERSION=${nextRelease.version} NEXT_RELEASE_NOTES='${nextRelease.notes}' GITHUB_REPOSITORY=${process.env.GITHUB_REPOSITORY} npx tsx ./bin/send-discord-notification.ts"
       }
     ]
   ]
