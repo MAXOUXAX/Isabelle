@@ -106,8 +106,9 @@ export class RoastCommand implements IsabelleCommand {
         return;
       }
 
+      const guildMember = await guild.members.fetch(user.id);
       const roastResult = await generateRoast({
-        displayName: user.displayName,
+        displayName: guildMember.displayName,
         messages: lastUserMessages,
       });
 
