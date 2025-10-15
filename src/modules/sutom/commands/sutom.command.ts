@@ -2,8 +2,8 @@ import { IsabelleCommand } from '@/manager/commands/command.interface.js';
 import startSutomSubcommand from '@/modules/sutom/commands/subcommands/start-sutom.js';
 import stopSutomSubcommand from '@/modules/sutom/commands/subcommands/stop-sutom.js';
 import guessWordSubcommand from '@/modules/sutom/commands/subcommands/sutom-guess.js';
-import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { createLogger } from '@/utils/logger.js';
+import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 
 const logger = createLogger('sutom-command');
 

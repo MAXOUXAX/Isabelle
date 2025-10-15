@@ -1,4 +1,5 @@
 import { IsabelleCommand } from '@/manager/commands/command.interface.js';
+import { requireBothUsersConsent } from '@/modules/legal/consent-helpers.js';
 import {
   MAX_ROASTS_PER_USER_PER_DAY,
   ROAST_FALLBACK_MESSAGE,
@@ -67,6 +68,17 @@ export class RoastCommand implements IsabelleCommand {
       }
 
       const user = interaction.options.getUser('cible', true);
+
+      const bothConsented = await requireBothUsersConsent(
+        interaction,
+        interaction.user.id,
+        user.id,
+        'generative-ai',
+      );
+
+      if (!bothConsented) {
+        return;
+      }
 
       if (user.bot) {
         await interaction.reply(
