@@ -82,7 +82,7 @@ export class RoastCommand implements IsabelleCommand {
 
       if (user.bot) {
         await interaction.reply(
-          'Je ne vais pas roast un bot, finis les conneries. stop!',
+          'Je ne vais pas roast un bot, fini les conneries. stop!',
         );
         return;
       }
