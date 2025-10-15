@@ -19,9 +19,11 @@ const MIN_FRESH_PERCENTAGE = 0.8;
  * Check if a message is considered "fresh" (less than 3 months old)
  */
 const isMessageFresh = (message: Message): boolean => {
-  const thresholdDate = new Date();
-  thresholdDate.setMonth(thresholdDate.getMonth() - FRESHNESS_THRESHOLD_MONTHS);
-  return message.createdTimestamp >= thresholdDate.getTime();
+  const now = Date.now();
+  const millisecondsIn3Months =
+    FRESHNESS_THRESHOLD_MONTHS * 30 * 24 * 60 * 60 * 1000;
+  const thresholdTimestamp = now - millisecondsIn3Months;
+  return message.createdTimestamp >= thresholdTimestamp;
 };
 
 /**
@@ -262,7 +264,7 @@ export const fetchLastUserMessages = async (
 
     // Check if we have enough messages and if they meet the freshness requirement
     if (
-      uniqueMessages.size >= minMessages &&
+      uniqueMessages.size >= minMessages ||
       uniqueMessages.size >= maxMessages
     ) {
       const currentMessages = Array.from(uniqueMessages.values());
