@@ -11,21 +11,25 @@ export class SutomCommand implements IsabelleCommand {
   commandData = new SlashCommandBuilder()
     .setName('sutom')
     .setDescription(
-      'Joue une partie de SUTOM ! Chaque joueur a sa propre instance de jeu.',
+      'Permet de jouer au SUTOM, le jeu où tu dois deviner un mot en un nombre limité de tentatives !',
     )
     .addSubcommand((subcommand) =>
       subcommand
         .setName('start')
-        .setDescription('Commence une partie de SUTOM'),
+        .setDescription(
+          "Lance une partie de SUTOM, uniquement si tu n'en as pas déjà une en cours !",
+        ),
     )
     .addSubcommand((subcommand) =>
       subcommand
         .setName('mot')
-        .setDescription('Propose un mot pour la partie de SUTOM')
+        .setDescription(
+          'Propose un mot pour ta partie de SUTOM (fonctionne uniquement dans ton thread)',
+        )
         .addStringOption((option) =>
           option
-            .setName('mot')
-            .setDescription('Le mot que tu proposes')
+            .setName('tentative')
+            .setDescription('À quel mot penses-tu ?')
             .setRequired(true),
         ),
     )
@@ -39,15 +43,27 @@ export class SutomCommand implements IsabelleCommand {
         void guessWordSubcommand(interaction);
         break;
       case 'start':
-        startSutomSubcommand(interaction);
+        void startSutomSubcommand(interaction);
         break;
       case 'stop':
         void stopSutomSubcommand(interaction);
         break;
       default:
-        interaction.reply('not a valid subcommand').catch((e: unknown) => {
-          logger.error(e);
-        });
+        void interaction.reply(
+          'Un problème est survenu, la sous-commande que tu as utilisée est inconnue.',
+        );
+        logger.error(
+          {
+            interaction: {
+              id: interaction.id,
+              guildId: interaction.guildId,
+              userId: interaction.user.id,
+              commandName: interaction.commandName,
+              subcommand: interaction.options.getSubcommand(false),
+            },
+          },
+          'Unknown subcommand used in /sutom command',
+        );
         break;
     }
   }

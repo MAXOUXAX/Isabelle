@@ -7,22 +7,36 @@ export interface WordRepository {
 }
 
 class OfflineWordRepository implements WordRepository {
-  wordList: string[] = [];
+  private solutionsList: string[] = [];
+  private guessesList: string[] = [];
+
   constructor() {
-    const wordsFile = resolveResourcePath('sutom', 'mots.filtered.txt');
-    const fileContent = fs.readFileSync(wordsFile, 'utf-8');
-    this.wordList = fileContent
+    // Load solutions list (words that can be chosen as the answer)
+    const solutionsFile = resolveResourcePath('sutom', 'solutions.txt');
+    const solutionsContent = fs.readFileSync(solutionsFile, 'utf-8');
+    this.solutionsList = solutionsContent
       .split('\n')
       .filter((word) => word.trim() !== '')
-      .map((word) => word.trim());
+      .map((word) => word.trim().toLowerCase());
+
+    // Load guesses list (words that are valid guesses)
+    const guessesFile = resolveResourcePath('sutom', 'guesses.txt');
+    const guessesContent = fs.readFileSync(guessesFile, 'utf-8');
+    this.guessesList = guessesContent
+      .split('\n')
+      .filter((word) => word.trim() !== '')
+      .map((word) => word.trim().toLowerCase());
   }
 
   getRandomWord(): string {
-    return this.wordList[Math.floor(Math.random() * this.wordList.length)];
+    return this.solutionsList[
+      Math.floor(Math.random() * this.solutionsList.length)
+    ];
   }
 
   wordExists(word: string): boolean {
-    return this.wordList.includes(word.toLowerCase().trim());
+    const normalizedWord = word.toLowerCase().trim();
+    return this.guessesList.includes(normalizedWord);
   }
 }
 

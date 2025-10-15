@@ -86,7 +86,7 @@ try {
   const result = await db.select().from(myTable).where(eq(myTable.id, userId));
   return result[0];
 } catch (error) {
-  console.error('Database operation failed:', error);
+  logger.error('Database operation failed:', error);
   return null;
 }
 ```

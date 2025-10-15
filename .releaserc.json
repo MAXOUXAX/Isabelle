@@ -21,6 +21,12 @@
       {
         "successComment": ":tada: This ${issue.pull_request ? 'PR' : 'issue'} was just released in version ${nextRelease.version}!\nCheck out the [GitHub release here!](<github_release_url>)"
       }
+    ],
+    [
+      "semantic-release-discord",
+      {
+        "notifyOnFail": false
+      }
     ]
   ]
 }

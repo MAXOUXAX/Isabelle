@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "isabelle",
-  "version": "1.7.0",
+  "version": "1.8.1",
   "description": "Isabelle est un BOT Discord à destination des élèves de TELECOM Nancy, et plus particulièrement aux étudiants de la promotion 2027 des FISA",
   "author": "MAXOUXAX",
   "engines": {
@@ -46,6 +46,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio"
+    "sutom:generate-wordlist": "tsx bin/generate-wordlist.ts"
   },
   "lint-staged": {
     "*.{js,ts}": [
@@ -82,6 +83,7 @@
     "npm-run-all": "^4.1.5",
     "prettier": "^3.5.3",
     "semantic-release": "^24.2.9",
+    "semantic-release-discord": "^1.2.0",
     "tsup": "^8.4.0",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
