@@ -139,7 +139,7 @@ export class RoastCommand implements IsabelleCommand {
         ? ` • ${roastResult.modelVersion}`
         : '';
 
-      const metadataNote = `\n-# ${generationDateTime}${modelInfo} • ${roastResult.totalTokens.toString()} tokens`;
+      const metadataNote = `\n\n-# Ce contenu a été généré par une intelligence artificielle et peut être inexact ou inapproprié. Isabelle n'est pas responsable des propos tenus.\n-# ${generationDateTime}${modelInfo} • ${roastResult.totalTokens.toString()} tokens`;
 
       await safelySendMessage(
         interaction,
