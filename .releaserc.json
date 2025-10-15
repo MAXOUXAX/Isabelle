@@ -23,9 +23,9 @@
       }
     ],
     [
-      "semantic-release-discord",
+      "@semantic-release/exec",
       {
-        "notifyOnFail": false
+        "successCmd": "npx tsx ./bin/send-discord-notification.ts"
       }
     ]
   ]
