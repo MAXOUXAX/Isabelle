@@ -46,6 +46,38 @@ export class ConsentInteractionHandler implements InteractionHandler {
       return;
     }
 
+    // Check if user has already made this exact choice
+    try {
+      const currentConsent = await legalManager.hasUserConsented(
+        interaction.user.id,
+        scope,
+      );
+
+      // If they already have a consent status and it matches what they're trying to do
+      if (currentConsent !== null && currentConsent === consented) {
+        const message = consented
+          ? `Vous avez déjà accepté le consentement pour **${scopeConfig.displayName}**.`
+          : `Vous avez déjà refusé le consentement pour **${scopeConfig.displayName}**.`;
+
+        await interaction.reply({
+          content: message,
+          flags: [MessageFlags.Ephemeral],
+        });
+        return;
+      }
+    } catch (error) {
+      logger.error(
+        { error, userId: interaction.user.id, scope },
+        'Failed to check current consent status',
+      );
+      await interaction.reply({
+        content:
+          "Une erreur s'est produite lors de la vérification de votre statut de consentement. Veuillez réessayer.",
+        flags: [MessageFlags.Ephemeral],
+      });
+      return;
+    }
+
     // Record the consent
     try {
       await legalManager.recordConsent(interaction.user.id, scope, consented);
