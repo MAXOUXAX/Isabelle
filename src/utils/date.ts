@@ -61,60 +61,13 @@ export function addDays(date: Date, days: number): Date {
   return result;
 }
 
-export function fromDrizzleDate(
-  value: Date | number | string | bigint | null | undefined,
-): Date {
-  if (value instanceof Date) {
-    return value;
-  }
-  if (typeof value === 'number') {
-    return new Date(value);
-  }
-  if (typeof value === 'bigint') {
-    const asNumber = Number(value);
-    if (Number.isNaN(asNumber)) {
-      return new Date(0);
-    }
-    return new Date(asNumber);
-  }
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-
-    const isoCandidate =
-      trimmed.includes('T') || !trimmed.includes(' ')
-        ? trimmed
-        : trimmed.replace(' ', 'T');
-
-    const parsedIso = Date.parse(isoCandidate);
-    if (!Number.isNaN(parsedIso)) {
-      return new Date(parsedIso);
-    }
-
-    const numeric = Number(trimmed);
-    if (!Number.isNaN(numeric)) {
-      return new Date(numeric);
-    }
-
-    if (!trimmed.endsWith('Z')) {
-      const parsedUtc = Date.parse(`${trimmed.replace(' ', 'T')}Z`);
-      if (!Number.isNaN(parsedUtc)) {
-        return new Date(parsedUtc);
-      }
-    }
-
-    return new Date(0);
-  }
-  return new Date(0);
-}
-
 export function timeUntilNextUse(
-  value: Date | number | string | bigint | null | undefined,
+  lastUse: Date,
   usageCount24h: number,
   maxUsagesPerDay: number,
 ): Date {
-  const baseDate = fromDrizzleDate(value);
   // If user has reached daily limit, add 24 hours from the oldest usage
   // Otherwise, add 1 hour from the most recent usage
   const timeToAdd = usageCount24h >= maxUsagesPerDay ? DAY_IN_MS : HOUR_IN_MS;
-  return new Date(baseDate.getTime() + timeToAdd);
+  return new Date(lastUse.getTime() + timeToAdd);
 }

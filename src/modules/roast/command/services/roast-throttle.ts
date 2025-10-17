@@ -1,11 +1,6 @@
 import { db } from '@/db/index.js';
 import { roastUsage } from '@/db/schema.js';
-import {
-  DAY_IN_MS,
-  fromDrizzleDate,
-  HOUR_IN_MS,
-  timeUntilNextUse,
-} from '@/utils/date.js';
+import { DAY_IN_MS, HOUR_IN_MS, timeUntilNextUse } from '@/utils/date.js';
 import { createLogger } from '@/utils/logger.js';
 import {
   InteractionReplyOptions,
@@ -30,7 +25,12 @@ export async function checkRoastQuota(
   logger.debug({ guildId, userId, lastUsage }, 'Last roast usage fetched');
 
   if (lastUsage) {
-    const lastUsageDate = fromDrizzleDate(lastUsage.createdAt);
+    if (lastUsage.createdAt === null) {
+      logger.error('Unexpected: last usage has null createdAt');
+      return null;
+    }
+
+    const lastUsageDate = lastUsage.createdAt;
     const timeSinceLastUsage = Date.now() - lastUsageDate.getTime();
 
     if (timeSinceLastUsage < HOUR_IN_MS) {
@@ -67,6 +67,11 @@ export async function checkRoastQuota(
       logger.error(
         'Unexpected: rows.length >= maxRoastsPerDay but no oldest usage found',
       );
+      return null;
+    }
+
+    if (oldestUsage.createdAt === null) {
+      logger.error('Unexpected: oldest usage has null createdAt');
       return null;
     }
 
