@@ -41,4 +41,5 @@ jobs:
       - name: 🚀 Execute Semantic Release
         env:
           GITHUB_TOKEN: ${{ secrets.ISABELLE_RELEASE_TOKEN }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: npx semantic-release
