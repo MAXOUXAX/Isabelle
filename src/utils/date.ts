@@ -61,6 +61,25 @@ export function addDays(date: Date, days: number): Date {
   return result;
 }
 
+/**
+ * Computes the next allowed usage timestamp based on recent activity and a daily limit.
+ *
+ * Logic:
+ * - If the number of usages recorded in the past 24 hours (`usageCount24h`) has met or exceeded
+ *   the maximum allowed (`maxUsagesPerDay`), the next allowed time is 24 hours after the oldest
+ *   relevant usage (approximated here using the provided `lastUse` plus one day).
+ * - Otherwise, a shorter cooldown applies: the next allowed time is one hour after `lastUse`.
+ *
+ * Assumptions:
+ * - `lastUse` represents the most recent usage timestamp (or the oldest within the current rolling window
+ *   if you are enforcing a rolling daily limit externally).
+ * - Constants `DAY_IN_MS` and `HOUR_IN_MS` are millisecond durations (e.g., 24 * 60 * 60 * 1000, 60 * 60 * 1000).
+ *
+ * @param lastUse The Date of the most recent (or relevant) usage event.
+ * @param usageCount24h The number of usages performed within the last 24-hour window.
+ * @param maxUsagesPerDay The maximum number of allowed usages in any 24-hour period.
+ * @returns A Date representing when the next usage is permitted.
+ */
 export function timeUntilNextUse(
   lastUse: Date,
   usageCount24h: number,
