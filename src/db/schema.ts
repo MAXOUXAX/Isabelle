@@ -4,12 +4,12 @@ import { int, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
 
 const base = () => {
   return {
-    createdAt: int('created_at', { mode: 'timestamp' }).default(
-      sql`(unixepoch())`,
-    ),
-    updatedAt: int('updated_at', { mode: 'timestamp' }).$onUpdate(
-      () => sql`(unixepoch())`,
-    ),
+    createdAt: int('created_at', { mode: 'timestamp' })
+      .default(sql`(unixepoch())`)
+      .notNull(),
+    updatedAt: int('updated_at', { mode: 'timestamp' })
+      .$onUpdate(() => sql`(unixepoch())`)
+      .notNull(),
   };
 };
 

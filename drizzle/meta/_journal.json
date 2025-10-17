@@ -36,6 +36,13 @@
       "when": 1760462497055,
       "tag": "0004_calm_lake",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1760712050254,
+      "tag": "0005_military_nuke",
+      "breakpoints": true
     }
   ]
 }
