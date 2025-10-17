@@ -88,6 +88,5 @@ export async function recordRoastUsage(
   await db.insert(roastUsage).values({
     guildId,
     userId,
-    createdAt: undefined,
   });
 }
