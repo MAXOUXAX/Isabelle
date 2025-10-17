@@ -109,7 +109,12 @@ export function fromDrizzleDate(
 
 export function timeUntilNextUse(
   value: Date | number | string | bigint | null | undefined,
+  usageCount24h: number,
+  maxUsagesPerDay: number,
 ): Date {
   const baseDate = fromDrizzleDate(value);
-  return new Date(baseDate.getTime() + HOUR_IN_MS);
+  // If user has reached daily limit, add 24 hours from the oldest usage
+  // Otherwise, add 1 hour from the most recent usage
+  const timeToAdd = usageCount24h >= maxUsagesPerDay ? DAY_IN_MS : HOUR_IN_MS;
+  return new Date(baseDate.getTime() + timeToAdd);
 }

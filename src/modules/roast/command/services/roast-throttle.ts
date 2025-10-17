@@ -1,6 +1,11 @@
 import { db } from '@/db/index.js';
 import { roastUsage } from '@/db/schema.js';
-import { DAY_IN_MS, fromDrizzleDate, HOUR_IN_MS } from '@/utils/date.js';
+import {
+  DAY_IN_MS,
+  fromDrizzleDate,
+  HOUR_IN_MS,
+  timeUntilNextUse,
+} from '@/utils/date.js';
 import { createLogger } from '@/utils/logger.js';
 import {
   InteractionReplyOptions,
@@ -64,11 +69,9 @@ export async function checkRoastQuota(
       );
       return null;
     }
-    const oldestUsageDate = fromDrizzleDate(oldestUsage.createdAt);
-    const nextAvailableTime = new Date(oldestUsageDate.getTime() + DAY_IN_MS);
 
     const nextAllowedTimestamp = time(
-      nextAvailableTime,
+      timeUntilNextUse(oldestUsage.createdAt, rows.length, maxRoastsPerDay),
       TimestampStyles.RelativeTime,
     );
 
