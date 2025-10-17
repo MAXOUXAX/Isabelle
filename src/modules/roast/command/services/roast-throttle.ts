@@ -25,11 +25,6 @@ export async function checkRoastQuota(
   logger.debug({ guildId, userId, lastUsage }, 'Last roast usage fetched');
 
   if (lastUsage) {
-    if (lastUsage.createdAt === null) {
-      logger.error('Unexpected: last usage has null createdAt');
-      return null;
-    }
-
     const lastUsageDate = lastUsage.createdAt;
     const timeSinceLastUsage = Date.now() - lastUsageDate.getTime();
 
@@ -70,11 +65,6 @@ export async function checkRoastQuota(
       return null;
     }
 
-    if (oldestUsage.createdAt === null) {
-      logger.error('Unexpected: oldest usage has null createdAt');
-      return null;
-    }
-
     const nextAllowedTimestamp = time(
       timeUntilNextUse(oldestUsage.createdAt, rows.length, maxRoastsPerDay),
       TimestampStyles.RelativeTime,
@@ -98,5 +88,6 @@ export async function recordRoastUsage(
   await db.insert(roastUsage).values({
     guildId,
     userId,
+    createdAt: undefined,
   });
 }
