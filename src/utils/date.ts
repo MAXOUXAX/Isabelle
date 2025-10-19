@@ -61,55 +61,19 @@ export function addDays(date: Date, days: number): Date {
   return result;
 }
 
-export function fromDrizzleDate(
-  value: Date | number | string | bigint | null | undefined,
-): Date {
-  if (value instanceof Date) {
-    return value;
-  }
-  if (typeof value === 'number') {
-    return new Date(value);
-  }
-  if (typeof value === 'bigint') {
-    const asNumber = Number(value);
-    if (Number.isNaN(asNumber)) {
-      return new Date(0);
-    }
-    return new Date(asNumber);
-  }
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-
-    const isoCandidate =
-      trimmed.includes('T') || !trimmed.includes(' ')
-        ? trimmed
-        : trimmed.replace(' ', 'T');
-
-    const parsedIso = Date.parse(isoCandidate);
-    if (!Number.isNaN(parsedIso)) {
-      return new Date(parsedIso);
-    }
-
-    const numeric = Number(trimmed);
-    if (!Number.isNaN(numeric)) {
-      return new Date(numeric);
-    }
-
-    if (!trimmed.endsWith('Z')) {
-      const parsedUtc = Date.parse(`${trimmed.replace(' ', 'T')}Z`);
-      if (!Number.isNaN(parsedUtc)) {
-        return new Date(parsedUtc);
-      }
-    }
-
-    return new Date(0);
-  }
-  return new Date(0);
-}
-
+/**
+ * Calculates the next available usage time based on the most recent usage and daily limits.
+ *
+ * @param lastUse - The date and time of the last use.
+ * @param usageCount24h - Number of usages within the past 24 hours.
+ * @param maxUsagesPerDay - Maximum allowed usages within a 24-hour period.
+ * @returns The date and time when the resource can be used again.
+ */
 export function timeUntilNextUse(
-  value: Date | number | string | bigint | null | undefined,
+  lastUse: Date,
+  usageCount24h: number,
+  maxUsagesPerDay: number,
 ): Date {
-  const baseDate = fromDrizzleDate(value);
-  return new Date(baseDate.getTime() + HOUR_IN_MS);
+  const timeToAdd = usageCount24h >= maxUsagesPerDay ? DAY_IN_MS : HOUR_IN_MS;
+  return new Date(lastUse.getTime() + timeToAdd);
 }

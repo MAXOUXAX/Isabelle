@@ -1,11 +1,6 @@
 import { db } from '@/db/index.js';
 import { roastUsage } from '@/db/schema.js';
-import {
-  DAY_IN_MS,
-  fromDrizzleDate,
-  HOUR_IN_MS,
-  timeUntilNextUse,
-} from '@/utils/date.js';
+import { DAY_IN_MS, HOUR_IN_MS, timeUntilNextUse } from '@/utils/date.js';
 import { createLogger } from '@/utils/logger.js';
 import {
   InteractionReplyOptions,
@@ -30,7 +25,7 @@ export async function checkRoastQuota(
   logger.debug({ guildId, userId, lastUsage }, 'Last roast usage fetched');
 
   if (lastUsage) {
-    const lastUsageDate = fromDrizzleDate(lastUsage.createdAt);
+    const lastUsageDate = lastUsage.createdAt;
     const timeSinceLastUsage = Date.now() - lastUsageDate.getTime();
 
     if (timeSinceLastUsage < HOUR_IN_MS) {
@@ -60,12 +55,18 @@ export async function checkRoastQuota(
   );
 
   if (rows.length >= maxRoastsPerDay) {
-    // Use lastUsage if available (most recent), otherwise use the oldest usage in the 24h window
-    // rows[0] is guaranteed to exist here since rows.length >= maxRoastsPerDay > 0
-    const nextEligibleUsage = lastUsage ?? rows[0];
+    // When daily limit is reached, calculate when the oldest usage expires (24h later)
+    // rows are ordered by createdAt DESC, so the oldest is at the end
+    const oldestUsage = rows.at(-1);
+    if (!oldestUsage) {
+      logger.error(
+        'Unexpected: rows.length >= maxRoastsPerDay but no oldest usage found',
+      );
+      return null;
+    }
 
     const nextAllowedTimestamp = time(
-      timeUntilNextUse(nextEligibleUsage.createdAt),
+      timeUntilNextUse(oldestUsage.createdAt, rows.length, maxRoastsPerDay),
       TimestampStyles.RelativeTime,
     );
 
