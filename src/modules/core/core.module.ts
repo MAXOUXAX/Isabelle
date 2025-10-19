@@ -25,7 +25,7 @@ export class CoreModule extends IsabelleModule {
   }
 
   private setActivity(): void {
-    if (environment !== 'development') {
+    if (environment === 'development') {
       client.user?.setActivity({
         name: 'En développement',
         type: ActivityType.Custom,
