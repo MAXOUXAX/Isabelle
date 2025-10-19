@@ -1,3 +1,4 @@
+import { environment } from '@/utils/environment.js';
 import fs from 'fs';
 import path from 'path';
 import pino from 'pino';
@@ -44,7 +45,7 @@ function initializeLogging() {
   // Rotate existing log file if it exists
   rotateLogFile(logsDir, currentLogPath);
 
-  const baseLevel = process.env.NODE_ENV === 'development' ? 'debug' : 'info';
+  const baseLevel = environment === 'development' ? 'debug' : 'info';
 
   // Create file logger with clean output
   const fileTransport: pino.DestinationStream = pino.transport({
