@@ -6,7 +6,6 @@ import { environment } from '@/utils/environment.js';
 import { ActivityType } from 'discord.js';
 import { createRequire } from 'node:module';
 import { Bonjour } from './commands/bonjour.js';
-import { Ping } from './commands/ping.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../../../package.json') as { version: string };
@@ -21,7 +20,7 @@ export class CoreModule extends IsabelleModule {
 
   init(): void {
     commandManager.onCommandsRegistered(this.scheduleActivityUpdate);
-    this.registerCommands([new Bonjour(), new Ping()]);
+    this.registerCommands([new Bonjour()]);
     this.setActivity();
   }
 
