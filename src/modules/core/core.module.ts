@@ -1,6 +1,7 @@
 import { client } from '@/index.js';
 import { commandManager } from '@/manager/commands/command.manager.js';
 import { IsabelleModule } from '@/modules/bot-module.js';
+import { debounce } from '@/utils/debounce.js';
 import { environment } from '@/utils/environment.js';
 import { ActivityType } from 'discord.js';
 import { createRequire } from 'node:module';
@@ -12,14 +13,20 @@ const { version } = require('../../../package.json') as { version: string };
 
 export class CoreModule extends IsabelleModule {
   readonly name = 'core';
+  private readonly activityDebounceMs = 5000;
+  private readonly scheduleActivityUpdate = debounce(
+    this.setActivity.bind(this),
+    this.activityDebounceMs,
+  );
 
   init(): void {
+    commandManager.onCommandsRegistered(this.scheduleActivityUpdate);
     this.registerCommands([new Bonjour(), new Ping()]);
     this.setActivity();
   }
 
   private setActivity(): void {
-    if (environment === 'development') {
+    if (environment == 'development') {
       client.user?.setActivity({
         name: 'En développement',
         type: ActivityType.Custom,

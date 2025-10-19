@@ -3,15 +3,36 @@ import { IsabelleCommand } from '@/manager/commands/command.interface.js';
 import { IsabelleModule } from '@/modules/bot-module.js';
 import { createLogger } from '@/utils/logger.js';
 import { REST, Routes } from 'discord.js';
+import Emittery from 'emittery';
 
 const logger = createLogger('commands');
+
+interface CommandManagerEvents {
+  commandsRegistered: {
+    module: IsabelleModule;
+    commands: IsabelleCommand[];
+  };
+}
 
 export class CommandManager {
   private commands = new Map<IsabelleModule, IsabelleCommand[]>();
   private rest = new REST({ version: '10' }).setToken(config.DISCORD_TOKEN);
+  private events = new Emittery<CommandManagerEvents>();
 
   registerCommandsFromModule(module: IsabelleModule) {
     this.commands.set(module, module.commands);
+    void this.events.emit('commandsRegistered', {
+      module,
+      commands: module.commands,
+    });
+  }
+
+  onCommandsRegistered(
+    listener: (
+      payload: CommandManagerEvents['commandsRegistered'],
+    ) => void | Promise<void>,
+  ) {
+    return this.events.on('commandsRegistered', listener);
   }
 
   findByName(name: string): IsabelleCommand | undefined {
