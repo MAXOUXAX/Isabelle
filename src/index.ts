@@ -10,7 +10,7 @@ import { RussianRoulette } from '@/modules/russian-roulette/russian-roulette.mod
 import { Schedule } from '@/modules/schedule/schedule.module.js';
 import { SutomModule } from '@/modules/sutom/sutom.module.js';
 import { environment } from '@/utils/environment.js';
-import { ActivityType, Client, Events, GatewayIntentBits } from 'discord.js';
+import { Client, Events, GatewayIntentBits } from 'discord.js';
 import { config } from './config.js';
 import { interactionManager } from './manager/interaction.manager.js';
 import { IsabelleModule } from './modules/bot-module.js';
@@ -91,12 +91,6 @@ client.once(Events.ClientReady, () => {
         { memberCount: developmentGuild.memberCount },
         'Guild member count',
       );
-
-      client.user?.setActivity({
-        name: 'se développer elle même',
-        type: ActivityType.Playing,
-        url: 'https://github.com/MAXOUXAX/Isabelle',
-      });
 
       logger.info('Deploying commands to development guild...');
 
