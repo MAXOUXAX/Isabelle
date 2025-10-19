@@ -1,4 +1,4 @@
-import { isProd } from '@/modules/roast/command/config/roast-config.js';
+import { environment } from '@/utils/environment.js';
 import { createLogger } from '@/utils/logger.js';
 import { ChatInputCommandInteraction, MessageFlags } from 'discord.js';
 
@@ -78,7 +78,7 @@ export async function handleRoastError({
     // In development or if we can extract useful error info, append debug details
     const errorDetails = error ? extractErrorDetails(error) : null;
     if (errorDetails) {
-      if (isProd) {
+      if (environment === 'production') {
         if (errorDetails.includes('overloaded')) {
           contentToSend =
             "Le modèle d'IA est actuellement surchargé. Réessaie dans quelques instants !";

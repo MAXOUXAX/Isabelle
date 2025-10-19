@@ -9,6 +9,7 @@ import { RoastModule } from '@/modules/roast/roast.module.js';
 import { RussianRoulette } from '@/modules/russian-roulette/russian-roulette.module.js';
 import { Schedule } from '@/modules/schedule/schedule.module.js';
 import { SutomModule } from '@/modules/sutom/sutom.module.js';
+import { environment } from '@/utils/environment.js';
 import { ActivityType, Client, Events, GatewayIntentBits } from 'discord.js';
 import { config } from './config.js';
 import { interactionManager } from './manager/interaction.manager.js';
@@ -56,7 +57,7 @@ client.once(Events.ClientReady, () => {
     logger.info('Registering modules...');
     registerModules();
 
-    if (process.env.NODE_ENV === 'development') {
+    if (environment === 'development') {
       logger.info('Running in development mode - single guild deployment');
 
       if (client.guilds.cache.size > 1) {
@@ -294,7 +295,7 @@ function registerModules(): void {
 }
 
 client.on(Events.GuildCreate, (guild) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (environment === 'development') {
     if (client.guilds.cache.size > 1) {
       logger.error(
         { guildCount: client.guilds.cache.size },

@@ -3,7 +3,6 @@ import { requireBothUsersConsent } from '@/modules/legal/consent-helpers.js';
 import {
   MAX_ROASTS_PER_USER_PER_DAY,
   ROAST_FALLBACK_MESSAGE,
-  isProd,
 } from '@/modules/roast/command/config/roast-config.js';
 import { handleRoastError } from '@/modules/roast/command/services/roast-error-handler.js';
 import { generateRoast } from '@/modules/roast/command/services/roast-generator.js';
@@ -11,6 +10,7 @@ import {
   checkRoastQuota,
   recordRoastUsage,
 } from '@/modules/roast/command/services/roast-throttle.js';
+import { environment } from '@/utils/environment.js';
 import { createLogger } from '@/utils/logger.js';
 import { fetchLastUserMessages } from '@/utils/message-picker.js';
 import { safelySendMessage } from '@/utils/safely-send-message.js';
@@ -59,7 +59,7 @@ export class RoastCommand implements IsabelleCommand {
       );
 
       if (block) {
-        if (isProd) {
+        if (environment === 'production') {
           await interaction.reply(block);
           return;
         }
@@ -126,7 +126,7 @@ export class RoastCommand implements IsabelleCommand {
       await recordRoastUsage(guildId, interaction.user.id);
 
       const developmentNote =
-        !isProd && block
+        environment === 'development' && block
           ? '\n-# *Cooldown contourné - environnement de développement*'
           : '';
 
