@@ -74,8 +74,6 @@ export function timeUntilNextUse(
   usageCount24h: number,
   maxUsagesPerDay: number,
 ): Date {
-  // If user has reached daily limit, add 24 hours from the oldest usage
-  // Otherwise, add 1 hour from the most recent usage
   const timeToAdd = usageCount24h >= maxUsagesPerDay ? DAY_IN_MS : HOUR_IN_MS;
   return new Date(lastUse.getTime() + timeToAdd);
 }
