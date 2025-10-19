@@ -40,8 +40,15 @@
     {
       "idx": 5,
       "version": "6",
-      "when": 1760712050254,
-      "tag": "0005_military_nuke",
+      "when": 1760870115250,
+      "tag": "0005_fix-automatic-responses",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1760870129338,
+      "tag": "0006_parallel_scrambler",
       "breakpoints": true
     }
   ]
