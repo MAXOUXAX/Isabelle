@@ -11,17 +11,21 @@ name: ESLint
 
 on:
   push:
-    branches: ['main']
+    branches: ["main"]
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: ['main']
+    branches: ["main"]
   schedule:
-    - cron: '54 05 * * 3'
+    - cron: "54 05 * * 3"
 
 jobs:
   eslint:
     name: Run eslint scanning
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [24.x]
+
     permissions:
       contents: read
       security-events: write
@@ -29,6 +33,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
 
       - name: Install Dependencies
         # Not using npm ci because we want to install devDependencies
@@ -38,7 +48,7 @@ jobs:
 
       - name: Run ESLint
         env:
-          SARIF_ESLINT_IGNORE_SUPPRESSED: 'true'
+          SARIF_ESLINT_IGNORE_SUPPRESSED: "true"
         run: npx eslint .
           --config eslint.config.js
           --format @microsoft/eslint-formatter-sarif
@@ -46,7 +56,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload analysis results to GitHub
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: eslint-results.sarif
           wait-for-processing: true

@@ -10,14 +10,14 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to build (git tag)'
+        description: "Version to build (git tag)"
         required: true
         type: string
 
   workflow_call:
     inputs:
       version:
-        description: 'Version to build (git tag)'
+        description: "Version to build (git tag)"
         required: true
         type: string
 
@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [22.x]
+        node-version: [24.x]
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
@@ -36,10 +36,10 @@ jobs:
           ref: ${{ inputs.version || github.ref }}
 
       - name: Set up Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: Clean npm cache and remove existing dependencies
         run: |
@@ -64,7 +64,7 @@ jobs:
           echo "safe_name=${NAME//\//-}" >> $GITHUB_OUTPUT
 
       - name: Upload Build Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: build-artifact-${{ steps.artifact-name.outputs.safe_name }}
           path: dist/*
