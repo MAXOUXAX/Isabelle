@@ -1,4 +1,3 @@
-import { createLogger } from '@/utils/logger.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -11,15 +10,13 @@ const {
   LOG_LEVEL,
 } = process.env;
 
-const logger = createLogger('config');
-
 if (
   !DISCORD_TOKEN ||
   !DISCORD_CLIENT_ID ||
   !SCHEDULE_URL ||
   !GOOGLE_GENERATIVE_AI_API_KEY
 ) {
-  logger.error(
+  console.error(
     'Oops! Some environment variables are missing. Please check your .env file.',
   );
   const missingVars = [
@@ -29,7 +26,7 @@ if (
     !GOOGLE_GENERATIVE_AI_API_KEY && 'GOOGLE_GENERATIVE_AI_API_KEY',
   ].filter(Boolean);
 
-  logger.error(`Missing environment variables: ${missingVars.join(', ')}`);
+  console.error(`Missing environment variables: ${missingVars.join(', ')}`);
   process.exit(1);
 }
 
