@@ -10,6 +10,9 @@ jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [24.x]
 
     permissions:
       contents: write # Required to create a tag and a GitHub release
@@ -29,9 +32,9 @@ jobs:
           token: ${{ secrets.ISABELLE_RELEASE_TOKEN }}
 
       - name: ⚙️ Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
-          node-version: "lts/*"
+          node-version: ${{ matrix.node-version }}
           # Enable cache for npm dependencies, speeding up future builds
           cache: "npm"
 
