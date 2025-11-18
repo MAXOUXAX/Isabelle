@@ -58,7 +58,6 @@ export async function generateRoast({
           preparedMessages,
       },
     ],
-    maxOutputTokens: MAX_THINKING_TOKENS * 2,
     providerOptions: {
       google: {
         thinkingBudget: MAX_THINKING_TOKENS,
