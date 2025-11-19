@@ -7,7 +7,7 @@
   "engines": {
     "node": ">=22"
   },
-  "packageManager": "npm@10.9.0",
+  "packageManager": "npm@11.6.2",
   "license": "AGPL-3.0-or-later",
   "homepage": "https://github.com/MAXOUXAX/Isabelle",
   "contributors": [
@@ -55,11 +55,11 @@
     ]
   },
   "dependencies": {
-    "@ai-sdk/google": "^2.0.26",
+    "@ai-sdk/google": "^2.0.38",
     "@libsql/client": "^0.15.15",
-    "@napi-rs/canvas": "^0.1.81",
-    "ai": "^5.0.86",
-    "discord.js": "^14.24.2",
+    "@napi-rs/canvas": "^0.1.82",
+    "ai": "^5.0.95",
+    "discord.js": "^14.25.0",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.44.7",
     "node-ical": "^0.22.1",
@@ -68,26 +68,26 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.0",
+    "@eslint/js": "^9.39.1",
     "@semantic-release/exec": "^7.1.0",
     "@semantic-release/git": "^10.0.1",
-    "@semantic-release/github": "^12.0.1",
+    "@semantic-release/github": "^12.0.2",
     "@types/eslint__js": "^9.14.0",
-    "@types/node": "^24.9.2",
-    "@typescript-eslint/eslint-plugin": "^8.46.4",
-    "@typescript-eslint/parser": "^8.46.4",
+    "@types/node": "^24.10.1",
+    "@typescript-eslint/eslint-plugin": "^8.47.0",
+    "@typescript-eslint/parser": "^8.47.0",
     "cross-env": "^10.1.0",
-    "drizzle-kit": "^0.31.6",
+    "drizzle-kit": "^0.31.7",
     "eslint": "^9.39.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.6",
     "npm-run-all": "^4.1.5",
-    "prettier": "^3.5.3",
-    "semantic-release": "^25.0.1",
+    "prettier": "^3.6.2",
+    "semantic-release": "^25.0.2",
     "semantic-release-discord": "^1.2.0",
-    "tsup": "^8.4.0",
+    "tsup": "^8.5.1",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.46.4"
+    "typescript-eslint": "^8.47.0"
   }
 }

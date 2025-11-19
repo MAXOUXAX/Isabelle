@@ -12,6 +12,8 @@ const dateFormatter = new Intl.DateTimeFormat('fr-FR', {
   timeStyle: 'short',
 });
 
+const MAX_THINKING_TOKENS = 8192;
+
 interface GenerateRoastOptions {
   displayName: string;
   messages: Message[];
@@ -58,7 +60,7 @@ export async function generateRoast({
     ],
     providerOptions: {
       google: {
-        thinkingBudget: 8192,
+        thinkingBudget: MAX_THINKING_TOKENS,
       },
     },
   });
