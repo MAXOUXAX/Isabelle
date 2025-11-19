@@ -21,6 +21,7 @@ export const loggingMiddleware: LanguageModelMiddleware = {
       }),
     };
     logger.info({ usefulParams }, `Generating text with an AI model...`);
+    logger.debug({ params }, `Full generation parameters:`);
 
     const result = await doGenerate();
 
@@ -51,6 +52,7 @@ export const loggingMiddleware: LanguageModelMiddleware = {
     };
 
     logger.info({ usefulResults }, `Generated response:`);
+    logger.debug({ result }, `Full generation result:`);
 
     return result;
   },
