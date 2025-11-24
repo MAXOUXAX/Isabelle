@@ -7,7 +7,7 @@
   "engines": {
     "node": ">=22"
   },
-  "packageManager": "npm@11.6.2",
+  "packageManager": "npm@11.6.3",
   "license": "AGPL-3.0-or-later",
   "homepage": "https://github.com/MAXOUXAX/Isabelle",
   "contributors": [
@@ -55,17 +55,17 @@
     ]
   },
   "dependencies": {
-    "@ai-sdk/google": "^2.0.38",
+    "@ai-sdk/google": "^2.0.42",
     "@libsql/client": "^0.15.15",
     "@napi-rs/canvas": "^0.1.82",
-    "ai": "^5.0.95",
-    "discord.js": "^14.25.0",
+    "ai": "^5.0.101",
+    "discord.js": "^14.25.1",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.44.7",
     "node-ical": "^0.22.1",
     "pino": "^10.1.0",
     "pino-pretty": "^13.1.2",
-    "zod": "^4.1.12"
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
@@ -80,7 +80,7 @@
     "drizzle-kit": "^0.31.7",
     "eslint": "^9.39.1",
     "husky": "^9.1.7",
-    "lint-staged": "^16.2.6",
+    "lint-staged": "^16.2.7",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.6.2",
     "semantic-release": "^25.0.2",
