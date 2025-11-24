@@ -96,7 +96,7 @@ export class RussianRouletteCommand implements IsabelleCommand {
       }
       logger.debug(
         { reason: 'Russian Roulette', duration: label },
-        `Successfully timed out user ${targetId} (${member.displayName}) for 5 minutes`,
+        `Successfully timed out user ${targetId} (${member.displayName})`,
       );
     } catch (e) {
       logger.error(
