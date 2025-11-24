@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { readFile } from 'node:fs/promises';
+
 async function sendDiscordNotification() {
   const requiredEnvVars = {
     NEXT_RELEASE_VERSION: process.env.NEXT_RELEASE_VERSION,
-    NEXT_RELEASE_NOTES: process.env.NEXT_RELEASE_NOTES,
+    NEXT_RELEASE_NOTES_FILE: process.env.NEXT_RELEASE_NOTES_FILE,
     GITHUB_REPOSITORY: process.env.GITHUB_REPOSITORY,
     DISCORD_WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL,
   } as const;
@@ -17,9 +19,21 @@ async function sendDiscordNotification() {
   }
 
   const version = requiredEnvVars.NEXT_RELEASE_VERSION!;
-  const notes = requiredEnvVars.NEXT_RELEASE_NOTES!;
   const githubRepo = requiredEnvVars.GITHUB_REPOSITORY!;
   const webhookUrl = requiredEnvVars.DISCORD_WEBHOOK_URL!;
+
+  let notes = '';
+  if (process.env.NEXT_RELEASE_NOTES_FILE) {
+    try {
+      notes = await readFile(process.env.NEXT_RELEASE_NOTES_FILE, 'utf8');
+    } catch (error) {
+      console.error(
+        `Erreur lors de la lecture de ${process.env.NEXT_RELEASE_NOTES_FILE} :`,
+        error,
+      );
+      return;
+    }
+  }
 
   if (!notes || notes.trim() === '') {
     console.log('Aucune note de version à envoyer. Notification annulée.');
