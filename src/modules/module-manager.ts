@@ -1,4 +1,5 @@
 import { commandManager } from '@/manager/commands/command.manager.js';
+import { interactionManager } from '@/manager/interaction.manager.js';
 import { IsabelleModule, ModuleContributor } from '@/modules/bot-module.js';
 import {
   ApplicationCommandOptionType,
@@ -67,6 +68,9 @@ export class ModuleManager {
       try {
         module.init();
         commandManager.registerCommandsFromModule(module);
+        interactionManager.registerInteractionHandlers(
+          module.interactionHandlers,
+        );
         this.moduleLoadResults.set(module, {
           status: 'loaded',
           loadTimeMs: performance.now() - startTime,

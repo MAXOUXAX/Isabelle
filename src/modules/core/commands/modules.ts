@@ -49,9 +49,10 @@ export class Modules implements IsabelleCommand {
     });
 
     try {
+      const allModules = this.moduleManager.getModuleData();
+
       if (isOverview) {
-        const modules = this.moduleManager.getModuleData();
-        const container = buildModulesOverviewMessage(modules);
+        const container = buildModulesOverviewMessage(allModules);
 
         await interaction.editReply({
           components: [container],
@@ -60,7 +61,7 @@ export class Modules implements IsabelleCommand {
         return;
       }
 
-      const moduleDetail = this.moduleManager.getModuleDataBySlug(subcommand);
+      const moduleDetail = allModules.find((m) => m.slug === subcommand);
 
       if (!moduleDetail) {
         await interaction.editReply({
@@ -70,7 +71,7 @@ export class Modules implements IsabelleCommand {
         return;
       }
 
-      const container = buildModuleDetailMessage(moduleDetail);
+      const container = buildModuleDetailMessage(moduleDetail, allModules);
 
       await interaction.editReply({
         components: [container],

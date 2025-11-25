@@ -2,6 +2,7 @@ import { client } from '@/index.js';
 import { commandManager } from '@/manager/commands/command.manager.js';
 import { IsabelleModule } from '@/modules/bot-module.js';
 import { Modules } from '@/modules/core/commands/modules.js';
+import { ModulesSelectHandler } from '@/modules/core/interactions/modules-navigation.interaction.js';
 import { moduleManager } from '@/modules/module-manager.js';
 import { debounce } from '@/utils/debounce.js';
 import { environment } from '@/utils/environment.js';
@@ -23,6 +24,7 @@ export class CoreModule extends IsabelleModule {
   init(): void {
     commandManager.onCommandsRegistered(this.scheduleActivityUpdate);
     this.registerCommands([new Bonjour(), new Modules(moduleManager)]);
+    this.registerInteractionHandlers([new ModulesSelectHandler()]);
     this.setActivity();
   }
 

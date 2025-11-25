@@ -1,4 +1,5 @@
-import { humanTime } from '@/utils/date.js';
+import { humanShortDate, humanTime } from '@/utils/date.js';
+import { colors, emojis } from '@/utils/theme.js';
 import {
   ContainerBuilder,
   RESTPostAPIChatInputApplicationCommandsJSONBody,
@@ -29,86 +30,89 @@ interface BonjourMessageContext {
 export function buildBonjourMessage(
   context: BonjourMessageContext,
 ): ContainerBuilder {
-  const introduction = buildIntroductionSection(context.displayName);
-  const planningSection = context.hasScheduleError
-    ? buildPlanningErrorSection()
-    : buildPlanningSection(context.lessons);
-  const commandsSection = buildPromotedCommandsSection(
-    context.promotedCommands,
-  );
-  const statsSection = buildStatsSection(context.stats);
+  const today = new Date();
+  const formattedDate = humanShortDate(today);
 
-  return new ContainerBuilder()
-    .addTextDisplayComponents((textDisplay) =>
-      textDisplay.setContent(introduction),
+  const header = buildHeaderSection(context.displayName, formattedDate);
+  const schedule = context.hasScheduleError
+    ? buildScheduleErrorSection()
+    : buildScheduleSection(context.lessons);
+  const footer = buildFooterSection(context.stats);
+
+  const container = new ContainerBuilder()
+    .setAccentColor(colors.primary)
+    .addTextDisplayComponents((text) => text.setContent(header))
+    .addSeparatorComponents((sep) =>
+      sep.setDivider(true).setSpacing(SeparatorSpacingSize.Small),
     )
-    .addSeparatorComponents((separator) =>
-      separator.setDivider(true).setSpacing(SeparatorSpacingSize.Large),
-    )
-    .addTextDisplayComponents((textDisplay) =>
-      textDisplay.setContent(planningSection),
-    )
-    .addSeparatorComponents((separator) =>
-      separator.setDivider(true).setSpacing(SeparatorSpacingSize.Large),
-    )
-    .addTextDisplayComponents((textDisplay) =>
-      textDisplay.setContent(commandsSection),
-    )
-    .addSeparatorComponents((separator) =>
-      separator.setDivider(true).setSpacing(SeparatorSpacingSize.Large),
-    )
-    .addTextDisplayComponents((textDisplay) =>
-      textDisplay.setContent(statsSection),
+    .addTextDisplayComponents((text) => text.setContent(schedule));
+
+  // Add promoted commands section
+  if (context.promotedCommands.length > 0) {
+    const commandsSection = buildPromotedCommandsSection(
+      context.promotedCommands,
     );
+
+    container
+      .addSeparatorComponents((sep) =>
+        sep.setDivider(true).setSpacing(SeparatorSpacingSize.Small),
+      )
+      .addTextDisplayComponents((text) => text.setContent(commandsSection));
+  }
+
+  // Add subtle footer with stats
+  container
+    .addSeparatorComponents((sep) =>
+      sep.setDivider(false).setSpacing(SeparatorSpacingSize.Small),
+    )
+    .addTextDisplayComponents((text) => text.setContent(footer));
+
+  return container;
 }
 
-function buildIntroductionSection(displayName: string): string {
-  return `# 👋 Bonjour ${displayName}
-
-Je suis Isabelle, prête à t'accompagner pour ta journée à TELECOM Nancy. Voici les infos utiles et quelques commandes à tester dès maintenant.`;
+function buildHeaderSection(
+  displayName: string,
+  formattedDate: string,
+): string {
+  return `## Bonjour, ${displayName} !
+Voici ta journée du **${formattedDate}**.`;
 }
 
-function buildPlanningSection(lessons: LessonSummary[]): string {
+function buildScheduleSection(lessons: LessonSummary[]): string {
   if (lessons.length === 0) {
-    return `## 🗓️ Planning du jour
+    return `### ${emojis.calendar} Planning du jour
 
-- Aucun cours prévu aujourd'hui. Profite pour te reposer ou avancer tes projets !`;
+Aucun cours prévu aujourd'hui. Profite pour te reposer ou avancer tes projets !`;
   }
 
   const lines = lessons.map((lesson) => {
     const start = humanTime(lesson.start);
     const end = humanTime(lesson.end);
-    const room = lesson.room ? ` (${lesson.room})` : '';
-    return `- ${start} → ${end} • ${lesson.name}${room}`;
+    const room = lesson.room ? ` • \`${lesson.room}\`` : '';
+    return `\`${start}\` → \`${end}\` **${lesson.name}**${room}`;
   });
 
-  return `## 🗓️ Planning du jour
+  return `### ${emojis.calendar} Planning du jour
 
 ${lines.join('\n')}`;
 }
 
-function buildPlanningErrorSection(): string {
-  return `## 🗓️ Planning du jour
+function buildScheduleErrorSection(): string {
+  return `### ${emojis.calendar} Planning du jour
 
-- Impossible de récupérer l'emploi du temps. Vérifie plus tard ou utilise directement \`/schedule\`.`;
+${emojis.warning} Impossible de récupérer l'emploi du temps. Utilise \`/schedule\` pour réessayer.`;
 }
 
 function buildPromotedCommandsSection(
-  promotedCommands: RESTPostAPIChatInputApplicationCommandsJSONBody[],
+  commands: RESTPostAPIChatInputApplicationCommandsJSONBody[],
 ): string {
-  const blocks = promotedCommands.map((command) => {
-    return `- \`/${command.name}\` — ${command.description}`;
-  });
+  const lines = commands.map((cmd) => `\`/${cmd.name}\` — ${cmd.description}`);
 
-  return `## 🎯 Commandes à essayer
+  return `### ${emojis.sparkles} Commandes à essayer
 
-${blocks.join('\n')}`;
+${lines.join('\n')}`;
 }
 
-function buildStatsSection(stats: BonjourStats): string {
-  return `## 🛠️ Détails techniques
-
-- Version actuelle : \`v${stats.version}\`
-- Modules actifs : ${String(stats.moduleCount)}
-- Commandes et sous-commandes : ${String(stats.commandCount)}`;
+function buildFooterSection(stats: BonjourStats): string {
+  return `-# v${stats.version} • ${String(stats.moduleCount)} modules • ${String(stats.commandCount)} commandes`;
 }
