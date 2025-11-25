@@ -4,13 +4,14 @@ import { CoreModule } from '@/modules/core/core.module.js';
 import { legalManager } from '@/modules/legal/legal.manager.js';
 import { LegalModule } from '@/modules/legal/legal.module.js';
 import { generativeAi } from '@/modules/legal/prompts/generative-ai.prompt.js';
+import { moduleManager } from '@/modules/module-manager.js';
 import { PlanifierModule } from '@/modules/planifier/planifier.module.js';
 import { RoastModule } from '@/modules/roast/roast.module.js';
 import { RussianRoulette } from '@/modules/russian-roulette/russian-roulette.module.js';
 import { Schedule } from '@/modules/schedule/schedule.module.js';
 import { SutomModule } from '@/modules/sutom/sutom.module.js';
 import { environment } from '@/utils/environment.js';
-import { ActivityType, Client, Events, GatewayIntentBits } from 'discord.js';
+import { Client, Events, GatewayIntentBits } from 'discord.js';
 import { config } from './config.js';
 import { interactionManager } from './manager/interaction.manager.js';
 import { IsabelleModule } from './modules/bot-module.js';
@@ -18,7 +19,6 @@ import { HotPotato } from './modules/hot-potato/hot-potato.module.js';
 import { createLogger } from './utils/logger.js';
 
 const logger = createLogger('core');
-const modulesLogger = createLogger('modules');
 
 export const client = new Client({
   intents: [
@@ -44,6 +44,8 @@ const MODULES: IsabelleModule[] = [
   new RoastModule(),
 ];
 
+moduleManager.registerModules(MODULES);
+
 client.once(Events.ClientReady, () => {
   async function handler() {
     logger.info(
@@ -54,8 +56,8 @@ client.once(Events.ClientReady, () => {
     logger.info('Registering legal consent scopes...');
     registerLegalScopes();
 
-    logger.info('Registering modules...');
-    registerModules();
+    logger.info('Initializing modules...');
+    await moduleManager.initializeModules();
 
     if (environment === 'development') {
       logger.info('Running in development mode - single guild deployment');
@@ -91,12 +93,6 @@ client.once(Events.ClientReady, () => {
         { memberCount: developmentGuild.memberCount },
         'Guild member count',
       );
-
-      client.user?.setActivity({
-        name: 'se développer elle même',
-        type: ActivityType.Playing,
-        url: 'https://github.com/MAXOUXAX/Isabelle',
-      });
 
       logger.info('Deploying commands to development guild...');
 
@@ -218,80 +214,6 @@ await client.login(config.DISCORD_TOKEN);
 
 function registerLegalScopes() {
   legalManager.registerConsentScope(generativeAi);
-}
-
-function registerModules(): void {
-  interface ModuleResult {
-    module: IsabelleModule;
-    success: boolean;
-    time: number;
-  }
-
-  const globalStartTime = performance.now();
-  const results: ModuleResult[] = [];
-
-  for (const module of MODULES) {
-    modulesLogger.info(`Initializing ${module.name} module...`);
-    const startTime = performance.now();
-    let success = false;
-
-    try {
-      module.init();
-      const commandCount = module.commands.length;
-      const interactionCount = module.interactionHandlers.length;
-
-      commandManager.registerCommandsFromModule(module);
-      interactionManager.registerInteractionHandlers(
-        module.interactionHandlers,
-      );
-      success = true;
-
-      modulesLogger.debug(
-        { commandCount, interactionCount },
-        `${module.name} registered ${String(commandCount)} commands and ${String(interactionCount)} interactions`,
-      );
-    } catch (error) {
-      modulesLogger.error(
-        { error, moduleName: module.name },
-        `Failed to initialize ${module.name} module`,
-      );
-      modulesLogger.warn(
-        `${module.name} module will be disabled and unavailable`,
-      );
-    } finally {
-      const endTime = performance.now();
-      const loadTime = endTime - startTime;
-      results.push({ module, success, time: loadTime });
-
-      if (success) {
-        if (loadTime > 1000) {
-          modulesLogger.warn(
-            `${module.name} module took ${loadTime.toFixed(2)}ms to initialize (>1s). This may impact bot startup time.`,
-          );
-        } else {
-          modulesLogger.info(
-            `${module.name} module initialized successfully in ${loadTime.toFixed(2)}ms`,
-          );
-        }
-      }
-    }
-  }
-
-  const totalTime = performance.now() - globalStartTime;
-  const successCount = results.filter((r) => r.success).length;
-  const failedCount = MODULES.length - successCount;
-
-  if (failedCount > 0) {
-    modulesLogger.warn(
-      { successCount, totalModules: MODULES.length, failedCount, totalTime },
-      `Module initialization completed: ${String(successCount)}/${String(MODULES.length)} successful, ${String(failedCount)} failed (${totalTime.toFixed(2)}ms total)`,
-    );
-  } else {
-    modulesLogger.info(
-      { successCount, totalTime },
-      `All ${String(successCount)} modules initialized successfully in ${totalTime.toFixed(2)}ms`,
-    );
-  }
 }
 
 client.on(Events.GuildCreate, (guild) => {

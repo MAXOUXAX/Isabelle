@@ -10,6 +10,12 @@ const dateFormatter = new Intl.DateTimeFormat('fr', {
   minute: 'numeric',
 });
 
+const shortDateFormatter = new Intl.DateTimeFormat('fr', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+});
+
 export function startOfCurrentWeek() {
   const now = new Date();
   const day = now.getDay();
@@ -49,6 +55,10 @@ export function endOfDay(date: Date) {
 
 export function humanDate(date: Date) {
   return dateFormatter.format(date);
+}
+
+export function humanShortDate(date: Date) {
+  return shortDateFormatter.format(date);
 }
 
 export function humanTime(date: Date) {
