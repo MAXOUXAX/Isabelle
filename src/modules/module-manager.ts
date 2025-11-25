@@ -109,7 +109,7 @@ export class ModuleManager {
     return {
       name: module.name,
       slug: this.generateSlug(module.name),
-      status: loadResult?.status ?? 'loaded',
+      status: loadResult?.status ?? 'failed',
       loadTimeMs: loadResult?.loadTimeMs ?? 0,
       errorMessage: loadResult?.errorMessage,
       commandCount: module.commands.length,

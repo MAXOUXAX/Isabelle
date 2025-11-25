@@ -10,9 +10,14 @@ import { version } from '@/utils/version.js';
 import { ActivityType } from 'discord.js';
 import { Bonjour } from './commands/bonjour.js';
 
+// Debounce delay for updating the bot's activity status.
+// 5000ms (5 seconds) is chosen to avoid excessive updates when commands are registered in quick succession,
+// while still ensuring the status is updated promptly after changes.
+const ACTIVITY_DEBOUNCE_MS = 5000;
+
 export class CoreModule extends IsabelleModule {
   readonly name = 'core';
-  private readonly activityDebounceMs = 5000;
+  private readonly activityDebounceMs = ACTIVITY_DEBOUNCE_MS;
   private readonly scheduleActivityUpdate = debounce(
     this.setActivity.bind(this),
     this.activityDebounceMs,
