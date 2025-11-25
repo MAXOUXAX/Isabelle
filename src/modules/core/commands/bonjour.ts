@@ -16,6 +16,8 @@ const { version } = require('../../../../package.json') as { version: string };
 
 const logger = createLogger('bonjour-command');
 
+const PROMOTED_COMMANDS = ['roulette-russe', 'sutom', 'roast'] as const;
+
 export class Bonjour implements IsabelleCommand {
   commandData = new SlashCommandBuilder()
     .setName('bonjour')
@@ -69,10 +71,8 @@ export class Bonjour implements IsabelleCommand {
   }
 
   private getPromotedCommands(): IsabelleCommand[] {
-    return [
-      commandManager.findByName('roulette-russe'),
-      commandManager.findByName('sutom'),
-      commandManager.findByName('roast'),
-    ].filter((command): command is IsabelleCommand => command !== undefined);
+    return PROMOTED_COMMANDS.map((name) =>
+      commandManager.findByName(name),
+    ).filter((command): command is IsabelleCommand => command !== undefined);
   }
 }

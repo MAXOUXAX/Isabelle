@@ -19,9 +19,9 @@ export class CommandManager {
   private rest = new REST({ version: '10' }).setToken(config.DISCORD_TOKEN);
   private events = new Emittery<CommandManagerEvents>();
 
-  registerCommandsFromModule(module: IsabelleModule) {
+  async registerCommandsFromModule(module: IsabelleModule) {
     this.commands.set(module, module.commands);
-    void this.events.emit('commandsRegistered', {
+    await this.events.emit('commandsRegistered', {
       module,
       commands: module.commands,
     });

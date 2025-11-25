@@ -237,9 +237,7 @@ function extractSubcommands(
     }
 
     if (option.type === ApplicationCommandOptionType.SubcommandGroup) {
-      const nestedOptions = Array.isArray(option.options)
-        ? option.options
-        : undefined;
+      const nestedOptions = option.options;
       result.push(
         ...extractSubcommands(nestedOptions, [...parentPath, option.name]),
       );

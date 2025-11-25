@@ -55,7 +55,7 @@ export class CoreModule extends IsabelleModule {
     client.user?.setActivity({
       name: 'En production',
       type: ActivityType.Custom,
-      state: state,
+      state,
     });
   }
 }

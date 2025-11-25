@@ -57,7 +57,7 @@ client.once(Events.ClientReady, () => {
     registerLegalScopes();
 
     logger.info('Initializing modules...');
-    moduleManager.initializeModules();
+    await moduleManager.initializeModules();
 
     if (environment === 'development') {
       logger.info('Running in development mode - single guild deployment');

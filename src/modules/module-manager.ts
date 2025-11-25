@@ -62,12 +62,12 @@ export class ModuleManager {
     }
   }
 
-  initializeModules(): void {
+  async initializeModules(): Promise<void> {
     for (const module of this.moduleLoadResults.keys()) {
       const startTime = performance.now();
       try {
         module.init();
-        commandManager.registerCommandsFromModule(module);
+        await commandManager.registerCommandsFromModule(module);
         interactionManager.registerInteractionHandlers(
           module.interactionHandlers,
         );
