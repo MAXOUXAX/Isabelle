@@ -31,7 +31,7 @@ export class CoreModule extends IsabelleModule {
       client.user?.setActivity({
         name: 'En développement',
         type: ActivityType.Custom,
-        state: 'Se développe elle même',
+        state: 'Se développe elle-même',
       });
       return;
     }
