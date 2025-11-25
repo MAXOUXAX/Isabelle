@@ -103,11 +103,6 @@ export class ModuleManager {
     return this.modules.map((module) => this.buildModuleData(module));
   }
 
-  getModuleDataBySlug(slug: string): ModuleData | null {
-    const module = this.modules.find((m) => this.generateSlug(m.name) === slug);
-    return module ? this.buildModuleData(module) : null;
-  }
-
   private buildModuleData(module: IsabelleModule): ModuleData {
     const loadResult = this.moduleLoadResults.get(module);
 

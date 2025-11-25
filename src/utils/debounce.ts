@@ -1,3 +1,7 @@
+import { createLogger } from '@/utils/logger.js';
+
+const logger = createLogger('debounce');
+
 export type DebouncedFunction<Args extends unknown[]> = ((
   ...args: Args
 ) => void) & {
@@ -17,7 +21,9 @@ export function debounce<Args extends unknown[]>(
 
     timeout = setTimeout(() => {
       timeout = null;
-      void fn(...args);
+      Promise.resolve(fn(...args)).catch((error: unknown) => {
+        logger.error({ error }, 'Debounced function threw an error');
+      });
     }, wait);
   }) as DebouncedFunction<Args>;
 

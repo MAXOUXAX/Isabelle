@@ -24,6 +24,11 @@ export class ModulesSelectHandler implements InteractionHandler {
 
     if (!selectedSlug) {
       logger.warn('No module selected in modules dropdown');
+      await interaction.reply({
+        content:
+          'Aucun module sélectionné. Utilise `/modules overview` pour voir les modules disponibles.',
+        flags: [MessageFlags.Ephemeral],
+      });
       return;
     }
 

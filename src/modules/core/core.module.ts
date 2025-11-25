@@ -6,12 +6,9 @@ import { ModulesSelectHandler } from '@/modules/core/interactions/modules-naviga
 import { moduleManager } from '@/modules/module-manager.js';
 import { debounce } from '@/utils/debounce.js';
 import { environment } from '@/utils/environment.js';
+import { version } from '@/utils/version.js';
 import { ActivityType } from 'discord.js';
-import { createRequire } from 'node:module';
 import { Bonjour } from './commands/bonjour.js';
-
-const require = createRequire(import.meta.url);
-const { version } = require('../../../package.json') as { version: string };
 
 export class CoreModule extends IsabelleModule {
   readonly name = 'core';

@@ -4,15 +4,12 @@ import { buildBonjourMessage } from '@/modules/core/messages/bonjour/bonjour-mes
 import { moduleManager } from '@/modules/module-manager.js';
 import { createLogger } from '@/utils/logger.js';
 import { getTodaysLessons } from '@/utils/schedule.js';
+import { version } from '@/utils/version.js';
 import {
   ChatInputCommandInteraction,
   MessageFlags,
   SlashCommandBuilder,
 } from 'discord.js';
-import { createRequire } from 'node:module';
-
-const require = createRequire(import.meta.url);
-const { version } = require('../../../../package.json') as { version: string };
 
 const logger = createLogger('bonjour-command');
 
