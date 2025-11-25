@@ -55,7 +55,7 @@
     ]
   },
   "dependencies": {
-    "@ai-sdk/google": "^2.0.42",
+    "@ai-sdk/google": "^2.0.43",
     "@libsql/client": "^0.15.15",
     "@napi-rs/canvas": "^0.1.82",
     "ai": "^5.0.101",
