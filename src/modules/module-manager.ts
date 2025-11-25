@@ -1,10 +1,11 @@
 import { commandManager } from '@/manager/commands/command.manager.js';
 import { interactionManager } from '@/manager/interaction.manager.js';
 import { IsabelleModule, ModuleContributor } from '@/modules/bot-module.js';
-import {
-  ApplicationCommandOptionType,
-  type RESTPostAPIChatInputApplicationCommandsJSONBody,
-} from 'discord.js';
+import { countSubcommands } from '@/utils/commands.js';
+import { createLogger } from '@/utils/logger.js';
+import { type RESTPostAPIChatInputApplicationCommandsJSONBody } from 'discord.js';
+
+const logger = createLogger('module-manager');
 
 /**
  * Result of a module initialization attempt.
@@ -82,7 +83,11 @@ export class ModuleManager {
           errorMessage:
             error instanceof Error ? error.message : 'Unknown error',
         });
-        throw error;
+        // Log a warning and continue initializing other modules
+        logger.warn(
+          { error, moduleName: module.name },
+          `Failed to initialize module "${module.name}"`,
+        );
       }
     }
   }
@@ -133,29 +138,8 @@ export class ModuleManager {
     let count = 0;
     for (const command of module.commands) {
       const json = command.commandData.toJSON();
-      const subcommandCount = this.countSubcommands(json.options);
+      const subcommandCount = countSubcommands(json.options);
       count += subcommandCount > 0 ? subcommandCount : 1;
-    }
-    return count;
-  }
-
-  private countSubcommands(
-    options: RESTPostAPIChatInputApplicationCommandsJSONBody['options'],
-  ): number {
-    if (!options) return 0;
-
-    let count = 0;
-    for (const option of options) {
-      if (option.type === ApplicationCommandOptionType.Subcommand) {
-        count++;
-      } else if (
-        option.type === ApplicationCommandOptionType.SubcommandGroup &&
-        'options' in option
-      ) {
-        count += this.countSubcommands(
-          option.options as RESTPostAPIChatInputApplicationCommandsJSONBody['options'],
-        );
-      }
     }
     return count;
   }
