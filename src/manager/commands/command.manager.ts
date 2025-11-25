@@ -2,7 +2,7 @@ import { config } from '@/config.js';
 import { IsabelleCommand } from '@/manager/commands/command.interface.js';
 import { IsabelleModule } from '@/modules/bot-module.js';
 import { createLogger } from '@/utils/logger.js';
-import { REST, Routes } from 'discord.js';
+import { ApplicationCommandOptionType, REST, Routes } from 'discord.js';
 import Emittery from 'emittery';
 
 const logger = createLogger('commands');
@@ -50,6 +50,43 @@ export class CommandManager {
     return Array.from(this.commands.values())
       .flat()
       .map((command) => command.commandData);
+  }
+
+  getCommandCountIncludingSubcommands(): number {
+    return this.getFlatCommandsArray().reduce((total, command) => {
+      const json = command.toJSON();
+      const subcommandCount = this.countSubcommands(json.options);
+
+      return total + (subcommandCount > 0 ? subcommandCount : 1);
+    }, 0);
+  }
+
+  private countSubcommands(options: unknown): number {
+    if (!Array.isArray(options)) {
+      return 0;
+    }
+
+    let count = 0;
+
+    for (const option of options) {
+      if (!option || typeof option !== 'object') {
+        continue;
+      }
+
+      const optionType = (option as { type?: number }).type;
+
+      if (optionType === ApplicationCommandOptionType.Subcommand) {
+        count += 1;
+        continue;
+      }
+
+      if (optionType === ApplicationCommandOptionType.SubcommandGroup) {
+        const nestedOptions = (option as { options?: unknown }).options;
+        count += this.countSubcommands(nestedOptions);
+      }
+    }
+
+    return count;
   }
 
   async deployCommandsGlobally() {

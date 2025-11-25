@@ -1,9 +1,11 @@
 import { client } from '@/index.js';
 import { commandManager } from '@/manager/commands/command.manager.js';
 import { IsabelleModule } from '@/modules/bot-module.js';
+import { Modules } from '@/modules/core/commands/modules.js';
+import { moduleManager } from '@/modules/module-manager.js';
 import { debounce } from '@/utils/debounce.js';
 import { environment } from '@/utils/environment.js';
-import { ActivityType, ApplicationCommandOptionType } from 'discord.js';
+import { ActivityType } from 'discord.js';
 import { createRequire } from 'node:module';
 import { Bonjour } from './commands/bonjour.js';
 
@@ -20,7 +22,7 @@ export class CoreModule extends IsabelleModule {
 
   init(): void {
     commandManager.onCommandsRegistered(this.scheduleActivityUpdate);
-    this.registerCommands([new Bonjour()]);
+    this.registerCommands([new Bonjour(), new Modules(moduleManager)]);
     this.setActivity();
   }
 
@@ -45,7 +47,7 @@ export class CoreModule extends IsabelleModule {
       state += ` - ${String(client.guilds.cache.size)} serveurs - ${String(totalUsers)} utilisateurs`;
     }
 
-    const commandCount = this.getCommandCount();
+    const commandCount = commandManager.getCommandCountIncludingSubcommands();
     state += ` - ${String(commandCount)} commandes`;
 
     client.user?.setActivity({
@@ -53,42 +55,5 @@ export class CoreModule extends IsabelleModule {
       type: ActivityType.Custom,
       state: state,
     });
-  }
-
-  private getCommandCount(): number {
-    return commandManager.getFlatCommandsArray().reduce((total, command) => {
-      const json = command.toJSON();
-      const subcommandCount = this.countSubcommands(json.options);
-
-      return total + (subcommandCount > 0 ? subcommandCount : 1);
-    }, 0);
-  }
-
-  private countSubcommands(options: unknown): number {
-    if (!Array.isArray(options)) {
-      return 0;
-    }
-
-    let count = 0;
-
-    for (const option of options) {
-      if (!option || typeof option !== 'object') {
-        continue;
-      }
-
-      const optionType = (option as { type?: number }).type;
-
-      if (optionType === ApplicationCommandOptionType.Subcommand) {
-        count += 1;
-        continue;
-      }
-
-      if (optionType === ApplicationCommandOptionType.SubcommandGroup) {
-        const nestedOptions = (option as { options?: unknown }).options;
-        count += this.countSubcommands(nestedOptions);
-      }
-    }
-
-    return count;
   }
 }

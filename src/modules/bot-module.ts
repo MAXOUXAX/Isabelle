@@ -1,8 +1,15 @@
 import { Interaction } from 'discord.js';
 import { IsabelleCommand } from '../manager/commands/command.interface.js';
+
+export interface ModuleContributor {
+  displayName: string;
+  githubUsername: string;
+}
+
 export abstract class IsabelleModule {
   commands: IsabelleCommand[] = [];
   interactionHandlers: InteractionHandler[] = [];
+  contributors: ModuleContributor[] = [];
 
   abstract init(): void;
 
