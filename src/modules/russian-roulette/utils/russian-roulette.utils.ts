@@ -97,14 +97,10 @@ export function increasePercentageWithLog(
   );
 }
 
-// map un nombre d'une tranche vers une autre
-// exemple :
-// number : 5
-// in_min : 0
-// in_max : 10
-// out_min : 10
-// out_max : 20
-// return : 15
+/**
+ * Maps a number from one range to another.
+ * Example: number: 5, in_min: 0, in_max: 10, out_min: 10, out_max: 20, returns: 15
+ */
 export function mapNumber(
   number: number,
   inMin: number,
