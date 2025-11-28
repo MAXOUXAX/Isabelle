@@ -59,8 +59,9 @@ export const russianRouletteStats = sqliteTable(
     id: int('id').primaryKey({ autoIncrement: true }),
     guildId: text('guild_id').notNull(),
     userId: text('user_id').notNull(),
-    shots: int('shots').default(0).notNull(), // Times the user executed /roulette-russe
-    deaths: int('deaths').default(0).notNull(), // Times the user got hit
+    plays: int('plays').default(0).notNull(), // Times the user executed /roulette-russe jouer
+    shots: int('shots').default(0).notNull(), // Times the user's play resulted in someone getting hit
+    deaths: int('deaths').default(0).notNull(), // Times the user was hit by a shot
     timeoutMinutes: int('timeout_minutes').default(0).notNull(), // Total minutes timed out
     ...base(),
   },

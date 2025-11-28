@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "49a2aa79-516e-4923-ae62-196c58a244b0",
+  "id": "d50501e9-412c-4cdc-8c77-486e4dc5428e",
   "prevId": "89348eae-cd49-4742-bda1-a30b86d8acae",
   "tables": {
     "audit_legal_consent": {
@@ -229,6 +229,14 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "plays": {
+          "name": "plays",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
         },
         "shots": {
           "name": "shots",

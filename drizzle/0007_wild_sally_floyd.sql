@@ -2,6 +2,7 @@ CREATE TABLE `russian_roulette_stats` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`guild_id` text NOT NULL,
 	`user_id` text NOT NULL,
+	`plays` integer DEFAULT 0 NOT NULL,
 	`shots` integer DEFAULT 0 NOT NULL,
 	`deaths` integer DEFAULT 0 NOT NULL,
 	`timeout_minutes` integer DEFAULT 0 NOT NULL,

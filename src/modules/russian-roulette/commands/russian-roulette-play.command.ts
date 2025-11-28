@@ -1,5 +1,6 @@
 import {
   incrementDeaths,
+  incrementPlays,
   incrementShots,
 } from '@/modules/russian-roulette/db/russian-roulette.db-operations.js';
 import {
@@ -36,8 +37,8 @@ export const executePlayCommand = async (
   const randomSafeMessage =
     SAFE_MESSAGES[Math.floor(Math.random() * SAFE_MESSAGES.length)];
 
-  // Always track the shot (someone pulled the trigger)
-  void incrementShots(guild.id, interaction.user.id);
+  // Always track the play (someone executed the command)
+  void incrementPlays(guild.id, interaction.user.id);
 
   // No one got hit this round.
   if (targetId == null) {
@@ -93,6 +94,9 @@ export const executePlayCommand = async (
 
     // Convert milliseconds to minutes for tracking
     const timeoutMinutes = Math.round(duration / (60 * 1000));
+
+    // Track the shot for the shooter (their play resulted in someone getting hit)
+    void incrementShots(guild.id, interaction.user.id);
 
     // Track the death and timeout duration for the target user
     void incrementDeaths(guild.id, targetId, timeoutMinutes);

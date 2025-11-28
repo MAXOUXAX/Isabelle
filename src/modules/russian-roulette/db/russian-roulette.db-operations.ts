@@ -6,7 +6,35 @@ import { sql } from 'drizzle-orm';
 const logger = createLogger('russian-roulette-db-operations');
 
 /**
+ * Increments the play count for a user in the database.
+ * A play is counted when a user executes /roulette-russe jouer.
+ */
+export async function incrementPlays(
+  guildId: string,
+  userId: string,
+): Promise<void> {
+  try {
+    await db
+      .insert(russianRouletteStats)
+      .values({
+        guildId,
+        userId,
+        plays: 1,
+      })
+      .onConflictDoUpdate({
+        target: [russianRouletteStats.guildId, russianRouletteStats.userId],
+        set: {
+          plays: sql`plays + 1`,
+        },
+      });
+  } catch (error) {
+    logger.error({ error }, 'Failed to increment plays count');
+  }
+}
+
+/**
  * Increments the shot count for a user in the database.
+ * A shot is counted when the user's play resulted in someone getting hit.
  */
 export async function incrementShots(
   guildId: string,
@@ -19,14 +47,11 @@ export async function incrementShots(
         guildId,
         userId,
         shots: 1,
-        deaths: 0,
-        updatedAt: sql`(unixepoch())`,
       })
       .onConflictDoUpdate({
         target: [russianRouletteStats.guildId, russianRouletteStats.userId],
         set: {
           shots: sql`shots + 1`,
-          updatedAt: sql`(unixepoch())`,
         },
       });
   } catch (error) {
@@ -51,17 +76,14 @@ export async function incrementDeaths(
       .values({
         guildId,
         userId,
-        shots: 0,
         deaths: 1,
         timeoutMinutes,
-        updatedAt: sql`(unixepoch())`,
       })
       .onConflictDoUpdate({
         target: [russianRouletteStats.guildId, russianRouletteStats.userId],
         set: {
           deaths: sql`deaths + 1`,
           timeoutMinutes: sql`timeout_minutes + ${timeoutMinutes}`,
-          updatedAt: sql`(unixepoch())`,
         },
       });
   } catch (error) {
