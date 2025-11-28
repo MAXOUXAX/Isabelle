@@ -15,6 +15,7 @@ import {
 } from '@/modules/russian-roulette/utils/russian-roulette.utils.js';
 import { createLogger } from '@/utils/logger.js';
 import { mentionId } from '@/utils/mention.js';
+import { voidAndTrackError } from '@/utils/promises.js';
 import { ChatInputCommandInteraction, MessageFlags } from 'discord.js';
 
 const logger = createLogger('russian-roulette-play-command');
@@ -38,7 +39,7 @@ export const executePlayCommand = async (
     SAFE_MESSAGES[Math.floor(Math.random() * SAFE_MESSAGES.length)];
 
   // Always track the play (someone executed the command)
-  void incrementPlays(guild.id, interaction.user.id);
+  voidAndTrackError(incrementPlays(guild.id, interaction.user.id));
 
   // No one got hit this round.
   if (targetId == null) {
@@ -96,10 +97,10 @@ export const executePlayCommand = async (
     const timeoutMinutes = Math.round(duration / (60 * 1000));
 
     // Track the shot for the shooter (their play resulted in someone getting hit)
-    void incrementShots(guild.id, interaction.user.id);
+    voidAndTrackError(incrementShots(guild.id, interaction.user.id));
 
     // Track the death and timeout duration for the target user
-    void incrementDeaths(guild.id, targetId, timeoutMinutes);
+    voidAndTrackError(incrementDeaths(guild.id, targetId, timeoutMinutes));
 
     resetNumberOfGamesSinceLastKill();
 
