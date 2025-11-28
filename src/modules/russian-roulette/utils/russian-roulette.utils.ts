@@ -86,7 +86,7 @@ export function getGunTarget(userID: string, guild: Guild) {
   return otherId ?? userID;
 }
 
-// Increase the chance that someone is gonna be killed, plus la suite de commande sans kill augmente plus la chance est elever
+// Increases the chance that someone will be killed; the longer the streak of commands without a kill, the higher the chance becomes.
 export function increasePercentageWithLog(
   maxPercentage: number,
   base: number,
