@@ -122,8 +122,11 @@ export const executePlayCommand = async (
       `Failed to timeout user ${targetId} in Russian Roulette:`,
     );
     increaseGamesSinceLastKill();
-    await interaction.reply(
-      `Le pistolet s'enraye... Personne n'est sanctionné cette fois-ci (erreur : ${(e as Error).name}).`,
-    );
+    const errorMessage = `Le pistolet s'enraye... Personne n'est sanctionné cette fois-ci (erreur : ${(e as Error).name}).`;
+    if (interaction.replied) {
+      await interaction.followUp(errorMessage);
+    } else {
+      await interaction.reply(errorMessage);
+    }
   }
 };
