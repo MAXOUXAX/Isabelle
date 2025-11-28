@@ -50,6 +50,13 @@
       "when": 1760870129338,
       "tag": "0006_parallel_scrambler",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1764325821996,
+      "tag": "0007_furry_shadow_king",
+      "breakpoints": true
     }
   ]
 }

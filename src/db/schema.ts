@@ -52,3 +52,17 @@ export const roastUsage = sqliteTable('roast_usage', {
   userId: text('user_id').notNull(),
   ...base(),
 });
+
+export const russianRouletteStats = sqliteTable(
+  'russian_roulette_stats',
+  {
+    id: int('id').primaryKey({ autoIncrement: true }),
+    guildId: text('guild_id').notNull(),
+    userId: text('user_id').notNull(),
+    shots: int('shots').default(0).notNull(), // Times the user executed /roulette-russe
+    deaths: int('deaths').default(0).notNull(), // Times the user got hit
+    timeoutMinutes: int('timeout_minutes').default(0).notNull(), // Total minutes timed out
+    ...base(),
+  },
+  (t) => [unique().on(t.guildId, t.userId)],
+);
