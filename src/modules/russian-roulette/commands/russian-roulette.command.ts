@@ -1,5 +1,6 @@
 import { IsabelleCommand } from '@/manager/commands/command.interface.js';
 import { executePlayCommand } from '@/modules/russian-roulette/commands/russian-roulette-play.command.js';
+import { voidAndTrackError } from '@/utils/promises.js';
 import {
   ChatInputCommandInteraction,
   MessageFlags,
@@ -21,7 +22,7 @@ export class RussianRouletteCommand implements IsabelleCommand {
     const subcommand = interaction.options.getSubcommand();
 
     if (subcommand === 'jouer') {
-      void executePlayCommand(interaction);
+      voidAndTrackError(executePlayCommand(interaction));
       return;
     } else {
       await interaction.reply({
