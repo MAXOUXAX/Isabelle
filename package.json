@@ -58,7 +58,6 @@
     "@ai-sdk/google": "^2.0.43",
     "@libsql/client": "^0.15.15",
     "@napi-rs/canvas": "^0.1.82",
-    "@resvg/resvg-js": "^2.6.2",
     "ai": "^5.0.101",
     "discord.js": "^14.25.1",
     "dotenv": "^17.2.3",
@@ -66,8 +65,6 @@
     "node-ical": "^0.22.1",
     "pino": "^10.1.0",
     "pino-pretty": "^13.1.2",
-    "react": "^19.2.0",
-    "satori": "^0.18.3",
     "zod": "^4.1.13"
   },
   "devDependencies": {
