@@ -65,7 +65,7 @@ export function getRandomTimeoutDuration(): {
  */
 export function getGunTarget(userID: string, guild: Guild) {
   const targetSelf = Math.random() > PERCENTAGES.kill_other;
-  const dynamicFireChance = increasePercentageWithLog(
+  const dynamicFireChance = calculateDynamicFireChance(
     0.7, // maxPercentage - maximum chance we can reach
     PERCENTAGES.is_killing, // base - starting chance
   );
@@ -86,27 +86,52 @@ export function getGunTarget(userID: string, guild: Guild) {
   return otherId ?? userID;
 }
 
-// Increases the chance that someone will be killed; the longer the streak of commands without a kill, the higher the chance becomes.
-export function increasePercentageWithLog(
+/**
+ * Calculates the dynamic fire chance for Russian Roulette based on the number of games since the last "kill".
+ *
+ * The function increases the fire chance logarithmically as more games are played without a "kill",
+ * but caps the result at the specified maximum percentage.
+ *
+ * @param maxPercentage - The maximum allowed fire chance (as a percentage).
+ * @param base - The base fire chance to start from.
+ * @returns The calculated fire chance, capped at `maxPercentage`.
+ *
+ * @remarks
+ * This function assumes the existence of a `numberOfGamesSinceLastKill` variable and a `mapNumber` utility function.
+ */
+export function calculateDynamicFireChance(
   maxPercentage: number,
   base: number,
 ): number {
   return Math.min(
     maxPercentage,
-    base + mapNumber(Math.log(numberOfGamesSinceLastKill + 1), 0, 4, 0, 1),
+    base +
+      mapNumber({
+        value: Math.log(numberOfGamesSinceLastKill + 1),
+        inMin: 0,
+        inMax: 4,
+        outMin: 0,
+        outMax: 1,
+      }),
   );
 }
 
 /**
- * Maps a number from one range to another.
- * Example: number: 5, in_min: 0, in_max: 10, out_min: 10, out_max: 20, returns: 15
+ * Maps a number from one range to another using named parameters.
+ * Example: mapNumber({ value: 5, inMin: 0, inMax: 10, outMin: 10, outMax: 20 }) returns 15
  */
-export function mapNumber(
-  number: number,
-  inMin: number,
-  inMax: number,
-  outMin: number,
-  outMax: number,
-) {
-  return ((number - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
+export function mapNumber({
+  value,
+  inMin,
+  inMax,
+  outMin,
+  outMax,
+}: {
+  value: number;
+  inMin: number;
+  inMax: number;
+  outMin: number;
+  outMax: number;
+}): number {
+  return ((value - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
 }
