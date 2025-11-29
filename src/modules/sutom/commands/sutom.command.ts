@@ -3,6 +3,7 @@ import startSutomSubcommand from '@/modules/sutom/commands/subcommands/start-sut
 import stopSutomSubcommand from '@/modules/sutom/commands/subcommands/stop-sutom.js';
 import guessWordSubcommand from '@/modules/sutom/commands/subcommands/sutom-guess.js';
 import { createLogger } from '@/utils/logger.js';
+import { voidAndTrackError } from '@/utils/promises.js';
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 
 const logger = createLogger('sutom-command');
@@ -40,17 +41,19 @@ export class SutomCommand implements IsabelleCommand {
   public executeCommand(interaction: ChatInputCommandInteraction) {
     switch (interaction.options.getSubcommand()) {
       case 'mot':
-        void guessWordSubcommand(interaction);
+        voidAndTrackError(guessWordSubcommand(interaction));
         break;
       case 'start':
-        void startSutomSubcommand(interaction);
+        voidAndTrackError(startSutomSubcommand(interaction));
         break;
       case 'stop':
-        void stopSutomSubcommand(interaction);
+        voidAndTrackError(stopSutomSubcommand(interaction));
         break;
       default:
-        void interaction.reply(
-          'Un problème est survenu, la sous-commande que tu as utilisée est inconnue.',
+        voidAndTrackError(
+          interaction.reply(
+            'Un problème est survenu, la sous-commande que tu as utilisée est inconnue.',
+          ),
         );
         logger.error(
           {

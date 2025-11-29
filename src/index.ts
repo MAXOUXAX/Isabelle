@@ -11,6 +11,7 @@ import { RussianRoulette } from '@/modules/russian-roulette/russian-roulette.mod
 import { Schedule } from '@/modules/schedule/schedule.module.js';
 import { SutomModule } from '@/modules/sutom/sutom.module.js';
 import { environment } from '@/utils/environment.js';
+import { voidAndTrackError } from '@/utils/promises.js';
 import { Client, Events, GatewayIntentBits } from 'discord.js';
 import { config } from './config.js';
 import { interactionManager } from './manager/interaction.manager.js';
@@ -147,7 +148,8 @@ const interactionLogger = createLogger('interactions');
 
 client.on(Events.InteractionCreate, (interaction) => {
   if (!interaction.isCommand()) {
-    return void interactionManager.handleInteraction(interaction);
+    voidAndTrackError(interactionManager.handleInteraction(interaction));
+    return;
   }
 
   const handler = async () => {
