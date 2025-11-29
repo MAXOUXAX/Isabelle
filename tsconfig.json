@@ -2,7 +2,6 @@
   "compilerOptions": {
     "target": "ESNext",
     "module": "NodeNext",
-    "lib": ["ESNext", "ESNext.Intl"],
     "rootDir": "./src",
     "outDir": "./dist",
     "removeComments": true,
@@ -13,12 +12,10 @@
     "strictNullChecks": true,
     "skipLibCheck": true,
     "baseUrl": ".",
-    "jsx": "react-jsx",
-    "jsxImportSource": "react",
     "paths": {
       "@/*": ["src/*"],
       "@modules/*": ["src/modules/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "bin/**/*.ts", "drizzle.config.ts"]
+  "include": ["src/**/*.ts", "bin/**/*.ts", "drizzle.config.ts"]
 }
