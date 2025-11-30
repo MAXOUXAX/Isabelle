@@ -24,7 +24,7 @@ export async function incrementPlays(
       .onConflictDoUpdate({
         target: [russianRouletteStats.guildId, russianRouletteStats.userId],
         set: {
-          plays: sql`plays + 1`,
+          plays: sql`${russianRouletteStats.plays} + 1`,
         },
       });
   } catch (error) {
@@ -51,7 +51,7 @@ export async function incrementShots(
       .onConflictDoUpdate({
         target: [russianRouletteStats.guildId, russianRouletteStats.userId],
         set: {
-          shots: sql`shots + 1`,
+          shots: sql`${russianRouletteStats.shots} + 1`,
         },
       });
   } catch (error) {
@@ -82,8 +82,8 @@ export async function incrementDeaths(
       .onConflictDoUpdate({
         target: [russianRouletteStats.guildId, russianRouletteStats.userId],
         set: {
-          deaths: sql`deaths + 1`,
-          timeoutMinutes: sql`timeout_minutes + ${timeoutMinutes}`,
+          deaths: sql`${russianRouletteStats.deaths} + 1`,
+          timeoutMinutes: sql`${russianRouletteStats.timeoutMinutes} + ${timeoutMinutes}`,
         },
       });
   } catch (error) {

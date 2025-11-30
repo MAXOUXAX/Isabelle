@@ -57,6 +57,13 @@
       "when": 1764345335570,
       "tag": "0007_wild_sally_floyd",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1764512493114,
+      "tag": "0008_sudden_golden_guardian",
+      "breakpoints": true
     }
   ]
 }

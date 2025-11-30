@@ -8,7 +8,8 @@ const base = () => {
       .default(sql`(unixepoch())`)
       .notNull(),
     updatedAt: int('updated_at', { mode: 'timestamp' })
-      .$onUpdate(() => sql`(unixepoch())`)
+      .default(sql`(unixepoch())`)
+      .$onUpdate(() => new Date())
       .notNull(),
   };
 };
