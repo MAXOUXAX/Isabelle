@@ -106,7 +106,7 @@ export function LeaderboardView({ entries }: { entries: LeaderboardEntry[] }) {
       >
         <div style={styles.headerTitle}>Classement de la roulette russe</div>
         <div style={styles.headerSubtitle}>
-          Top 10 des victimes par durée d'exclusion
+          Top {LEADERBOARD_ROWS_COUNT} des victimes par durée d'exclusion
         </div>
       </header>
       <section style={styles.columnBar}>
