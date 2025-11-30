@@ -7,6 +7,11 @@ import { eq } from 'drizzle-orm';
 
 const logger = createLogger('snake-case-listener');
 
+// Configuration constants for snake_case detection
+const MIN_MESSAGE_LENGTH = 5;
+const MIN_UNDERSCORE_COUNT = 2;
+const RESPONSE_PROBABILITY = 0.3;
+
 // Funny responses to send when snake_case is detected
 const SNAKE_CASE_RESPONSES = [
   '🐍 Encore un message en snake_case ! Le clavier fait des siennes ?',
@@ -65,14 +70,14 @@ export async function invalidateSnakeCaseCache(guildId: string) {
  */
 function isSnakeCaseMessage(content: string): boolean {
   // Ignore short messages
-  if (content.length < 5) return false;
+  if (content.length < MIN_MESSAGE_LENGTH) return false;
 
   // Count underscores and spaces
   const underscoreCount = (content.match(/_/g) ?? []).length;
   const spaceCount = (content.match(/ /g) ?? []).length;
 
-  // Must have at least 2 underscores to be considered snake_case
-  if (underscoreCount < 2) return false;
+  // Must have at least MIN_UNDERSCORE_COUNT underscores to be considered snake_case
+  if (underscoreCount < MIN_UNDERSCORE_COUNT) return false;
 
   // More underscores than spaces (or no spaces at all)
   if (underscoreCount <= spaceCount) return false;
@@ -122,8 +127,8 @@ export async function snakeCaseMessageListener(
     logger.error({ error }, 'Failed to add reaction');
   });
 
-  // 30% chance to also reply with a funny message
-  if (Math.random() < 0.3) {
+  // RESPONSE_PROBABILITY chance to also reply with a funny message
+  if (Math.random() < RESPONSE_PROBABILITY) {
     const randomResponse =
       SNAKE_CASE_RESPONSES[
         Math.floor(Math.random() * SNAKE_CASE_RESPONSES.length)

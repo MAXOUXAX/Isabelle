@@ -125,8 +125,10 @@ export class SnakeCaseCommand implements IsabelleCommand {
   ) {
     const user = interaction.options.getUser('utilisateur', true);
 
-    const result = await db
-      .delete(snakeCaseTargets)
+    // First check if the target exists
+    const existing = await db
+      .select()
+      .from(snakeCaseTargets)
       .where(
         and(
           eq(snakeCaseTargets.guildId, guildId),
@@ -134,13 +136,23 @@ export class SnakeCaseCommand implements IsabelleCommand {
         ),
       );
 
-    if (result.rowsAffected === 0) {
+    if (existing.length === 0) {
       await interaction.reply({
         content: `${user.displayName} n'était pas surveillé(e) pour les messages en snake_case.`,
         flags: MessageFlags.Ephemeral,
       });
       return;
     }
+
+    // Delete the target
+    await db
+      .delete(snakeCaseTargets)
+      .where(
+        and(
+          eq(snakeCaseTargets.guildId, guildId),
+          eq(snakeCaseTargets.userId, user.id),
+        ),
+      );
 
     await invalidateSnakeCaseCache(guildId);
 
