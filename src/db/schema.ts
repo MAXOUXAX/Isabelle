@@ -67,3 +67,15 @@ export const russianRouletteStats = sqliteTable(
   },
   (t) => [unique().on(t.guildId, t.userId)],
 );
+
+// Stores the target users for snake_case detection per guild
+export const snakeCaseTargets = sqliteTable(
+  'snake_case_targets',
+  {
+    id: int('id').primaryKey({ autoIncrement: true }),
+    guildId: text('guild_id').notNull(),
+    userId: text('user_id').notNull(), // The user to monitor for snake_case messages
+    ...base(),
+  },
+  (t) => [unique().on(t.guildId, t.userId)],
+);

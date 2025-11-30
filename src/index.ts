@@ -9,6 +9,7 @@ import { PlanifierModule } from '@/modules/planifier/planifier.module.js';
 import { RoastModule } from '@/modules/roast/roast.module.js';
 import { RussianRoulette } from '@/modules/russian-roulette/russian-roulette.module.js';
 import { Schedule } from '@/modules/schedule/schedule.module.js';
+import { SnakeCaseDetectorModule } from '@/modules/snake-case-detector/snake-case-detector.module.js';
 import { SutomModule } from '@/modules/sutom/sutom.module.js';
 import { environment } from '@/utils/environment.js';
 import { voidAndTrackError } from '@/utils/promises.js';
@@ -40,6 +41,7 @@ const MODULES: IsabelleModule[] = [
   new AutomaticResponsesModule(),
   new PlanifierModule(),
   new RussianRoulette(),
+  new SnakeCaseDetectorModule(),
   new SutomModule(),
   new Schedule(),
   new RoastModule(),

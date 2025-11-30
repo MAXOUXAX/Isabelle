@@ -57,6 +57,13 @@
       "when": 1764345335570,
       "tag": "0007_wild_sally_floyd",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1764510547854,
+      "tag": "0008_sticky_dazzler",
+      "breakpoints": true
     }
   ]
 }
