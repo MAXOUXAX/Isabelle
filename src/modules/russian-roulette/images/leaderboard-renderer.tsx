@@ -5,7 +5,7 @@ import { AttachmentBuilder } from 'discord.js';
 import { readFile } from 'fs/promises';
 import satori, { type Font } from 'satori';
 
-import { LeaderboardEntry } from './leaderboard-data.js';
+import type { LeaderboardEntry } from './leaderboard-data.js';
 import { LeaderboardView } from './leaderboard-view.js';
 
 const logger = createLogger('leaderboard-satori');
