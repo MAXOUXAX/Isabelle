@@ -317,7 +317,7 @@ function registerFontOnce(): void {
   if (fontRegistered) return;
 
   try {
-    const fontPath = resolveResourcePath('sutom', 'Outfit-Bold.ttf');
+    const fontPath = resolveResourcePath('fonts', 'Outfit-Bold.ttf');
     GlobalFonts.registerFromPath(fontPath, 'Outfit');
     fontRegistered = true;
   } catch (error) {

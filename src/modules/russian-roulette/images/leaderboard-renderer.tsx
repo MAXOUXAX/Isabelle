@@ -16,7 +16,7 @@ async function loadFonts(): Promise<Font[]> {
   if (cachedFonts) return cachedFonts;
 
   const outfitBuffer = await readFile(
-    resolveResourcePath('sutom', 'Outfit-Bold.ttf'),
+    resolveResourcePath('fonts', 'Outfit-Bold.ttf'),
   );
 
   cachedFonts = [
