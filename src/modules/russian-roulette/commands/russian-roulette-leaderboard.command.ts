@@ -68,11 +68,6 @@ export const executeLeaderboardCommand = async (
     await interaction.editReply({
       files: [image],
     });
-
-    logger.debug(
-      { guildId: guild.id, entriesCount: entries.length },
-      'Leaderboard rendered successfully with Satori',
-    );
   } catch (error) {
     logger.error({ error }, 'Failed to generate leaderboard');
     await interaction.editReply({
