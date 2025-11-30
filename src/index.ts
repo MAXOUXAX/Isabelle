@@ -133,10 +133,7 @@ client.once(Events.ClientReady, () => {
   handler().catch((error: unknown) => {
     logger.fatal(
       {
-        error:
-          error instanceof Error
-            ? { message: error.message, stack: error.stack }
-            : error,
+        error,
       },
       'Critical startup failure - Isabelle cannot start',
     );
@@ -168,10 +165,9 @@ client.on(Events.InteractionCreate, (interaction) => {
   };
 
   handler().catch((error: unknown) => {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     interactionLogger.error(
       {
-        error: errorMessage,
+        error,
         interactionType: interaction.type,
         commandName: interaction.isCommand()
           ? interaction.commandName
@@ -182,6 +178,8 @@ client.on(Events.InteractionCreate, (interaction) => {
       },
       'Interaction handling failed',
     );
+
+    const errorMessage = error instanceof Error ? error.message : String(error);
 
     // Only reply if the interaction hasn't been replied to already
     if (interaction.replied || interaction.deferred) {

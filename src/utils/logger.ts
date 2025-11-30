@@ -79,6 +79,10 @@ function initializeLogging() {
   return pino(
     {
       level: baseLevel,
+      serializers: {
+        // Use pino's built-in error serializer for the 'error' key
+        error: pino.stdSerializers.err,
+      },
     },
     pino.multistream(streams),
   );
