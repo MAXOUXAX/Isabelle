@@ -66,7 +66,7 @@ export default async function startSutomSubcommand(
 
       // Send the game board in the thread as the first message
       await thread.send({
-        content: `Bienvenue dans ta partie de SUTOM, ${user.toString()}! 🎯\nOn cherche un mot de **${String(game.word.length)} lettres**.\n\nUtilise \`/sutom mot\` pour proposer tes mots.`,
+        content: `Bienvenue dans ta partie de SUTOM, ${user.toString()}! 🎯\nOn cherche un mot de **${String(game.word.length)} lettres**.\n\nEnvoie tes propositions de mots directement dans ce thread !`,
         embeds: [embed],
         files: [attachment],
       });
