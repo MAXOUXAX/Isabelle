@@ -12,6 +12,19 @@ export abstract class IsabelleModule {
 
   abstract init(): void;
 
+  /**
+   * List of contributors to this module.
+   *
+   * Each contributor should include their display name and GitHub username.
+   * This information may be used by the bot to display module credits,
+   * acknowledge contributors in help or info commands, or for other attribution purposes.
+   *
+   * Example:
+   * [
+   *   { displayName: "Alice Smith", githubUsername: "alice-smith" },
+   *   { displayName: "Bob Jones", githubUsername: "bob-jones" }
+   * ]
+   */
   abstract get contributors(): ModuleContributor[];
 
   registerCommands(commands: IsabelleCommand[]): void {
