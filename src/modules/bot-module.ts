@@ -9,9 +9,10 @@ export interface ModuleContributor {
 export abstract class IsabelleModule {
   commands: IsabelleCommand[] = [];
   interactionHandlers: InteractionHandler[] = [];
-  contributors: ModuleContributor[] = [];
 
   abstract init(): void;
+
+  abstract get contributors(): ModuleContributor[];
 
   registerCommands(commands: IsabelleCommand[]): void {
     for (const command of commands) {
