@@ -31,6 +31,7 @@ const styles = {
     color: '#ffffff',
   },
   headerSubtitle: {
+    display: 'flex',
     fontSize: 16,
     color: '#9ca3af',
     marginTop: 8,
@@ -70,6 +71,7 @@ function ColumnHeader({ column, isFirst }: ColumnHeaderProps) {
     >
       <div
         style={{
+          display: 'flex',
           fontSize: 16,
           fontWeight: 700,
           color: column.color,
@@ -81,6 +83,7 @@ function ColumnHeader({ column, isFirst }: ColumnHeaderProps) {
       </div>
       <div
         style={{
+          display: 'flex',
           fontSize: 12,
           color: 'rgba(156, 163, 175, 0.8)',
           marginTop: 2,
@@ -110,11 +113,15 @@ export function LeaderboardView({ entries }: { entries: LeaderboardEntry[] }) {
         </div>
       </header>
       <section style={styles.columnBar}>
-        <div style={{ width: RANK_COLUMN_WIDTH }} />
+        <div style={{ display: 'flex', width: RANK_COLUMN_WIDTH }} />
         <div
-          style={{ width: AVATAR_COLUMN_WIDTH, marginRight: AVATAR_MARGIN }}
+          style={{
+            display: 'flex',
+            width: AVATAR_COLUMN_WIDTH,
+            marginRight: AVATAR_MARGIN,
+          }}
         />
-        <div style={{ flex: 1, marginRight: NAME_MARGIN }} />
+        <div style={{ display: 'flex', flex: 1, marginRight: NAME_MARGIN }} />
         <div
           style={{
             display: 'flex',
