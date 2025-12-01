@@ -77,7 +77,7 @@ export async function sutomMessageListener(message: Message): Promise<void> {
       break;
     }
     case AttemptOutcome.VALID_WORD: {
-      const remaining = 6 - game.wordHistory.length;
+      const remaining = game.getRemainingAttempts();
       await replyWithBoard(
         `Il te reste **${String(remaining)}** tentative${remaining > 1 ? 's' : ''}.`,
       );
