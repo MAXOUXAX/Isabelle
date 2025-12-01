@@ -9,7 +9,7 @@ const MINUTES_PER_DAY = 24 * MINUTES_PER_HOUR;
 
 export const LEADERBOARD_COLUMN_WIDTH = 120;
 
-export const LEADERBOARD_ROWS_COUNT = 5;
+export const LEADERBOARD_ROWS_COUNT = 10;
 
 export interface LeaderboardStat {
   userId: string;
