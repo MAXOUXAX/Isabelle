@@ -1,7 +1,10 @@
 import { sutomGameManager } from '@/modules/sutom/core/game-manager.js';
-import { AttemptOutcome } from '@/modules/sutom/core/sutom-game.js';
+import {
+  GuessResponder,
+  handleGuessAttempt,
+} from '@/modules/sutom/core/guess-handler.js';
 import { createLogger } from '@/utils/logger.js';
-import { Message } from 'discord.js';
+import { AttachmentBuilder, EmbedBuilder, Message } from 'discord.js';
 
 const logger = createLogger('sutom-message');
 
@@ -29,61 +32,17 @@ export async function sutomMessageListener(message: Message): Promise<void> {
     `User ${message.author.username} (${message.author.id}) guessed word via message: "${guessedWord}"`,
   );
 
-  const archiveThread = async () => {
-    if (message.channel.isThread()) {
-      await message.channel.setArchived(true).catch((e: unknown) => {
-        logger.error({ error: e }, 'Failed to archive thread');
-      });
-    }
+  const responder: GuessResponder = {
+    sendError: async (content: string) => {
+      await message.reply(content);
+    },
+    sendBoard: async (embed: EmbedBuilder, attachment: AttachmentBuilder) => {
+      await message.reply({ embeds: [embed], files: [attachment] });
+    },
   };
 
-  const replyWithBoard = async (boardMessage: string) => {
-    const { embed, attachment } = game.buildBoard(boardMessage);
-    await message.reply({ embeds: [embed], files: [attachment] });
-  };
-
-  const concludeGame = async (boardMessage: string) => {
-    await replyWithBoard(boardMessage);
-    await archiveThread();
-    sutomGameManager.deleteGame(userId);
-  };
-
-  const wordOutcome = game.addWord(guessedWord);
-
-  switch (wordOutcome) {
-    case AttemptOutcome.WORD_REPEATED:
-      await message.reply('Tu as déjà essayé ce mot !');
-      break;
-    case AttemptOutcome.WORD_LENGTH_MISMATCH:
-      await message.reply(
-        "Le mot que tu as proposé n'a pas la bonne longueur !",
-      );
-      break;
-    case AttemptOutcome.ATTEMPTS_EXHAUSTED: {
-      await concludeGame(
-        `❌ Tu as utilisé toutes tes tentatives ! Le mot était: **${game.word.toUpperCase()}**`,
-      );
-      break;
-    }
-    case AttemptOutcome.UNKNOWN_WORD:
-      await message.reply(
-        "Le mot que tu as proposé n'existe pas dans le dictionnaire !",
-      );
-      break;
-    case AttemptOutcome.WORD_SUCCESSFULLY_GUESSED: {
-      await concludeGame(
-        `🎉 Bravo, tu as trouvé le mot: **${game.word.toUpperCase()}**`,
-      );
-      break;
-    }
-    case AttemptOutcome.VALID_WORD: {
-      const remaining = game.getRemainingAttempts();
-      await replyWithBoard(
-        `Il te reste **${String(remaining)}** tentative${remaining > 1 ? 's' : ''}.`,
-      );
-      break;
-    }
-    default:
-      break;
-  }
+  await handleGuessAttempt(
+    { userId, game, thread: message.channel, responder },
+    guessedWord,
+  );
 }

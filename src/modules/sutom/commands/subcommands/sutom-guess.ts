@@ -1,7 +1,16 @@
 import { sutomGameManager } from '@/modules/sutom/core/game-manager.js';
-import { AttemptOutcome } from '@/modules/sutom/core/sutom-game.js';
+import {
+  GuessResponder,
+  handleGuessAttempt,
+} from '@/modules/sutom/core/guess-handler.js';
 import { createLogger } from '@/utils/logger.js';
-import { ChatInputCommandInteraction, MessageFlags } from 'discord.js';
+import {
+  AnyThreadChannel,
+  AttachmentBuilder,
+  ChatInputCommandInteraction,
+  EmbedBuilder,
+  MessageFlags,
+} from 'discord.js';
 
 const logger = createLogger('sutom-guess');
 
@@ -45,7 +54,13 @@ export default async function guessWordSubcommand(
     return;
   }
 
-  const gameChannel = channel as NonNullable<typeof channel>;
+  // Validate the channel is a thread
+  if (!channel.isThread()) {
+    await sendEphemeral('Ce canal ne correspond pas à un thread de jeu.');
+    return;
+  }
+
+  const gameChannel = channel as AnyThreadChannel;
 
   // Additional validation: check if there's a game associated with this thread
   const threadGame = sutomGameManager.getGameByThreadId(gameChannel.id);
@@ -61,62 +76,21 @@ export default async function guessWordSubcommand(
     return;
   }
 
-  const archiveThread = async () => {
-    if (gameChannel.isThread()) {
-      await gameChannel.setArchived(true).catch((e: unknown) => {
-        logger.error({ error: e }, 'Failed to archive thread');
-      });
-    }
+  const responder: GuessResponder = {
+    sendError: async (content: string) => {
+      await interaction.reply({ content, flags: MessageFlags.Ephemeral });
+    },
+    sendBoard: async (embed: EmbedBuilder, attachment: AttachmentBuilder) => {
+      await interaction.reply({ embeds: [embed], files: [attachment] });
+    },
   };
 
-  const replyWithBoard = async (message: string) => {
-    const { embed, attachment } = game.buildBoard(message);
-    await interaction.reply({ embeds: [embed], files: [attachment] });
-  };
+  const handled = await handleGuessAttempt(
+    { userId: user.id, game, thread: gameChannel, responder },
+    guessedWord,
+  );
 
-  const concludeGame = async (message: string) => {
-    await replyWithBoard(message);
-    await archiveThread();
-    sutomGameManager.deleteGame(user.id);
-  };
-
-  const wordOutcome = game.addWord(guessedWord);
-
-  switch (wordOutcome) {
-    case AttemptOutcome.WORD_REPEATED:
-      await sendEphemeral('Tu as déjà essayé ce mot !');
-      break;
-    case AttemptOutcome.WORD_LENGTH_MISMATCH:
-      await sendEphemeral(
-        "Le mot que tu as proposé n'a pas la bonne longueur !",
-      );
-      break;
-    case AttemptOutcome.ATTEMPTS_EXHAUSTED: {
-      await concludeGame(
-        `❌ Tu as utilisé toutes tes tentatives ! Le mot était: **${game.word.toUpperCase()}**`,
-      );
-      break;
-    }
-    case AttemptOutcome.UNKNOWN_WORD:
-      await sendEphemeral(
-        "Le mot que tu as proposé n'existe pas dans le dictionnaire !",
-      );
-      break;
-    case AttemptOutcome.WORD_SUCCESSFULLY_GUESSED: {
-      await concludeGame(
-        `🎉 Bravo, tu as trouvé le mot: **${game.word.toUpperCase()}**`,
-      );
-      break;
-    }
-    case AttemptOutcome.VALID_WORD: {
-      const remaining = 6 - game.wordHistory.length;
-      await replyWithBoard(
-        `Il te reste **${String(remaining)}** tentative${remaining > 1 ? 's' : ''}.`,
-      );
-      break;
-    }
-    default:
-      await sendEphemeral('Erreur inconnue !');
-      break;
+  if (!handled) {
+    await sendEphemeral('Erreur inconnue !');
   }
 }
