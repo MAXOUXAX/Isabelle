@@ -12,6 +12,7 @@ const ROW_PADDING = 16;
 
 const placeholderStyles = {
   avatar: {
+    display: 'flex',
     width: 48,
     height: 48,
     borderRadius: '50%',
@@ -20,6 +21,7 @@ const placeholderStyles = {
     flexShrink: 0,
   },
   line: {
+    display: 'flex',
     height: 20,
     width: 144,
     borderRadius: 4,
@@ -107,6 +109,7 @@ export function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
       ) : (
         <div
           style={{
+            display: 'flex',
             width: rankStyle.avatarSize,
             height: rankStyle.avatarSize,
             borderRadius: '50%',
