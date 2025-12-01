@@ -1,6 +1,6 @@
 import { client } from '@/index.js';
 import { commandManager } from '@/manager/commands/command.manager.js';
-import { IsabelleModule } from '@/modules/bot-module.js';
+import { IsabelleModule, ModuleContributor } from '@/modules/bot-module.js';
 import { Modules } from '@/modules/core/commands/modules.js';
 import { ModulesSelectHandler } from '@/modules/core/interactions/modules-navigation.interaction.js';
 import { moduleManager } from '@/modules/module-manager.js';
@@ -22,6 +22,15 @@ export class CoreModule extends IsabelleModule {
     this.setActivity.bind(this),
     this.activityDebounceMs,
   );
+
+  get contributors(): ModuleContributor[] {
+    return [
+      {
+        displayName: 'Maxence',
+        githubUsername: 'MAXOUXAX',
+      },
+    ];
+  }
 
   init(): void {
     commandManager.onCommandsRegistered(this.scheduleActivityUpdate);

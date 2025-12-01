@@ -1,5 +1,5 @@
+import { IsabelleModule, ModuleContributor } from '@/modules/bot-module.js';
 import { client } from '@/index.js';
-import { IsabelleModule } from '@/modules/bot-module.js';
 import { SutomCommand } from '@/modules/sutom/commands/sutom.command.js';
 import { sutomMessageListener } from '@/modules/sutom/events/sutom-message.listener.js';
 import { createLogger } from '@/utils/logger.js';
@@ -9,6 +9,18 @@ const logger = createLogger('sutom-module');
 
 export class SutomModule extends IsabelleModule {
   readonly name = 'Sutom';
+  get contributors(): ModuleContributor[] {
+    return [
+      {
+        displayName: 'Tristan',
+        githubUsername: 'Ozraam',
+      },
+      {
+        displayName: 'Maxence',
+        githubUsername: 'MAXOUXAX',
+      },
+    ];
+  }
 
   init(): void {
     this.registerCommands([new SutomCommand()]);

@@ -1,9 +1,17 @@
-import { IsabelleModule } from '@/modules/bot-module.js';
+import { IsabelleModule, ModuleContributor } from '@/modules/bot-module.js';
 import { PlanifierCommand } from './commands/planifier.command.js';
 import { handlePlanifierModalSubmit } from './interactions/planifier-modal-submit.interaction.js';
 
 export class PlanifierModule extends IsabelleModule {
   readonly name = 'planifier';
+  get contributors(): ModuleContributor[] {
+    return [
+      {
+        displayName: 'Maxence',
+        githubUsername: 'MAXOUXAX',
+      },
+    ];
+  }
 
   init(): void {
     this.registerCommands([new PlanifierCommand()]);
