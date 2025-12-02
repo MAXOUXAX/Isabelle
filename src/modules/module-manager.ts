@@ -30,6 +30,8 @@ export interface ModuleData extends ModuleLoadResult {
   contributors: ModuleContributor[];
 }
 
+const SLOW_MODULE_LOAD_TIME_TRESHOLD = 1000;
+
 /**
  * Manages the registration and initialization of Isabelle modules.
  *
@@ -95,7 +97,7 @@ export class ModuleManager {
           );
         }
 
-        if (loadTime > 1000) {
+        if (loadTime > SLOW_MODULE_LOAD_TIME_TRESHOLD) {
           logger.warn(
             `Module ${module.name} took ${loadTime.toFixed(2)}ms to initialize!`,
           );
@@ -129,18 +131,17 @@ export class ModuleManager {
 
     const endOverallTime = performance.now();
     const overallLoadTime = endOverallTime - startOverallTime;
-    const meanLoadTime = overallLoadTime / this.moduleLoadResults.size;
+    const meanLoadTime = overallLoadTime / (this.moduleLoadResults.size || 1);
+
+    let loadedCount = 0;
+    let failedCount = 0;
+    for (const result of this.moduleLoadResults.values()) {
+      if (result?.status === 'loaded') loadedCount++;
+      else if (result?.status === 'failed') failedCount++;
+    }
 
     logger.info(
-      `Module initialization complete in ${overallLoadTime.toFixed(2)}ms (mean: ${meanLoadTime.toFixed(2)}ms per module). (loaded: ${String(
-        Array.from(this.moduleLoadResults.values()).filter(
-          (result) => result?.status === 'loaded',
-        ).length,
-      )}, failed: ${String(
-        Array.from(this.moduleLoadResults.values()).filter(
-          (result) => result?.status === 'failed',
-        ).length,
-      )})`,
+      `Module initialization complete in ${overallLoadTime.toFixed(2)}ms (mean: ${meanLoadTime.toFixed(2)}ms per module, loaded: ${String(loadedCount)}, failed: ${String(failedCount)})`,
     );
   }
 
