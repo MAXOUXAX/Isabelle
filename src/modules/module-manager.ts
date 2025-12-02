@@ -63,23 +63,59 @@ export class ModuleManager {
     }
   }
 
+  private checkModuleHealth(module: IsabelleModule): boolean {
+    return module.commands.length > 0 || module.interactionHandlers.length > 0;
+  }
+
   async initializeModules(): Promise<void> {
+    logger.info(
+      `Initializing ${String(this.moduleLoadResults.size)} modules...`,
+    );
+
+    const startOverallTime = performance.now();
+
     for (const module of this.moduleLoadResults.keys()) {
+      logger.info(`Initializing module ${module.name}...`);
+
       const startTime = performance.now();
+
       try {
         module.init();
         await commandManager.registerCommandsFromModule(module);
         interactionManager.registerInteractionHandlers(
           module.interactionHandlers,
         );
+
+        const endTime = performance.now();
+        const loadTime = endTime - startTime;
+
+        if (!this.checkModuleHealth(module)) {
+          logger.warn(
+            `The module ${module.name} has registered no commands or interaction handlers. Is this intended?`,
+          );
+        }
+
+        if (loadTime > 1000) {
+          logger.warn(
+            `Module ${module.name} took ${loadTime.toFixed(2)}ms to initialize!`,
+          );
+        } else {
+          logger.info(
+            `Module ${module.name} initialized in ${loadTime.toFixed(2)}ms`,
+          );
+        }
+
         this.moduleLoadResults.set(module, {
           status: 'loaded',
-          loadTimeMs: performance.now() - startTime,
+          loadTimeMs: loadTime,
         });
       } catch (error) {
+        const endTime = performance.now();
+        const loadTime = endTime - startTime;
+
         this.moduleLoadResults.set(module, {
           status: 'failed',
-          loadTimeMs: performance.now() - startTime,
+          loadTimeMs: loadTime,
           errorMessage:
             error instanceof Error ? error.message : 'Unknown error',
         });
@@ -90,6 +126,22 @@ export class ModuleManager {
         );
       }
     }
+
+    const endOverallTime = performance.now();
+    const overallLoadTime = endOverallTime - startOverallTime;
+    const meanLoadTime = overallLoadTime / this.moduleLoadResults.size;
+
+    logger.info(
+      `Module initialization complete in ${overallLoadTime.toFixed(2)}ms (mean: ${meanLoadTime.toFixed(2)}ms per module). (loaded: ${String(
+        Array.from(this.moduleLoadResults.values()).filter(
+          (result) => result?.status === 'loaded',
+        ).length,
+      )}, failed: ${String(
+        Array.from(this.moduleLoadResults.values()).filter(
+          (result) => result?.status === 'failed',
+        ).length,
+      )})`,
+    );
   }
 
   getModuleDescriptors(): { slug: string; name: string }[] {
