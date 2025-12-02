@@ -30,6 +30,8 @@ export interface ModuleData extends ModuleLoadResult {
   contributors: ModuleContributor[];
 }
 
+const SLOW_MODULE_LOAD_TIME_TRESHOLD = 1000;
+
 /**
  * Manages the registration and initialization of Isabelle modules.
  *
@@ -63,23 +65,59 @@ export class ModuleManager {
     }
   }
 
+  private checkModuleHealth(module: IsabelleModule): boolean {
+    return module.commands.length > 0 || module.interactionHandlers.length > 0;
+  }
+
   async initializeModules(): Promise<void> {
+    logger.info(
+      `Initializing ${String(this.moduleLoadResults.size)} modules...`,
+    );
+
+    const startOverallTime = performance.now();
+
     for (const module of this.moduleLoadResults.keys()) {
+      logger.info(`Initializing module ${module.name}...`);
+
       const startTime = performance.now();
+
       try {
         module.init();
         await commandManager.registerCommandsFromModule(module);
         interactionManager.registerInteractionHandlers(
           module.interactionHandlers,
         );
+
+        const endTime = performance.now();
+        const loadTime = endTime - startTime;
+
+        if (!this.checkModuleHealth(module)) {
+          logger.warn(
+            `The module ${module.name} has registered no commands or interaction handlers. Is this intended?`,
+          );
+        }
+
+        if (loadTime > SLOW_MODULE_LOAD_TIME_TRESHOLD) {
+          logger.warn(
+            `Module ${module.name} took ${loadTime.toFixed(2)}ms to initialize!`,
+          );
+        } else {
+          logger.info(
+            `Module ${module.name} initialized in ${loadTime.toFixed(2)}ms`,
+          );
+        }
+
         this.moduleLoadResults.set(module, {
           status: 'loaded',
-          loadTimeMs: performance.now() - startTime,
+          loadTimeMs: loadTime,
         });
       } catch (error) {
+        const endTime = performance.now();
+        const loadTime = endTime - startTime;
+
         this.moduleLoadResults.set(module, {
           status: 'failed',
-          loadTimeMs: performance.now() - startTime,
+          loadTimeMs: loadTime,
           errorMessage:
             error instanceof Error ? error.message : 'Unknown error',
         });
@@ -90,6 +128,21 @@ export class ModuleManager {
         );
       }
     }
+
+    const endOverallTime = performance.now();
+    const overallLoadTime = endOverallTime - startOverallTime;
+    const meanLoadTime = overallLoadTime / (this.moduleLoadResults.size || 1);
+
+    let loadedCount = 0;
+    let failedCount = 0;
+    for (const result of this.moduleLoadResults.values()) {
+      if (result?.status === 'loaded') loadedCount++;
+      else if (result?.status === 'failed') failedCount++;
+    }
+
+    logger.info(
+      `Module initialization complete in ${overallLoadTime.toFixed(2)}ms (mean: ${meanLoadTime.toFixed(2)}ms per module, loaded: ${String(loadedCount)}, failed: ${String(failedCount)})`,
+    );
   }
 
   getModuleDescriptors(): { slug: string; name: string }[] {
