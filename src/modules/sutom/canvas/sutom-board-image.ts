@@ -3,7 +3,12 @@ import { createLogger } from '@/utils/logger.js';
 import { resolveResourcePath } from '@/utils/resources.js';
 import { createCanvas, GlobalFonts, type SKRSContext2D } from '@napi-rs/canvas';
 import { AttachmentBuilder } from 'discord.js';
-import { drawLetter, drawLetterTile, drawRoundedTile } from './canvas-utils.js';
+import {
+  drawCircleTile,
+  drawLetter,
+  drawLetterTile,
+  drawRoundedTile,
+} from './canvas-utils.js';
 import {
   DEFAULT_RENDER_OPTIONS,
   GAME_CONFIG,
@@ -38,6 +43,7 @@ function createRenderConfig(options: Partial<RenderConfig>): RenderConfig {
     roundedRadius:
       options.roundedRadius ?? DEFAULT_RENDER_OPTIONS.roundedRadius,
     background: options.background ?? DEFAULT_RENDER_OPTIONS.background,
+    hideLetters: options.hideLetters ?? DEFAULT_RENDER_OPTIONS.hideLetters,
   };
 }
 
@@ -183,6 +189,7 @@ export function renderSutomBoardImage(
 
 /**
  * Renders a completed guess row with letter evaluations.
+ * When hideLetters is true, shows only colored tiles without letters.
  */
 function drawEvaluationRow(
   ctx: SKRSContext2D,
@@ -194,47 +201,72 @@ function drawEvaluationRow(
 ): void {
   for (let i = 0; i < guess.length; i++) {
     const x = startX + i * (config.tileSize + config.tileSpacing);
-    const letter = guess[i];
+    const letter = config.hideLetters ? '' : guess[i];
     const state = evaluation[i];
 
-    switch (state) {
-      case LetterState.CORRECT:
-        drawLetterTile(
+    if (config.hideLetters) {
+      // When hiding letters, just draw colored tiles without letters
+      const color =
+        state === LetterState.CORRECT
+          ? TILE_COLORS.CORRECT
+          : state === LetterState.MISPLACED
+            ? TILE_COLORS.MISPLACED
+            : TILE_COLORS.INCORRECT;
+      const shape = state === LetterState.MISPLACED ? 'circle' : 'rounded';
+
+      if (shape === 'circle') {
+        drawCircleTile(ctx, x, y, config.tileSize, color);
+      } else {
+        drawRoundedTile(
           ctx,
           x,
           y,
           config.tileSize,
+          color,
           config.roundedRadius,
-          TILE_COLORS.CORRECT,
-          letter,
-          'rounded',
         );
-        break;
-      case LetterState.MISPLACED:
-        drawLetterTile(
-          ctx,
-          x,
-          y,
-          config.tileSize,
-          config.roundedRadius,
-          TILE_COLORS.MISPLACED,
-          letter,
-          'circle',
-          '#1d1f22',
-        );
-        break;
-      default:
-        drawLetterTile(
-          ctx,
-          x,
-          y,
-          config.tileSize,
-          config.roundedRadius,
-          TILE_COLORS.INCORRECT,
-          letter,
-          'rounded',
-        );
-        break;
+      }
+    } else {
+      // Normal rendering with letters
+      switch (state) {
+        case LetterState.CORRECT:
+          drawLetterTile(
+            ctx,
+            x,
+            y,
+            config.tileSize,
+            config.roundedRadius,
+            TILE_COLORS.CORRECT,
+            letter,
+            'rounded',
+          );
+          break;
+        case LetterState.MISPLACED:
+          drawLetterTile(
+            ctx,
+            x,
+            y,
+            config.tileSize,
+            config.roundedRadius,
+            TILE_COLORS.MISPLACED,
+            letter,
+            'circle',
+            '#1d1f22',
+          );
+          break;
+        default:
+          drawLetterTile(
+            ctx,
+            x,
+            y,
+            config.tileSize,
+            config.roundedRadius,
+            TILE_COLORS.INCORRECT,
+            letter,
+            'rounded',
+          );
+          break;
+      }
     }
   }
 }
@@ -267,6 +299,7 @@ function drawEmptyRow(
 
 /**
  * Renders the next attempt row with hints and placeholders.
+ * When hideLetters is true, shows empty tiles instead of hints.
  */
 function drawNextAttemptRow(
   ctx: SKRSContext2D,
@@ -278,7 +311,7 @@ function drawNextAttemptRow(
 ): void {
   for (let i = 0; i < word.length; i++) {
     const x = startX + i * (config.tileSize + config.tileSpacing);
-    const shouldReveal = i === 0 || solvedPositions[i];
+    const shouldReveal = (i === 0 || solvedPositions[i]) && !config.hideLetters;
 
     if (shouldReveal) {
       drawLetterTile(
@@ -290,6 +323,19 @@ function drawNextAttemptRow(
         TILE_COLORS.CORRECT,
         word[i],
         'rounded',
+      );
+    } else if (config.hideLetters) {
+      // When hiding letters, show empty tiles
+      drawRoundedTile(
+        ctx,
+        x,
+        y,
+        config.tileSize,
+        TILE_COLORS.EMPTY,
+        config.roundedRadius,
+        {
+          outline: TILE_COLORS.EMPTY_OUTLINE,
+        },
       );
     } else {
       const { cx, cy } = drawRoundedTile(

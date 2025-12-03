@@ -1,4 +1,5 @@
 import { IsabelleCommand } from '@/manager/commands/command.interface.js';
+import dailySutomSubcommand from '@/modules/sutom/commands/subcommands/daily-sutom.js';
 import startSutomSubcommand from '@/modules/sutom/commands/subcommands/start-sutom.js';
 import stopSutomSubcommand from '@/modules/sutom/commands/subcommands/stop-sutom.js';
 import guessWordSubcommand from '@/modules/sutom/commands/subcommands/sutom-guess.js';
@@ -16,9 +17,16 @@ export class SutomCommand implements IsabelleCommand {
     )
     .addSubcommand((subcommand) =>
       subcommand
-        .setName('start')
+        .setName('mot-aléatoire')
         .setDescription(
-          "Lance une partie de SUTOM, uniquement si tu n'en as pas déjà une en cours !",
+          'Lance une partie avec un mot aléatoire ! Ta partie sera dans un thread public.',
+        ),
+    )
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName('mot-du-jour')
+        .setDescription(
+          'Lance une partie avec le mot du jour ! Ta partie sera dans un thread privé.',
         ),
     )
     .addSubcommand((subcommand) =>
@@ -43,8 +51,11 @@ export class SutomCommand implements IsabelleCommand {
       case 'mot':
         voidAndTrackError(guessWordSubcommand(interaction));
         break;
-      case 'start':
+      case 'mot-aléatoire':
         voidAndTrackError(startSutomSubcommand(interaction));
+        break;
+      case 'mot-du-jour':
+        voidAndTrackError(dailySutomSubcommand(interaction));
         break;
       case 'stop':
         voidAndTrackError(stopSutomSubcommand(interaction));

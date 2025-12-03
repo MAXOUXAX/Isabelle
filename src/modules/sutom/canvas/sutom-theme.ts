@@ -27,6 +27,8 @@ export const DEFAULT_RENDER_OPTIONS: RenderConfig = {
   roundedRadius: 22,
   /** Default background color */
   background: '#0f1115',
+  /** Default: show letters */
+  hideLetters: false,
 } as const;
 
 /**
@@ -43,4 +45,6 @@ export interface RenderConfig {
   roundedRadius: number;
   /** Background color of the canvas (default: '#0f1115') */
   background: string;
+  /** If true, hide letters and only show colors (default: false) */
+  hideLetters: boolean;
 }
