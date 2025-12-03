@@ -48,7 +48,7 @@ class OfflineWordRepository implements WordRepository {
     for (let i = 0; i < dateString.length; i++) {
       const char = dateString.charCodeAt(i);
       hash = (hash << 5) - hash + char;
-      hash = hash & hash; // Convert to 32bit integer
+      hash = hash | 0; // Convert to 32bit integer
     }
 
     // Use absolute value and modulo to get a valid index
