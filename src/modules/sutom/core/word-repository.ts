@@ -41,7 +41,7 @@ class OfflineWordRepository implements WordRepository {
    */
   getDailyWord(): string {
     const today = new Date();
-    const dateString = `${String(today.getFullYear())}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const dateString = today.toISOString().split('T')[0];
 
     // Simple hash function to convert date string to a deterministic index
     let hash = 0;

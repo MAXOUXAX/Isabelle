@@ -201,7 +201,6 @@ function drawEvaluationRow(
 ): void {
   for (let i = 0; i < guess.length; i++) {
     const x = startX + i * (config.tileSize + config.tileSpacing);
-    const letter = config.hideLetters ? '' : guess[i];
     const state = evaluation[i];
 
     if (config.hideLetters) {
@@ -228,6 +227,7 @@ function drawEvaluationRow(
       }
     } else {
       // Normal rendering with letters
+      const letter = guess[i];
       switch (state) {
         case LetterState.CORRECT:
           drawLetterTile(
