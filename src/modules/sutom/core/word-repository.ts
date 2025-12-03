@@ -3,6 +3,7 @@ import * as fs from 'fs';
 
 export interface WordRepository {
   getRandomWord(): string;
+  getDailyWord(): string;
   wordExists(word: string): boolean;
 }
 
@@ -32,6 +33,27 @@ class OfflineWordRepository implements WordRepository {
     return this.solutionsList[
       Math.floor(Math.random() * this.solutionsList.length)
     ];
+  }
+
+  /**
+   * Returns a deterministic word based on the current date.
+   * The same word is returned for all users on the same day.
+   */
+  getDailyWord(): string {
+    const today = new Date();
+    const dateString = today.toISOString().split('T')[0];
+
+    // Simple hash function to convert date string to a deterministic index
+    let hash = 0;
+    for (let i = 0; i < dateString.length; i++) {
+      const char = dateString.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash | 0; // Convert to 32bit integer
+    }
+
+    // Use absolute value and modulo to get a valid index
+    const index = Math.abs(hash) % this.solutionsList.length;
+    return this.solutionsList[index];
   }
 
   wordExists(word: string): boolean {

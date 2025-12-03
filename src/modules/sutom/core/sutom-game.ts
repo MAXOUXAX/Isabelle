@@ -5,15 +5,24 @@ import { AttachmentBuilder, EmbedBuilder } from 'discord.js';
 
 const logger = createLogger('sutom-game');
 
+export interface SutomGameOptions {
+  /** If provided, uses this specific word instead of a random one */
+  specificWord?: string;
+  /** If true, this is a daily word game */
+  isDailyGame?: boolean;
+}
+
 export class SutomGame {
   word = '';
   wordHistory: string[] = [];
   wordRepository: WordRepository;
+  isDailyGame: boolean;
 
-  constructor(wordRepository: WordRepository) {
-    this.word = wordRepository.getRandomWord();
+  constructor(wordRepository: WordRepository, options?: SutomGameOptions) {
+    this.isDailyGame = options?.isDailyGame ?? false;
+    this.word = options?.specificWord ?? wordRepository.getRandomWord();
     logger.debug(
-      `New Sutom game created - word: "${this.word}" (${this.word.length.toString()} letters)`,
+      `New Sutom game created - word: "${this.word}" (${this.word.length.toString()} letters), daily: ${String(this.isDailyGame)}`,
     );
     this.wordRepository = wordRepository;
   }
@@ -25,12 +34,19 @@ export class SutomGame {
   /**
    * Build an embed + attachment pair using the canvas renderer instead of the legacy text board.
    * Consumers can pass the returned embed & attachment directly to an interaction reply.
+   * @param message Optional message to include in the embed description
+   * @param options Options for rendering the board
    */
-  buildBoard(message?: string): {
+  buildBoard(
+    message?: string,
+    options?: { hideLetters?: boolean },
+  ): {
     embed: EmbedBuilder;
     attachment: AttachmentBuilder;
   } {
-    const attachment = renderSutomBoardImage(this);
+    const attachment = renderSutomBoardImage(this, {
+      hideLetters: options?.hideLetters,
+    });
 
     const descriptionParts: string[] = [];
     descriptionParts.push('Essais: ' + String(this.wordHistory.length) + '/6');
