@@ -9,13 +9,21 @@ class ConfigManager {
 
   async init() {
     logger.info('Loading guild configs from database...');
-    const configs = await db.select().from(guildConfigs);
+    try {
+      const configs = await db.select().from(guildConfigs);
 
-    for (const guildConfig of configs) {
-      this.guilds[guildConfig.id] = guildConfig.config;
+      for (const guildConfig of configs) {
+        this.guilds[guildConfig.id] = guildConfig.config;
+      }
+
+      logger.info(
+        { count: configs.length },
+        'Guild configs loaded from database',
+      );
+    } catch (error) {
+      logger.error({ error }, 'Failed to load guild configs from database');
+      throw error;
     }
-
-    logger.info({ count: configs.length }, 'Guild configs loaded from database');
   }
 
   getGuild(guildId: string): GuildConfig {
