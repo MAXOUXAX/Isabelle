@@ -1,3 +1,5 @@
+import { db } from '@/db/index.js';
+import { guildConfigs } from '@/db/schema.js';
 import { createLogger } from '@/utils/logger.js';
 
 const logger = createLogger('config');
@@ -5,13 +7,15 @@ const logger = createLogger('config');
 class ConfigManager {
   private guilds: Record<string, GuildConfig> = {};
 
-  constructor() {
-    // 1. Load guild configs from database
-    // 2. Set guilds to the loaded guild configs
-    // TODO: Implement this
-    logger.info(
-      'ConfigManager initialized - guild configs loading not yet implemented',
-    );
+  async init() {
+    logger.info('Loading guild configs from database...');
+    const configs = await db.select().from(guildConfigs);
+
+    for (const guildConfig of configs) {
+      this.guilds[guildConfig.id] = guildConfig.config;
+    }
+
+    logger.info({ count: configs.length }, 'Guild configs loaded from database');
   }
 
   getGuild(guildId: string): GuildConfig {
