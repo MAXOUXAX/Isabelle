@@ -14,6 +14,7 @@ import { environment } from '@/utils/environment.js';
 import { voidAndTrackError } from '@/utils/promises.js';
 import { Client, Events, GatewayIntentBits } from 'discord.js';
 import { config } from './config.js';
+import { configManager } from './manager/config.manager.js';
 import { interactionManager } from './manager/interaction.manager.js';
 import { IsabelleModule } from './modules/bot-module.js';
 import { HotPotato } from './modules/hot-potato/hot-potato.module.js';
@@ -210,6 +211,7 @@ client.on(Events.InteractionCreate, (interaction) => {
   });
 });
 
+await configManager.init();
 await client.login(config.DISCORD_TOKEN);
 
 function registerLegalScopes() {
