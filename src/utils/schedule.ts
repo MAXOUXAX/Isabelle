@@ -102,6 +102,55 @@ function adjustSchedule(
 }
 
 /*
+ * Extrait le nom du professeur de la description
+ */
+function extractTeacherName(
+  description: string | undefined,
+  summary: string,
+): string {
+  if (!description) return '';
+
+  const lines = description
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+
+  // Patterns à ignorer
+  const ignorePatterns = [
+    // Métadonnées et IDs
+    /^\d+$/, // IDs numériques
+    /^\(Modifié le:/i,
+    /^\(Exporté le:/i,
+
+    // Groupes et Promos
+    /TELECOM/i,
+    /Apprentis/i,
+    /FISEA/i,
+    /FISA/i,
+    /\b\d[A]\b/i, // 1A, 2A, 3A
+  ];
+
+  const candidates = lines.filter((l) => {
+    if (l.toLowerCase() === summary.toLowerCase()) return false;
+    for (const pattern of ignorePatterns) {
+      if (pattern.test(l)) return false;
+    }
+    return true;
+  });
+
+  const explicit = lines.find((l) => /^Enseignant\s?:/i.test(l));
+  if (explicit) {
+    return explicit.replace(/^Enseignant\s?:/i, '').trim();
+  }
+
+  if (candidates.length > 0) {
+    return candidates[0];
+  }
+
+  return '';
+}
+
+/*
  * Crée un tableau de cours à partir des données du fichier ICS
  */
 function createLessonsFromData(data: VEvent[]): Lesson[] {
@@ -116,7 +165,7 @@ function createLessonsFromData(data: VEvent[]): Lesson[] {
       start,
       end,
       room: lesson.location.replaceAll('Remicourt_', '').toUpperCase(), // Balek du Remicourt
-      teacher: lesson.description.split('\n')[2], // TODO: Trouver un moyen de récupérer le nom du prof
+      teacher: extractTeacherName(lesson.description, lesson.summary),
       color: getLessonColor(lesson.summary),
     };
   });
