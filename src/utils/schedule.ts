@@ -1,13 +1,15 @@
 import { config } from '@/config.js';
 import { cacheStore } from '@/utils/cache.js';
 import { createLogger } from '@/utils/logger.js';
+import { ColorResolvable, EmbedBuilder } from 'discord.js';
 import { VEvent, fromURL } from 'node-ical';
 import * as dateUtils from './date.js';
+import { humanDate, humanTime } from './date.js';
 
 const logger = createLogger('schedule');
 
 // Interface pour afficher les cours avec seulement les informations nécessaires
-interface Lesson {
+export interface Lesson {
   name: string;
   start: Date;
   end: Date;
@@ -23,6 +25,44 @@ const cacheEntry = cacheStore.useCache(
   getSchedule,
   1000 * 60 * 60 * 24,
 );
+
+/**
+ * Crée un embed Discord pour afficher un cours
+ * @param lesson Le cours à afficher
+ * @param options Options de formatage
+ * @param options.useShortTime Si true, affiche seulement l'heure (HH:MM) au lieu de la date complète
+ * @returns Un EmbedBuilder configuré avec les informations du cours
+ */
+export function createLessonEmbed(
+  lesson: Lesson,
+  options?: { useShortTime?: boolean },
+): EmbedBuilder {
+  const timeFormatter = options?.useShortTime ? humanTime : humanDate;
+
+  return new EmbedBuilder()
+    .setTitle(lesson.name)
+    .addFields(
+      { name: 'Début', value: timeFormatter(lesson.start) },
+      { name: 'Fin', value: timeFormatter(lesson.end) },
+      { name: 'Salle', value: lesson.room },
+      { name: 'Enseignant', value: lesson.teacher || 'N/A' },
+    )
+    .setColor(lesson.color as ColorResolvable);
+}
+
+/**
+ * Crée un tableau d'embeds Discord pour afficher plusieurs cours
+ * @param lessons Les cours à afficher
+ * @param options Options de formatage
+ * @param options.useShortTime Si true, affiche seulement l'heure (HH:MM) au lieu de la date complète
+ * @returns Un tableau d'EmbedBuilder configurés
+ */
+export function createLessonEmbeds(
+  lessons: Lesson[],
+  options?: { useShortTime?: boolean },
+): EmbedBuilder[] {
+  return lessons.map((lesson) => createLessonEmbed(lesson, options));
+}
 
 // Règles d'ajustement des horaires
 interface TimeAdjustmentRule {
@@ -102,6 +142,55 @@ function adjustSchedule(
 }
 
 /*
+ * Extrait le nom du professeur de la description
+ */
+function extractTeacherName(
+  description: string | undefined,
+  summary: string,
+): string {
+  if (!description) return '';
+
+  const lines = description
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+
+  // Patterns à ignorer
+  const ignorePatterns = [
+    // Métadonnées et IDs
+    /^\d+$/, // IDs numériques
+    /^\(Modifié le:/i,
+    /^\(Exporté le:/i,
+
+    // Groupes et Promos
+    /TELECOM/i,
+    /Apprentis/i,
+    /FISEA/i,
+    /FISA/i,
+    /\b\d[A]\b/i, // 1A, 2A, 3A
+  ];
+
+  const candidates = lines.filter((l) => {
+    if (l.toLowerCase() === summary.toLowerCase()) return false;
+    for (const pattern of ignorePatterns) {
+      if (pattern.test(l)) return false;
+    }
+    return true;
+  });
+
+  const explicit = lines.find((l) => /^Enseignant\s?:/i.test(l));
+  if (explicit) {
+    return explicit.replace(/^Enseignant\s?:/i, '').trim();
+  }
+
+  if (candidates.length > 0) {
+    return candidates[0];
+  }
+
+  return '';
+}
+
+/*
  * Crée un tableau de cours à partir des données du fichier ICS
  */
 function createLessonsFromData(data: VEvent[]): Lesson[] {
@@ -116,7 +205,7 @@ function createLessonsFromData(data: VEvent[]): Lesson[] {
       start,
       end,
       room: lesson.location.replaceAll('Remicourt_', '').toUpperCase(), // Balek du Remicourt
-      teacher: lesson.description.split('\n')[2], // TODO: Trouver un moyen de récupérer le nom du prof
+      teacher: extractTeacherName(lesson.description, lesson.summary),
       color: getLessonColor(lesson.summary),
     };
   });

@@ -1,6 +1,8 @@
 import { IsabelleCommand } from '@/manager/commands/command.interface.js';
-import { humanDate, humanTime } from '@/utils/date.js';
+import { humanTime } from '@/utils/date.js';
 import {
+  createLessonEmbed,
+  createLessonEmbeds,
   getEndOfTodayLessons,
   getTodaysLessons,
   getTodaysNextLesson,
@@ -8,8 +10,6 @@ import {
 } from '@/utils/schedule.js';
 import {
   ChatInputCommandInteraction,
-  ColorResolvable,
-  EmbedBuilder,
   SlashCommandBuilder,
   time,
   TimestampStyles,
@@ -69,24 +69,9 @@ export class ScheduleCommand implements IsabelleCommand {
       return;
     }
 
-    const embeds = [];
-
-    for (const lesson of lessons) {
-      const embed = new EmbedBuilder()
-        .setTitle(lesson.name)
-        .addFields(
-          { name: 'Début', value: humanDate(lesson.start) },
-          { name: 'Fin', value: humanDate(lesson.end) },
-          { name: 'Salle', value: lesson.room },
-        )
-        .setColor(lesson.color as ColorResolvable);
-
-      embeds.push(embed);
-    }
-
     await interaction.reply({
       ephemeral: false,
-      embeds: embeds,
+      embeds: createLessonEmbeds(lessons),
     });
   }
 
@@ -102,24 +87,9 @@ export class ScheduleCommand implements IsabelleCommand {
       return;
     }
 
-    const embeds = [];
-
-    for (const lesson of lessons) {
-      const embed = new EmbedBuilder()
-        .setTitle(lesson.name)
-        .addFields(
-          { name: 'Début', value: humanDate(lesson.start) },
-          { name: 'Fin', value: humanDate(lesson.end) },
-          { name: 'Salle', value: lesson.room },
-        )
-        .setColor(lesson.color as ColorResolvable);
-
-      embeds.push(embed);
-    }
-
     await interaction.reply({
       ephemeral: false,
-      embeds: embeds,
+      embeds: createLessonEmbeds(lessons),
     });
   }
 
@@ -136,18 +106,9 @@ export class ScheduleCommand implements IsabelleCommand {
       return;
     }
 
-    const embed = new EmbedBuilder()
-      .setTitle(lesson.name)
-      .addFields(
-        { name: 'Début', value: humanTime(lesson.start) },
-        { name: 'Fin', value: humanTime(lesson.end) },
-        { name: 'Salle', value: lesson.room },
-      )
-      .setColor(lesson.color as ColorResolvable);
-
     await interaction.reply({
       ephemeral: false,
-      embeds: [embed],
+      embeds: [createLessonEmbed(lesson, { useShortTime: true })],
     });
   }
 
