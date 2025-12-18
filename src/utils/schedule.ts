@@ -39,15 +39,23 @@ export function createLessonEmbed(
 ): EmbedBuilder {
   const timeFormatter = options?.useShortTime ? humanTime : humanDate;
 
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setTitle(lesson.name)
     .addFields(
       { name: 'Début', value: timeFormatter(lesson.start) },
       { name: 'Fin', value: timeFormatter(lesson.end) },
-      { name: 'Salle', value: lesson.room },
-      { name: 'Enseignant', value: lesson.teacher || 'N/A' },
     )
     .setColor(lesson.color as ColorResolvable);
+
+  if (lesson.room) {
+    embed.addFields({ name: 'Salle', value: lesson.room });
+  }
+
+  if (lesson.teacher) {
+    embed.addFields({ name: 'Enseignant', value: lesson.teacher });
+  }
+
+  return embed;
 }
 
 /**
