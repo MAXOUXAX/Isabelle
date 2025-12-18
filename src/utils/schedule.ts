@@ -1,13 +1,15 @@
 import { config } from '@/config.js';
 import { cacheStore } from '@/utils/cache.js';
 import { createLogger } from '@/utils/logger.js';
+import { ColorResolvable, EmbedBuilder } from 'discord.js';
 import { VEvent, fromURL } from 'node-ical';
 import * as dateUtils from './date.js';
+import { humanDate, humanTime } from './date.js';
 
 const logger = createLogger('schedule');
 
 // Interface pour afficher les cours avec seulement les informations nécessaires
-interface Lesson {
+export interface Lesson {
   name: string;
   start: Date;
   end: Date;
@@ -23,6 +25,44 @@ const cacheEntry = cacheStore.useCache(
   getSchedule,
   1000 * 60 * 60 * 24,
 );
+
+/**
+ * Crée un embed Discord pour afficher un cours
+ * @param lesson Le cours à afficher
+ * @param options Options de formatage
+ * @param options.useShortTime Si true, affiche seulement l'heure (HH:MM) au lieu de la date complète
+ * @returns Un EmbedBuilder configuré avec les informations du cours
+ */
+export function createLessonEmbed(
+  lesson: Lesson,
+  options?: { useShortTime?: boolean },
+): EmbedBuilder {
+  const timeFormatter = options?.useShortTime ? humanTime : humanDate;
+
+  return new EmbedBuilder()
+    .setTitle(lesson.name)
+    .addFields(
+      { name: 'Début', value: timeFormatter(lesson.start) },
+      { name: 'Fin', value: timeFormatter(lesson.end) },
+      { name: 'Salle', value: lesson.room },
+      { name: 'Enseignant', value: lesson.teacher || 'N/A' },
+    )
+    .setColor(lesson.color as ColorResolvable);
+}
+
+/**
+ * Crée un tableau d'embeds Discord pour afficher plusieurs cours
+ * @param lessons Les cours à afficher
+ * @param options Options de formatage
+ * @param options.useShortTime Si true, affiche seulement l'heure (HH:MM) au lieu de la date complète
+ * @returns Un tableau d'EmbedBuilder configurés
+ */
+export function createLessonEmbeds(
+  lessons: Lesson[],
+  options?: { useShortTime?: boolean },
+): EmbedBuilder[] {
+  return lessons.map((lesson) => createLessonEmbed(lesson, options));
+}
 
 // Règles d'ajustement des horaires
 interface TimeAdjustmentRule {
