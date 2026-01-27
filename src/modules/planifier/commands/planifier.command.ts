@@ -21,41 +21,46 @@ export class PlanifierCommand implements IsabelleCommand {
       .setCustomId('planifier-modal')
       .setTitle('Planifier un événement');
 
-    const eventLabel = new TextInputBuilder()
-      .setCustomId('event-label')
-      .setLabel("Nom de l'événement")
+    const eventLabel = new TextInputBuilder({
+      custom_id: 'event-label',
+      label: "Nom de l'événement",
+      style: TextInputStyle.Short,
+    })
       .setRequired(true)
       .setMaxLength(100)
-      .setStyle(TextInputStyle.Short)
       .setPlaceholder('Relire la page 2 du TD n°4');
 
-    const eventDescription = new TextInputBuilder()
-      .setCustomId('event-description')
-      .setLabel("Description de l'événement")
+    const eventDescription = new TextInputBuilder({
+      custom_id: 'event-description',
+      label: "Description de l'événement",
+      style: TextInputStyle.Paragraph,
+    })
       .setRequired(true)
       .setMaxLength(1000)
-      .setStyle(TextInputStyle.Paragraph)
       .setPlaceholder('La page numéro 2 du TD n°4 doit être relue...');
 
-    const eventStartDate = new TextInputBuilder()
-      .setCustomId('event-date-start')
-      .setLabel("Date de début de l'événement")
+    const eventStartDate = new TextInputBuilder({
+      custom_id: 'event-date-start',
+      label: "Date de début de l'événement",
+      style: TextInputStyle.Short,
+    })
       .setRequired(true)
-      .setStyle(TextInputStyle.Short)
       .setPlaceholder('26/03/2025 14:00');
 
-    const eventEndDate = new TextInputBuilder()
-      .setCustomId('event-date-end')
-      .setLabel("Date de fin de l'événement")
+    const eventEndDate = new TextInputBuilder({
+      custom_id: 'event-date-end',
+      label: "Date de fin de l'événement",
+      style: TextInputStyle.Short,
+    })
       .setRequired(true)
-      .setStyle(TextInputStyle.Short)
       .setPlaceholder('26/03/2025 16:00');
 
-    const eventLocation = new TextInputBuilder()
-      .setCustomId('event-location')
-      .setLabel("Lieu de l'événement")
+    const eventLocation = new TextInputBuilder({
+      custom_id: 'event-location',
+      label: "Lieu de l'événement",
+      style: TextInputStyle.Short,
+    })
       .setRequired(true)
-      .setStyle(TextInputStyle.Short)
       .setPlaceholder('S1.01, ou https://arche.univ-lorraine.fr/...');
 
     const titleRow =
@@ -79,6 +84,7 @@ export class PlanifierCommand implements IsabelleCommand {
         eventLocation,
       );
 
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     modal.addComponents(
       titleRow,
       descriptionRow,
