@@ -4,36 +4,30 @@ import { createLogger } from '@/utils/logger.js';
 import {
   AuditLogEvent,
   Guild,
-  GuildAuditLogsActionType,
   GuildAuditLogsEntry,
-  GuildAuditLogsTargetType,
 } from 'discord.js';
 
 const logger = createLogger('hot-potato');
 
 export async function hotPotatoRoleListener(
-  entry: GuildAuditLogsEntry<
-    AuditLogEvent,
-    GuildAuditLogsActionType,
-    GuildAuditLogsTargetType,
-    AuditLogEvent
-  >,
+  entry: GuildAuditLogsEntry<AuditLogEvent.MemberUpdate>,
   guild: Guild,
 ): Promise<void> {
-  const { action, changes } = entry;
-  if (action !== AuditLogEvent.MemberUpdate) return;
+  const { changes } = entry;
 
   const { executorId, targetId } = entry;
+
+  if (!executorId || !targetId) return;
 
   const firstChange = changes.at(0);
   const isTimeout = firstChange?.key === 'communication_disabled_until';
 
   if (isTimeout) {
     // Ensure the executor is cached.
-    const executor = await guild.members.fetch(executorId ?? '');
+    const executor = await guild.members.fetch(executorId);
 
     // Ensure the target guild member is cached.
-    const target = await guild.members.fetch(targetId ?? '');
+    const target = await guild.members.fetch(targetId);
 
     const wasCommunicationDisabled = 'old' in firstChange;
     const isCommunicationDisabled = 'new' in firstChange;

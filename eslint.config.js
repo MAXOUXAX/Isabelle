@@ -3,6 +3,7 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
+// eslint-disable-next-line @typescript-eslint/no-deprecated
 export default tseslint.config(
   {
     ignores: ['dist/**/*', 'node_modules/**/*']
@@ -18,7 +19,7 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['*.js', 'tsup.config.ts', 'drizzle.config.ts'],
+          allowDefaultProject: ['*.js', 'tsup.config.ts'],
           defaultProject: './tsconfig.json',
         },
         tsconfigRootDir: import.meta.dirname,
