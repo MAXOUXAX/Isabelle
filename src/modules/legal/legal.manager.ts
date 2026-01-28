@@ -137,7 +137,7 @@ export class LegalManager {
       return results.map((result) => ({
         scope: result.scope,
         consented: result.consented === 1,
-        timestamp: result.createdAt ?? new Date(),
+        timestamp: result.createdAt,
       }));
     } catch (error) {
       logger.error({ error, userId }, 'Failed to get user consent history');
