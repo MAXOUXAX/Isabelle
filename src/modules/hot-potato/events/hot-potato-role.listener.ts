@@ -1,29 +1,19 @@
 import { configManager } from '@/manager/config.manager.js';
 import { mention } from '@/utils/mention.js';
 import { createLogger } from '@/utils/logger.js';
-import {
-  AuditLogEvent,
-  Guild,
-  GuildAuditLogsActionType,
-  GuildAuditLogsEntry,
-  GuildAuditLogsTargetType,
-} from 'discord.js';
+import { AuditLogEvent, Guild, GuildAuditLogsEntry } from 'discord.js';
 
 const logger = createLogger('hot-potato');
 
 export async function hotPotatoRoleListener(
-  entry: GuildAuditLogsEntry<
-    AuditLogEvent,
-    GuildAuditLogsActionType,
-    GuildAuditLogsTargetType,
-    AuditLogEvent
-  >,
+  entry: GuildAuditLogsEntry,
   guild: Guild,
 ): Promise<void> {
-  const { action, changes } = entry;
+  const { action } = entry;
   if (action !== AuditLogEvent.MemberUpdate) return;
 
-  const { executorId, targetId } = entry;
+  const memberUpdateEntry = entry as GuildAuditLogsEntry<AuditLogEvent.MemberUpdate>;
+  const { changes, executorId, targetId } = memberUpdateEntry;
 
   const firstChange = changes.at(0);
   const isTimeout = firstChange?.key === 'communication_disabled_until';
