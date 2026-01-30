@@ -68,3 +68,16 @@ export const russianRouletteStats = sqliteTable(
   },
   (t) => [unique().on(t.guildId, t.userId)],
 );
+
+export const birthdays = sqliteTable(
+  'birthdays',
+  {
+    id: int('id').primaryKey({ autoIncrement: true }),
+    userId: text('user_id').notNull(),
+    day: int('day').notNull(),
+    month: int('month').notNull(),
+    year: int('year'),
+    ...base(),
+  },
+  (t) => [unique().on(t.userId)],
+);

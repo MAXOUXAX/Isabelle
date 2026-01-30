@@ -8,6 +8,7 @@ import { moduleManager } from '@/modules/module-manager.js';
 import { PlanifierModule } from '@/modules/planifier/planifier.module.js';
 import { RoastModule } from '@/modules/roast/roast.module.js';
 import { RussianRoulette } from '@/modules/russian-roulette/russian-roulette.module.js';
+import { BirthdaysModule } from '@/modules/birthdays/birthdays.module.js';
 import { Schedule } from '@/modules/schedule/schedule.module.js';
 import { SutomModule } from '@/modules/sutom/sutom.module.js';
 import { environment } from '@/utils/environment.js';
@@ -44,6 +45,7 @@ const MODULES: IsabelleModule[] = [
   new SutomModule(),
   new Schedule(),
   new RoastModule(),
+  new BirthdaysModule(),
 ];
 
 moduleManager.registerModules(MODULES);

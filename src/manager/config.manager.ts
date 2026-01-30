@@ -38,6 +38,7 @@ class ConfigManager {
 export interface GuildConfig {
   HOT_POTATO_ROLE_ID?: string;
   HOT_POTATO_TIMEOUT_DURATION?: number;
+  BIRTHDAY_CHANNEL_ID?: string;
 }
 
 export const configManager = new ConfigManager();
