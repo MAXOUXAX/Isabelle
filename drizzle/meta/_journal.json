@@ -71,6 +71,13 @@
       "when": 1769785558693,
       "tag": "0009_yielding_living_lightning",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1769873078052,
+      "tag": "0010_misty_human_torch",
+      "breakpoints": true
     }
   ]
 }
