@@ -1,23 +1,12 @@
 import { configManager } from '@/manager/config.manager.js';
 import { mention } from '@/utils/mention.js';
 import { createLogger } from '@/utils/logger.js';
-import {
-  AuditLogEvent,
-  Guild,
-  GuildAuditLogsActionType,
-  GuildAuditLogsEntry,
-  GuildAuditLogsTargetType,
-} from 'discord.js';
+import { AuditLogEvent, Guild, GuildAuditLogsEntry } from 'discord.js';
 
 const logger = createLogger('hot-potato');
 
 export async function hotPotatoRoleListener(
-  entry: GuildAuditLogsEntry<
-    AuditLogEvent,
-    GuildAuditLogsActionType,
-    GuildAuditLogsTargetType,
-    AuditLogEvent
-  >,
+  entry: GuildAuditLogsEntry,
   guild: Guild,
 ): Promise<void> {
   const { action, changes } = entry;
