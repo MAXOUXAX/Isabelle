@@ -87,3 +87,42 @@ export function timeUntilNextUse(
   const timeToAdd = usageCount24h >= maxUsagesPerDay ? DAY_IN_MS : HOUR_IN_MS;
   return new Date(lastUse.getTime() + timeToAdd);
 }
+
+/**
+ * Parses a date string in the format "DD/MM/YYYY HH:MM".
+ * Returns null if the format is invalid or the date is invalid.
+ *
+ * @param dateString - The date string to parse (e.g., "26/03/2025 14:00")
+ * @returns A Date object or null
+ */
+export function parseCustomDate(dateString: string): Date | null {
+  const regex = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/;
+  const match = regex.exec(dateString);
+
+  if (!match) {
+    return null;
+  }
+
+  const [, dayStr, monthStr, yearStr, hourStr, minuteStr] = match;
+  const day = parseInt(dayStr, 10);
+  const month = parseInt(monthStr, 10);
+  const year = parseInt(yearStr, 10);
+  const hour = parseInt(hourStr, 10);
+  const minute = parseInt(minuteStr, 10);
+
+  // Month is 0-indexed in JS Date
+  const date = new Date(year, month - 1, day, hour, minute);
+
+  // Check if the date components match the input (handles "31/02/2025" -> March 3rd case)
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day ||
+    date.getHours() !== hour ||
+    date.getMinutes() !== minute
+  ) {
+    return null;
+  }
+
+  return date;
+}
