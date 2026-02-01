@@ -27,10 +27,16 @@ export async function safelySendMessage(
     const chunk = chunks[index];
 
     if (index === 0) {
-      await interaction.editReply({ content: chunk });
+      await interaction.editReply({
+        content: chunk,
+        allowedMentions: { parse: [] },
+      });
       continue;
     }
 
-    await interaction.followUp({ content: chunk });
+    await interaction.followUp({
+      content: chunk,
+      allowedMentions: { parse: [] },
+    });
   }
 }
