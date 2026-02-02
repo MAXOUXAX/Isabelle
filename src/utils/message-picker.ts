@@ -3,6 +3,7 @@ import type { TextChannel } from 'discord.js';
 import {
   ChannelType,
   Guild,
+  GuildMember,
   Message,
   PermissionFlagsBits,
   Snowflake,
@@ -62,26 +63,55 @@ const isChannelAccessible = (
 };
 
 /**
+ * Check if a channel is accessible by a specific member
+ */
+const isChannelAccessibleByMember = (
+  channel: TextChannel,
+  member: GuildMember,
+): boolean => {
+  const permissions = channel.permissionsFor(member);
+
+  return permissions.has(PermissionFlagsBits.ViewChannel);
+};
+
+/**
  * Get all accessible text channels in a guild
  */
 const getAccessibleChannels = (
   guild: Guild,
   botMember: Guild['members']['me'],
   botUserId: Snowflake,
+  invokerMember?: GuildMember,
 ): TextChannel[] => {
   const textChannels = guild.channels.cache.filter(
     (channel): channel is TextChannel => channel.type === ChannelType.GuildText,
   );
 
   return Array.from(textChannels.values()).filter((channel) => {
-    const accessible = isChannelAccessible(channel, botMember, botUserId);
-    if (!accessible) {
+    const accessibleToBot = isChannelAccessible(channel, botMember, botUserId);
+
+    // If an invoker member is provided, check their permissions too
+    const accessibleToInvoker = invokerMember
+      ? isChannelAccessibleByMember(channel, invokerMember)
+      : true;
+
+    if (!accessibleToBot) {
       logger.debug(
         { channelId: channel.id, guildId: guild.id },
-        'Skipping inaccessible channel',
+        'Skipping channel inaccessible to bot',
       );
+      return false;
     }
-    return accessible;
+
+    if (!accessibleToInvoker) {
+      logger.debug(
+        { channelId: channel.id, guildId: guild.id },
+        'Skipping channel inaccessible to invoker',
+      );
+      return false;
+    }
+
+    return true;
   });
 };
 
@@ -201,6 +231,7 @@ export const fetchLastUserMessages = async (
   userId: Snowflake,
   minMessages = 0,
   maxMessages = 100,
+  invokerId?: Snowflake,
 ): Promise<Message[]> => {
   if (!guild) {
     return [];
@@ -209,7 +240,24 @@ export const fetchLastUserMessages = async (
   const botMember = guild.members.me;
   const botUserId = guild.client.user.id;
 
-  const accessibleChannels = getAccessibleChannels(guild, botMember, botUserId);
+  let invokerMember: GuildMember | undefined;
+  if (invokerId) {
+    try {
+      invokerMember = await guild.members.fetch(invokerId);
+    } catch (error) {
+      logger.warn(
+        { guildId: guild.id, invokerId, error },
+        'Failed to fetch invoker member',
+      );
+    }
+  }
+
+  const accessibleChannels = getAccessibleChannels(
+    guild,
+    botMember,
+    botUserId,
+    invokerMember,
+  );
 
   if (accessibleChannels.length === 0) {
     logger.warn(
