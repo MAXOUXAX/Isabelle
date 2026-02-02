@@ -12,7 +12,8 @@ export async function hotPotatoRoleListener(
   const { action } = entry;
   if (action !== AuditLogEvent.MemberUpdate) return;
 
-  const memberUpdateEntry = entry as GuildAuditLogsEntry<AuditLogEvent.MemberUpdate>;
+  const memberUpdateEntry =
+    entry as GuildAuditLogsEntry<AuditLogEvent.MemberUpdate>;
   const { changes, executorId, targetId } = memberUpdateEntry;
 
   const firstChange = changes.at(0);
