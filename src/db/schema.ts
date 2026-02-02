@@ -74,5 +74,13 @@ export const russianRouletteStats = sqliteTable(
     timeoutMinutes: int('timeout_minutes').default(0).notNull(), // Total minutes timed out
     ...base(),
   },
-  (t) => [unique().on(t.guildId, t.userId)],
+  (t) => [
+    unique().on(t.guildId, t.userId),
+    index('russian_roulette_stats_leaderboard_idx').on(
+      t.guildId,
+      t.timeoutMinutes,
+      t.deaths,
+      t.shots,
+    ),
+  ],
 );
