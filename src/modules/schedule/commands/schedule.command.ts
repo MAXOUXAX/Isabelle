@@ -1,5 +1,7 @@
-import { IsabelleCommand } from '@/manager/commands/command.interface.js';
-import { humanTime } from '@/utils/date.js';
+import { IsabelleAutocompleteCommandBase } from '@/manager/commands/command.interface.js';
+import type { AutocompleteOptionHandler } from '@/utils/autocomplete.js';
+import { filterAutocompleteChoices } from '@/utils/autocomplete.js';
+import { addDays, humanTime } from '@/utils/date.js';
 import {
   createLessonEmbed,
   createLessonEmbeds,
@@ -16,7 +18,14 @@ import {
   TimestampStyles,
 } from 'discord.js';
 
-export class ScheduleCommand implements IsabelleCommand {
+const formatDateInput = (date: Date): string => {
+  const formatter = Intl.DateTimeFormat('fr-FR', {
+    dateStyle: 'full',
+  });
+  return formatter.format(date);
+};
+
+export class ScheduleCommand extends IsabelleAutocompleteCommandBase {
   commandData = new SlashCommandBuilder()
     .setName('schedule')
     .setDescription("Consultation de l'emploi du temps")
@@ -38,7 +47,8 @@ export class ScheduleCommand implements IsabelleCommand {
           option
             .setName('date')
             .setDescription('La date au format JJ/MM/AAAA')
-            .setRequired(true),
+            .setRequired(true)
+            .setAutocomplete(true),
         ),
     )
     .addSubcommand((subcommand) =>
@@ -51,6 +61,29 @@ export class ScheduleCommand implements IsabelleCommand {
         .setName('fin-de-journée')
         .setDescription("Affiche l'heure de fin des cours du jour."),
     );
+
+  protected getAutocompleteHandlers(): Record<
+    string,
+    AutocompleteOptionHandler
+  > {
+    return {
+      date: ({ focusedValue, subcommand }) => {
+        if (subcommand !== 'date') {
+          return [];
+        }
+
+        const today = new Date();
+        const suggestions = Array.from({ length: 90 }, (_, i) => {
+          const date = addDays(today, i);
+          const name = formatDateInput(date);
+          const value = date.toLocaleDateString('fr-FR');
+          return { name, value };
+        });
+
+        return filterAutocompleteChoices(suggestions, focusedValue);
+      },
+    };
+  }
 
   public async executeCommand(
     interaction: ChatInputCommandInteraction,
