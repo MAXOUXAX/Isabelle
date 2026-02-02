@@ -3,9 +3,9 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
-export default tseslint.config(
+export default [
   {
-    ignores: ['dist/**/*', 'node_modules/**/*']
+    ignores: ['dist/**/*', 'node_modules/**/*'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
@@ -18,11 +18,11 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['*.js', 'tsup.config.ts', 'drizzle.config.ts'],
+          allowDefaultProject: ['*.js', 'tsup.config.ts'],
           defaultProject: './tsconfig.json',
         },
         tsconfigRootDir: import.meta.dirname,
       },
     },
   },
-);
+];
