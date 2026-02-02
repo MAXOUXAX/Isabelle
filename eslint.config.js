@@ -1,12 +1,12 @@
 // @ts-check
 
 import eslint from '@eslint/js';
+import { defineConfig } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 
-// eslint-disable-next-line @typescript-eslint/no-deprecated
-export default tseslint.config(
+export default defineConfig(
   {
-    ignores: ['dist/**/*', 'node_modules/**/*']
+    ignores: ['dist/**/*', 'node_modules/**/*'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
