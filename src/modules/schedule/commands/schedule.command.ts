@@ -143,15 +143,13 @@ export class ScheduleCommand extends IsabelleAutocompleteCommandBase {
     interaction: ChatInputCommandInteraction,
   ): Promise<void> {
     const dateString = interaction.options.getString('date', true);
-    const dateParts = dateString.split('/').map(Number);
+    const dateParts = dateString
+      .split('/')
+      .map((part) => Number.parseInt(part, 10));
 
     if (
       dateParts.length !== 3 ||
-      dateParts[0] < 1 ||
-      dateParts[0] > 31 ||
-      dateParts[1] < 1 ||
-      dateParts[1] > 12 ||
-      dateParts[2] < 1970
+      dateParts.some((part) => Number.isNaN(part))
     ) {
       await interaction.reply({
         ephemeral: true,
@@ -161,7 +159,26 @@ export class ScheduleCommand extends IsabelleAutocompleteCommandBase {
       return;
     }
 
-    const date = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+    const [day, month, year] = dateParts;
+    const date = new Date(year, month - 1, day);
+
+    if (
+      day < 1 ||
+      day > 31 ||
+      month < 1 ||
+      month > 12 ||
+      year < 1970 ||
+      date.getDate() !== day ||
+      date.getMonth() !== month - 1 ||
+      date.getFullYear() !== year
+    ) {
+      await interaction.reply({
+        ephemeral: true,
+        content:
+          'Date invalide. Veuillez vérifier que la date existe et respecte le format JJ/MM/AAAA.',
+      });
+      return;
+    }
     const lessons = await getLessonsFromDate(date);
 
     if (lessons.length === 0) {
