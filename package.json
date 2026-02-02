@@ -41,7 +41,7 @@
     "lint": "eslint . --fix",
     "lint:dry": "eslint .",
     "prettier": "prettier --ignore-path .gitignore --write \"./src/**/*.+(js|ts|json)\"",
-    "prettier:dry": "prettier --ignore-path .gitignore \"./src/**/*.+(js|ts|json)\"",
+    "prettier:dry": "prettier --ignore-path .gitignore --check \"./src/**/*.+(js|ts|json)\"",
     "prepare": "husky",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
