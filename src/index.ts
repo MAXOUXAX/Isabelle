@@ -160,6 +160,7 @@ client.on(Events.InteractionCreate, (interaction) => {
           },
           `No command found for autocomplete: ${commandName}`,
         );
+        await interaction.respond([]);
         return;
       }
 
@@ -172,13 +173,14 @@ client.on(Events.InteractionCreate, (interaction) => {
           },
           `Autocomplete not implemented for command: ${commandName}`,
         );
+        await interaction.respond([]);
         return;
       }
 
       await command.autocomplete(interaction);
     };
 
-    handler().catch((error: unknown) => {
+    handler().catch(async (error: unknown) => {
       interactionLogger.error(
         {
           error,
@@ -189,6 +191,12 @@ client.on(Events.InteractionCreate, (interaction) => {
         },
         'Autocomplete handling failed',
       );
+
+      try {
+        await interaction.respond([]);
+      } catch {
+        // Ignore already-responded errors
+      }
     });
     return;
   }
