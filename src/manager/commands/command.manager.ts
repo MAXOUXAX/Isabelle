@@ -1,9 +1,13 @@
 import { config } from '@/config.js';
-import { IsabelleCommand } from '@/manager/commands/command.interface.js';
+import {
+  IsabelleCommand,
+  isAutocompleteCommand,
+} from '@/manager/commands/command.interface.js';
 import { IsabelleModule } from '@/modules/bot-module.js';
 import { countSubcommands } from '@/utils/commands.js';
 import { createLogger } from '@/utils/logger.js';
-import { REST, Routes } from 'discord.js';
+import type { RESTPostAPIChatInputApplicationCommandsJSONBody } from 'discord.js';
+import { ApplicationCommandOptionType, REST, Routes } from 'discord.js';
 import Emittery from 'emittery';
 
 const logger = createLogger('commands');
@@ -14,6 +18,40 @@ interface CommandManagerEvents {
     commands: IsabelleCommand[];
   };
 }
+
+const collectAutocompleteOptions = (
+  options: RESTPostAPIChatInputApplicationCommandsJSONBody['options'],
+  names: string[],
+): void => {
+  if (!options) return;
+
+  for (const option of options) {
+    if (
+      option.type === ApplicationCommandOptionType.Subcommand ||
+      option.type === ApplicationCommandOptionType.SubcommandGroup
+    ) {
+      if ('options' in option) {
+        collectAutocompleteOptions(
+          option.options as RESTPostAPIChatInputApplicationCommandsJSONBody['options'],
+          names,
+        );
+      }
+      continue;
+    }
+
+    if ('autocomplete' in option && option.autocomplete) {
+      names.push(option.name);
+    }
+  }
+};
+
+const getAutocompleteOptionNames = (
+  commandData: RESTPostAPIChatInputApplicationCommandsJSONBody,
+): string[] => {
+  const names: string[] = [];
+  collectAutocompleteOptions(commandData.options, names);
+  return names;
+};
 
 export class CommandManager {
   private commands = new Map<IsabelleModule, IsabelleCommand[]>();
@@ -28,6 +66,34 @@ export class CommandManager {
    * listeners complete before proceeding.
    */
   async registerCommandsFromModule(module: IsabelleModule) {
+    for (const command of module.commands) {
+      const commandJson =
+        command.commandData.toJSON() as unknown as RESTPostAPIChatInputApplicationCommandsJSONBody;
+      const autocompleteOptions = getAutocompleteOptionNames(commandJson);
+
+      if (autocompleteOptions.length > 0 && !isAutocompleteCommand(command)) {
+        throw new Error(
+          `La commande "${command.commandData.name}" définit l'autocomplétion pour ${autocompleteOptions.join(', ')} mais ne fournit pas de gestionnaire d'autocomplétion.`,
+        );
+      }
+
+      if (autocompleteOptions.length > 0 && isAutocompleteCommand(command)) {
+        const declaredOptions = command.autocompleteOptions;
+        const missingOptions = autocompleteOptions.filter(
+          (option) => !declaredOptions.includes(option),
+        );
+        const extraOptions = declaredOptions.filter(
+          (option) => !autocompleteOptions.includes(option),
+        );
+
+        if (missingOptions.length > 0 || extraOptions.length > 0) {
+          throw new Error(
+            `La commande "${command.commandData.name}" a une configuration d'autocomplétion invalide. Manquants: ${missingOptions.join(', ') || 'aucun'}. En trop: ${extraOptions.join(', ') || 'aucun'}.`,
+          );
+        }
+      }
+    }
+
     this.commands.set(module, module.commands);
     await this.events.emit('commandsRegistered', {
       module,
