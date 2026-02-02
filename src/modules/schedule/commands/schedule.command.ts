@@ -1,7 +1,7 @@
 import { IsabelleAutocompleteCommandBase } from '@/manager/commands/command.interface.js';
 import type { AutocompleteOptionHandler } from '@/utils/autocomplete.js';
 import { filterAutocompleteChoices } from '@/utils/autocomplete.js';
-import { addDays, humanTime } from '@/utils/date.js';
+import { addDays, humanTime, isValidDate } from '@/utils/date.js';
 import {
   createLessonEmbed,
   createLessonEmbeds,
@@ -160,18 +160,8 @@ export class ScheduleCommand extends IsabelleAutocompleteCommandBase {
     }
 
     const [day, month, year] = dateParts;
-    const date = new Date(year, month - 1, day);
 
-    if (
-      day < 1 ||
-      day > 31 ||
-      month < 1 ||
-      month > 12 ||
-      year < 1970 ||
-      date.getDate() !== day ||
-      date.getMonth() !== month - 1 ||
-      date.getFullYear() !== year
-    ) {
+    if (!isValidDate(day, month, year)) {
       await interaction.reply({
         ephemeral: true,
         content:
@@ -179,6 +169,8 @@ export class ScheduleCommand extends IsabelleAutocompleteCommandBase {
       });
       return;
     }
+
+    const date = new Date(year, month - 1, day);
     const lessons = await getLessonsFromDate(date);
 
     if (lessons.length === 0) {

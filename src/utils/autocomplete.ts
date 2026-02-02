@@ -5,6 +5,7 @@ import type {
 } from 'discord.js';
 
 export const MAX_AUTOCOMPLETE_CHOICES = 25;
+export const SEARCH_TERM_SEPARATOR = /\s+/;
 
 export type AutocompleteChoice =
   | string
@@ -36,7 +37,7 @@ const matchesFocusedValue = (
     typeof choice === 'string' ? choice : `${choice.name} ${choice.value}`;
   const lowerLabel = label.toLowerCase();
   const searchTerms = focusedValue
-    .split(/\s+/)
+    .split(SEARCH_TERM_SEPARATOR)
     .filter((term) => term.length > 0);
 
   return searchTerms.every((term) => lowerLabel.includes(term));
