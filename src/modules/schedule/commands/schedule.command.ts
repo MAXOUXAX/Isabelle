@@ -1,9 +1,12 @@
-import { IsabelleCommand } from '@/manager/commands/command.interface.js';
-import { humanTime } from '@/utils/date.js';
+import { IsabelleAutocompleteCommandBase } from '@/manager/commands/command.interface.js';
+import type { AutocompleteOptionHandler } from '@/utils/autocomplete.js';
+import { filterAutocompleteChoices } from '@/utils/autocomplete.js';
+import { addDays, humanTime, isValidDate } from '@/utils/date.js';
 import {
   createLessonEmbed,
   createLessonEmbeds,
   getEndOfTodayLessons,
+  getLessonsFromDate,
   getTodaysLessons,
   getTodaysNextLesson,
   getTomorrowsLessons,
@@ -15,7 +18,14 @@ import {
   TimestampStyles,
 } from 'discord.js';
 
-export class ScheduleCommand implements IsabelleCommand {
+const formatDateInput = (date: Date): string => {
+  const formatter = Intl.DateTimeFormat('fr-FR', {
+    dateStyle: 'full',
+  });
+  return formatter.format(date);
+};
+
+export class ScheduleCommand extends IsabelleAutocompleteCommandBase {
   commandData = new SlashCommandBuilder()
     .setName('schedule')
     .setDescription("Consultation de l'emploi du temps")
@@ -31,6 +41,18 @@ export class ScheduleCommand implements IsabelleCommand {
     )
     .addSubcommand((subcommand) =>
       subcommand
+        .setName('date')
+        .setDescription("Affiche les cours d'une date spécifique")
+        .addStringOption((option) =>
+          option
+            .setName('date')
+            .setDescription('La date au format JJ/MM/AAAA')
+            .setRequired(true)
+            .setAutocomplete(true),
+        ),
+    )
+    .addSubcommand((subcommand) =>
+      subcommand
         .setName('cours-suivant')
         .setDescription('Affiche le prochain cours de la journée.'),
     )
@@ -40,6 +62,29 @@ export class ScheduleCommand implements IsabelleCommand {
         .setDescription("Affiche l'heure de fin des cours du jour."),
     );
 
+  protected getAutocompleteHandlers(): Record<
+    string,
+    AutocompleteOptionHandler
+  > {
+    return {
+      date: ({ focusedValue, subcommand }) => {
+        if (subcommand !== 'date') {
+          return [];
+        }
+
+        const today = new Date();
+        const suggestions = Array.from({ length: 90 }, (_, i) => {
+          const date = addDays(today, i);
+          const name = formatDateInput(date);
+          const value = date.toLocaleDateString('fr-FR');
+          return { name, value };
+        });
+
+        return filterAutocompleteChoices(suggestions, focusedValue);
+      },
+    };
+  }
+
   public async executeCommand(
     interaction: ChatInputCommandInteraction,
   ): Promise<void> {
@@ -48,6 +93,7 @@ export class ScheduleCommand implements IsabelleCommand {
     const handlers: Record<string, () => Promise<void>> = {
       aujourdhui: () => this.handleTodaysClassesCommand(interaction),
       demain: () => this.handleTomorrowClassesCommand(interaction),
+      date: () => this.handleDateClassesCommand(interaction),
       'cours-suivant': () => this.handleNextClassCommand(interaction),
       'fin-de-journée': () => this.handleEndOfDayCommand(interaction),
     };
@@ -83,6 +129,54 @@ export class ScheduleCommand implements IsabelleCommand {
       await interaction.reply({
         ephemeral: true,
         content: "Demain c'est dodo...\n-# *Aucun cours n'est prévu demain*",
+      });
+      return;
+    }
+
+    await interaction.reply({
+      ephemeral: false,
+      embeds: createLessonEmbeds(lessons),
+    });
+  }
+
+  private async handleDateClassesCommand(
+    interaction: ChatInputCommandInteraction,
+  ): Promise<void> {
+    const dateString = interaction.options.getString('date', true);
+    const dateParts = dateString
+      .split('/')
+      .map((part) => Number.parseInt(part, 10));
+
+    if (
+      dateParts.length !== 3 ||
+      dateParts.some((part) => Number.isNaN(part))
+    ) {
+      await interaction.reply({
+        ephemeral: true,
+        content:
+          'Format de date invalide. Veuillez utiliser le format JJ/MM/AAAA.',
+      });
+      return;
+    }
+
+    const [day, month, year] = dateParts;
+
+    if (!isValidDate(day, month, year)) {
+      await interaction.reply({
+        ephemeral: true,
+        content:
+          'Date invalide. Veuillez vérifier que la date existe et respecte le format JJ/MM/AAAA.',
+      });
+      return;
+    }
+
+    const date = new Date(year, month - 1, day);
+    const lessons = await getLessonsFromDate(date);
+
+    if (lessons.length === 0) {
+      await interaction.reply({
+        ephemeral: true,
+        content: `Aucun cours n'est prévu le ${dateString}.`,
       });
       return;
     }
