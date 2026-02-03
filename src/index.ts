@@ -15,6 +15,7 @@ import { environment } from '@/utils/environment.js';
 import { voidAndTrackError } from '@/utils/promises.js';
 import { Client, Events, GatewayIntentBits } from 'discord.js';
 import { config } from './config.js';
+import { isAutocompleteCommand } from './manager/commands/command.interface.js';
 import { configManager } from './manager/config.manager.js';
 import { interactionManager } from './manager/interaction.manager.js';
 import { IsabelleModule } from './modules/bot-module.js';
@@ -147,6 +148,61 @@ client.once(Events.ClientReady, () => {
 const interactionLogger = createLogger('interactions');
 
 client.on(Events.InteractionCreate, (interaction) => {
+  if (interaction.isAutocomplete()) {
+    const handler = async () => {
+      const { commandName } = interaction;
+      const command = commandManager.findByName(commandName);
+
+      if (!command) {
+        interactionLogger.warn(
+          {
+            commandName,
+            userId: interaction.user.id,
+            guildId: interaction.guildId,
+          },
+          `No command found for autocomplete: ${commandName}`,
+        );
+        await interaction.respond([]);
+        return;
+      }
+
+      if (!isAutocompleteCommand(command)) {
+        interactionLogger.debug(
+          {
+            commandName,
+            userId: interaction.user.id,
+            guildId: interaction.guildId,
+          },
+          `Autocomplete not implemented for command: ${commandName}`,
+        );
+        await interaction.respond([]);
+        return;
+      }
+
+      await command.autocomplete(interaction);
+    };
+
+    handler().catch(async (error: unknown) => {
+      interactionLogger.error(
+        {
+          error,
+          interactionType: interaction.type,
+          commandName: interaction.commandName,
+          userId: interaction.user.id,
+          guildId: interaction.guildId,
+        },
+        'Autocomplete handling failed',
+      );
+
+      try {
+        await interaction.respond([]);
+      } catch {
+        // Ignore already-responded errors
+      }
+    });
+    return;
+  }
+
   if (!interaction.isCommand()) {
     voidAndTrackError(interactionManager.handleInteraction(interaction));
     return;

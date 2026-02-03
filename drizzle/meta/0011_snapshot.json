@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "c9f3aca8-c4aa-4993-9010-06bbd223139c",
-  "prevId": "cab8dd61-2496-4f7b-aab9-bf235ae98496",
+  "id": "fd0a5896-9133-4118-90b6-22f5a09442fb",
+  "prevId": "dc24cec2-56c1-4d5a-bdf2-24a3462237d7",
   "tables": {
     "audit_legal_consent": {
       "name": "audit_legal_consent",
@@ -124,6 +124,75 @@
             "guild_id"
           ],
           "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "birthdays": {
+      "name": "birthdays",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "day": {
+          "name": "day",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "month": {
+          "name": "month",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "year": {
+          "name": "year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch())"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch())"
+        }
+      },
+      "indexes": {
+        "birthdays_user_id_unique": {
+          "name": "birthdays_user_id_unique",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": true
         }
       },
       "foreignKeys": {},
@@ -302,6 +371,14 @@
         }
       },
       "indexes": {
+        "russian_roulette_stats_guild_timeout_idx": {
+          "name": "russian_roulette_stats_guild_timeout_idx",
+          "columns": [
+            "guild_id",
+            "timeout_minutes"
+          ],
+          "isUnique": false
+        },
         "russian_roulette_stats_guild_id_user_id_unique": {
           "name": "russian_roulette_stats_guild_id_user_id_unique",
           "columns": [

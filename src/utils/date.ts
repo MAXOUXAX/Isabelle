@@ -87,3 +87,24 @@ export function timeUntilNextUse(
   const timeToAdd = usageCount24h >= maxUsagesPerDay ? DAY_IN_MS : HOUR_IN_MS;
   return new Date(lastUse.getTime() + timeToAdd);
 }
+/**
+ * Checks if a given day, month, and year form a valid date.
+ *
+ * @param day - Day of the month (1-31).
+ * @param month - Month of the year (1-12).
+ * @param year - Year (e.g., 2024).
+ * @returns True if the date is valid, false otherwise.
+ */
+export function isValidDate(day: number, month: number, year: number): boolean {
+  const date = new Date(year, month - 1, day);
+  return (
+    day >= 1 &&
+    day <= 31 &&
+    month >= 1 &&
+    month <= 12 &&
+    year >= 1970 &&
+    date.getDate() === day &&
+    date.getMonth() === month - 1 &&
+    date.getFullYear() === year
+  );
+}
