@@ -25,7 +25,10 @@ export const auditLegalConsent = sqliteTable(
     consented: int('consented').notNull(),
     ...base(),
   },
-  (t) => [unique().on(t.userId, t.scope, t.createdAt)],
+  (t) => [
+    unique().on(t.userId, t.scope, t.createdAt),
+    index('audit_legal_consent_user_created_idx').on(t.userId, t.createdAt),
+  ],
 );
 
 export const guildConfigs = sqliteTable('guild_configs', {

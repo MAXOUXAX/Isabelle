@@ -1,0 +1,1 @@
+CREATE INDEX `audit_legal_consent_user_created_idx` ON `audit_legal_consent` (`user_id`,`created_at`);
