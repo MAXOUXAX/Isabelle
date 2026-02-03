@@ -40,11 +40,14 @@ export const executeLeaderboardCommand = async (
       })
       .from(russianRouletteStats)
       .where(eq(russianRouletteStats.guildId, guild.id))
+      // Optimization: Sort by timeoutMinutes, deaths, and shots to match the
+      // backing composite index `russian_roulette_stats_leaderboard_idx`.
       .orderBy(
         desc(russianRouletteStats.timeoutMinutes),
         desc(russianRouletteStats.deaths),
         desc(russianRouletteStats.shots),
       )
+      // Optimization: Limit to LEADERBOARD_ROWS_COUNT to avoid fetching all stats
       .limit(LEADERBOARD_ROWS_COUNT);
 
     // No one played yet

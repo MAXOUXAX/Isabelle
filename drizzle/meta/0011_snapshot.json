@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "dc24cec2-56c1-4d5a-bdf2-24a3462237d7",
-  "prevId": "c9f3aca8-c4aa-4993-9010-06bbd223139c",
+  "id": "89cd8c45-ff9c-43d1-a9b8-17806eb406bd",
+  "prevId": "dc24cec2-56c1-4d5a-bdf2-24a3462237d7",
   "tables": {
     "audit_legal_consent": {
       "name": "audit_legal_consent",
@@ -302,11 +302,13 @@
         }
       },
       "indexes": {
-        "russian_roulette_stats_guild_timeout_idx": {
-          "name": "russian_roulette_stats_guild_timeout_idx",
+        "russian_roulette_stats_leaderboard_idx": {
+          "name": "russian_roulette_stats_leaderboard_idx",
           "columns": [
             "guild_id",
-            "timeout_minutes"
+            "timeout_minutes",
+            "deaths",
+            "shots"
           ],
           "isUnique": false
         },

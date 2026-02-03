@@ -64,7 +64,7 @@ export default async function guessWordSubcommand(
 
   // Additional validation: check if there's a game associated with this thread
   const threadGame = sutomGameManager.getGameByThreadId(gameChannel.id);
-  if (!threadGame || threadGame.userId !== user.id) {
+  if (threadGame?.userId !== user.id) {
     await sendEphemeral(
       'Ce thread ne correspond pas à ta partie actuelle.',
     ).catch((e: unknown) => {
