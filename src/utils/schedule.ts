@@ -2,7 +2,7 @@ import { config } from '@/config.js';
 import { cacheStore } from '@/utils/cache.js';
 import { createLogger } from '@/utils/logger.js';
 import { ColorResolvable, EmbedBuilder } from 'discord.js';
-import { VEvent, fromURL } from 'node-ical';
+import { ParameterValue, VEvent, fromURL } from 'node-ical';
 import * as dateUtils from './date.js';
 import { humanDate, humanTime } from './date.js';
 
@@ -70,6 +70,18 @@ export function createLessonEmbeds(
   options?: { useShortTime?: boolean },
 ): EmbedBuilder[] {
   return lessons.map((lesson) => createLessonEmbed(lesson, options));
+}
+
+function getStringValue(value: ParameterValue | undefined): string {
+  if (!value) {
+    return '';
+  }
+
+  if (typeof value === 'object' && 'val' in value) {
+    return value.val;
+  }
+
+  return value;
 }
 
 // Règles d'ajustement des horaires
@@ -208,13 +220,17 @@ function createLessonsFromData(data: VEvent[]): Lesson[] {
 
     const { start, end } = adjustSchedule(startDate, endDate);
 
+    const summary = getStringValue(lesson.summary);
+    const description = getStringValue(lesson.description);
+    const location = getStringValue(lesson.location);
+
     return {
-      name: lesson.summary,
+      name: summary,
       start,
       end,
-      room: lesson.location.replaceAll('Remicourt_', '').toUpperCase(), // Balek du Remicourt
-      teacher: extractTeacherName(lesson.description, lesson.summary),
-      color: getLessonColor(lesson.summary),
+      room: location.replaceAll('Remicourt_', '').toUpperCase(), // Balek du Remicourt
+      teacher: extractTeacherName(description, summary),
+      color: getLessonColor(summary),
     };
   });
 }
