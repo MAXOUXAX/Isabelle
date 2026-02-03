@@ -2,3 +2,8 @@
 **Vulnerability:** The `safelySendMessage` utility, used for sending AI-generated "roasts", did not suppress Discord mentions. This allowed the AI (potentially via prompt injection) to trigger mass notifications (`@everyone`, `@here`) or harass specific users.
 **Learning:** Utilities that wrap message sending must enforce secure defaults, especially when handling untrusted or generated content. Relying on the prompt to "behave" is insufficient.
 **Prevention:** Enforce `allowedMentions: { parse: [] }` in all message sending utilities handling AI or user-controlled content.
+
+## 2026-02-03 - Prevent Confused Deputy in Data Access
+**Vulnerability:** The `roast` command fetched target user messages from all channels the *bot* could see, including private admin channels inaccessible to the command invoker. This allowed users to potentially access sensitive information via the bot.
+**Learning:** Bot permissions are often broader than user permissions. When acting on behalf of a user to access data, the bot must explicitly intersect its permissions with the invoker's permissions.
+**Prevention:** Pass the `invokerId` (or `interaction.user`) to data fetching utilities and verify `ViewChannel` (or equivalent) permissions for the invoker before processing data.
