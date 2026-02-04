@@ -14,29 +14,30 @@ export class InteractionManager {
   }
 
   async handleInteraction(interaction: Interaction) {
-    if (!interaction.isMessageComponent()) {
+    if (!(interaction.isMessageComponent() || interaction.isModalSubmit())) {
       logger.debug(
-        `Ignoring non-message component interaction (type: ${interaction.type.toString()})`,
+        `Ignoring unsupported interaction type: ${interaction.type.toString()}`,
       );
       return;
     }
 
-    let handler = this.handlers.get(interaction.customId);
+    const customId = interaction.customId;
+    let handler = this.handlers.get(customId);
 
     if (!handler) {
       // Try prefix matching for handlers that use prefixes (e.g., "consent" matches "consent-generative-ai-decline")
       logger.debug(
-        `No exact match found, attempting prefix matching for customId: "${interaction.customId}"`,
+        `No exact match found, attempting prefix matching for customId: "${customId}"`,
       );
 
       for (const [handlerCustomId, handlerInstance] of this.handlers) {
-        if (interaction.customId.startsWith(handlerCustomId + ':')) {
+        if (customId.startsWith(handlerCustomId + ':')) {
           logger.debug(
             {
               matchedPrefix: handlerCustomId,
-              fullCustomId: interaction.customId,
+              fullCustomId: customId,
             },
-            `Found prefix match: handler "${handlerCustomId}" matches "${interaction.customId}"`,
+            `Found prefix match: handler "${handlerCustomId}" matches "${customId}"`,
           );
           handler = handlerInstance;
           break;
@@ -47,22 +48,22 @@ export class InteractionManager {
     if (handler) {
       logger.debug(
         {
-          customId: interaction.customId,
+          customId,
           userId: interaction.user.id,
           guildId: interaction.guildId,
         },
-        `Handling interaction: ${interaction.customId} from user ${interaction.user.id}`,
+        `Handling interaction: ${customId} from user ${interaction.user.id}`,
       );
       await handler.handle(interaction);
     } else {
       logger.warn(
         {
-          customId: interaction.customId,
+          customId,
           userId: interaction.user.id,
           guildId: interaction.guildId,
           registeredHandlers: Array.from(this.handlers.keys()),
         },
-        `No handler registered for interaction customId: "${interaction.customId}"`,
+        `No handler registered for interaction customId: "${customId}"`,
       );
     }
   }
