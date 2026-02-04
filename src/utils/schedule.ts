@@ -199,6 +199,23 @@ function extractTeacherName(
 }
 
 /*
+ * Helper to safely extract string values from node-ical properties
+ * which can be strings or objects with a val property
+ */
+function getIcalValue(value: unknown): string {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (
+    typeof value === 'object' &&
+    'val' in value &&
+    typeof (value as { val: unknown }).val === 'string'
+  ) {
+    return (value as { val: string }).val;
+  }
+  return '';
+}
+
+/*
  * Crée un tableau de cours à partir des données du fichier ICS
  */
 function createLessonsFromData(data: VEvent[]): Lesson[] {
@@ -208,13 +225,17 @@ function createLessonsFromData(data: VEvent[]): Lesson[] {
 
     const { start, end } = adjustSchedule(startDate, endDate);
 
+    const summary = getIcalValue(lesson.summary);
+    const location = getIcalValue(lesson.location);
+    const description = getIcalValue(lesson.description);
+
     return {
-      name: lesson.summary,
+      name: summary,
       start,
       end,
-      room: lesson.location.replaceAll('Remicourt_', '').toUpperCase(), // Balek du Remicourt
-      teacher: extractTeacherName(lesson.description, lesson.summary),
-      color: getLessonColor(lesson.summary),
+      room: location.replaceAll('Remicourt_', '').toUpperCase(), // Balek du Remicourt
+      teacher: extractTeacherName(description, summary),
+      color: getLessonColor(summary),
     };
   });
 }
