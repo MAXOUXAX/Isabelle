@@ -227,7 +227,11 @@ async function checkAndSendResponse(
   const randomResponse =
     responses[Math.floor(Math.random() * responses.length)];
 
-  await message.reply(randomResponse);
+  // Prevent mass mentions (e.g. @everyone) in automatic responses
+  await message.reply({
+    content: randomResponse,
+    allowedMentions: { parse: [] },
+  });
   return true;
 }
 
