@@ -33,11 +33,31 @@ class ConfigManager {
   setGuild(guildId: string, config: GuildConfig): void {
     this.guilds[guildId] = config;
   }
+
+  async saveGuild(guildId: string, config: GuildConfig): Promise<void> {
+    this.guilds[guildId] = config;
+
+    await db
+      .insert(guildConfigs)
+      .values({
+        id: guildId,
+        config,
+      })
+      .onConflictDoUpdate({
+        target: guildConfigs.id,
+        set: {
+          config,
+        },
+      });
+
+    logger.info({ guildId }, 'Guild config saved to database');
+  }
 }
 
 export interface GuildConfig {
   HOT_POTATO_ROLE_ID?: string;
   HOT_POTATO_TIMEOUT_DURATION?: number;
+  PLANIFIER_FORUM_CHANNEL_ID?: string;
 }
 
 export const configManager = new ConfigManager();
