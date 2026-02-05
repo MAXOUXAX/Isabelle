@@ -1,4 +1,5 @@
 import { IsabelleModule, ModuleContributor } from '@/modules/bot-module.js';
+import { CountdownCommand } from '@/modules/schedule/commands/countdown.command.js';
 import { ScheduleCommand } from '@/modules/schedule/commands/schedule.command.js';
 
 export class Schedule extends IsabelleModule {
@@ -13,6 +14,6 @@ export class Schedule extends IsabelleModule {
   }
 
   init(): void {
-    this.registerCommands([new ScheduleCommand()]);
+    this.registerCommands([new ScheduleCommand(), new CountdownCommand()]);
   }
 }

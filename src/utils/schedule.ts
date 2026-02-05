@@ -408,6 +408,35 @@ function getLessonColor(title: string): string {
   }
 }
 
+/*
+ * Récupère le cours actuel
+ */
+export async function getCurrentLesson(): Promise<Lesson | null> {
+  const now = new Date();
+  const lessons = await getTodaysLessons();
+
+  return (
+    lessons.find((lesson) => lesson.start <= now && lesson.end >= now) ?? null
+  );
+}
+
+/*
+ * Récupère le dernier cours de la semaine
+ */
+export async function getLastLessonOfWeek(): Promise<Lesson | null> {
+  const weekLessons = await getWeekLessons();
+  const days = ['vendredi', 'jeudi', 'mercredi', 'mardi', 'lundi'];
+
+  for (const day of days) {
+    const lessons = weekLessons[day] as Lesson[] | undefined;
+    if (lessons && lessons.length > 0) {
+      return lessons[lessons.length - 1];
+    }
+  }
+
+  return null;
+}
+
 async function getSchedule() {
   return await fromURL(config.SCHEDULE_URL);
 }
