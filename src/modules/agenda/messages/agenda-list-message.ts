@@ -1,4 +1,8 @@
 import { agendaEvents } from '@/db/schema.js';
+import {
+  buildAgendaEventDetailsText,
+  buildAgendaEventHeader,
+} from '@/modules/agenda/utils/agenda-display.js';
 import { colors, emojis } from '@/utils/theme.js';
 import {
   ButtonBuilder,
@@ -118,10 +122,11 @@ export function buildEventDetailMessage(
     minute: '2-digit',
   });
 
-  let header = `## ${event.emoji} ${event.title}\n\n`;
-  if (event.description) {
-    header += `${event.description}\n\n`;
-  }
+  const header = buildAgendaEventHeader({
+    emoji: event.emoji,
+    title: event.title,
+    description: event.description,
+  });
 
   const container = new ContainerBuilder()
     .setAccentColor(colors.accent)
@@ -150,11 +155,14 @@ export function buildEventDetailMessage(
   );
 
   // Event details
-  const location = event.location;
-  let details = `### Détails\n\n`;
-  details += `**📍 Lieu :** ${location}\n`;
-  details += `**🕐 Début :** ${formattedStartDate}\n`;
-  details += `**🕐 Fin :** ${formattedEndDate}\n`;
+  let details = buildAgendaEventDetailsText({
+    location: event.location,
+    schedule: {
+      startLabel: formattedStartDate,
+      endLabel: formattedEndDate,
+    },
+    includeHeading: true,
+  });
 
   if (event.discordEventId) {
     details += `\n[Voir l'événement Discord](https://discord.com/events/${event.guildId}/${event.discordEventId})`;

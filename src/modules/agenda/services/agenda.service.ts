@@ -5,10 +5,14 @@ import {
   agendaAssistant,
 } from '@/modules/agenda/services/ai/agenda-assistant.js';
 import {
+  buildAgendaEventDetailsText,
+  buildAgendaEventHeader,
+} from '@/modules/agenda/utils/agenda-display.js';
+import {
   formatFrenchDate,
   isDeadlineMode,
 } from '@/modules/agenda/utils/date-parser.js';
-import { parseUrl } from '@/modules/agenda/utils/url-parser.js';
+import { getAgendaLocationPresentation } from '@/modules/agenda/utils/location-presentation.js';
 import { buildAiFooter } from '@/utils/ai-footer.js';
 import { createLogger } from '@/utils/logger.js';
 import {
@@ -328,25 +332,29 @@ function buildThreadMessage({
     messageContent += `<@&${roleId}>\n`;
   }
 
-  messageContent += `## ${emoji} ${eventLabel}\n\n`;
-  messageContent += `${eventDescription}\n\n`;
-  messageContent += `**📍 Lieu :** ${eventLocation}\n`;
+  messageContent += buildAgendaEventHeader({
+    emoji,
+    title: eventLabel,
+    description: eventDescription,
+  });
 
-  if (deadlineMode) {
-    messageContent += `**🕐 Échéance :** ${formattedStartDate}\n`;
-  } else {
-    const formattedEndDate = formatFrenchDate(endDate);
-    messageContent += `**🕐 Début :** ${formattedStartDate}\n`;
-    messageContent += `**🕐 Fin :** ${formattedEndDate}\n`;
-  }
+  const formattedEndDate = deadlineMode ? undefined : formatFrenchDate(endDate);
+  messageContent += buildAgendaEventDetailsText({
+    location: eventLocation,
+    schedule: {
+      deadlineLabel: deadlineMode ? formattedStartDate : undefined,
+      startLabel: deadlineMode ? undefined : formattedStartDate,
+      endLabel: formattedEndDate,
+    },
+  });
 
   if (aiFooter) {
     messageContent += aiFooter;
   }
 
   const components: ActionRowBuilder<ButtonBuilder>[] = [];
-  const locationUrl = parseUrl(eventLocation);
 
+  const { locationUrl } = getAgendaLocationPresentation(eventLocation);
   if (locationUrl) {
     const button = new ButtonBuilder()
       .setStyle(ButtonStyle.Link)
