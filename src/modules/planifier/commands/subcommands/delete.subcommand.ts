@@ -1,7 +1,7 @@
 import { db } from '@/db/index.js';
 import { agendaEvents } from '@/db/schema.js';
 import { configManager } from '@/manager/config.manager.js';
-import { removeEventThread } from '@/modules/planifier/services/thread-auto-close.service.js';
+import { deleteAgendaEvent } from '@/modules/planifier/services/agenda.service.js';
 import {
   AutocompleteOptionHandler,
   filterAutocompleteChoices,
@@ -88,7 +88,7 @@ export async function handleDeleteSubcommand(
     await event.delete();
 
     // Remove the event-thread association from the database
-    await removeEventThread(interaction.guildId, eventId);
+    await deleteAgendaEvent(interaction.guildId, eventId);
 
     // Try to delete associated forum thread
     let threadDeleted = false;
