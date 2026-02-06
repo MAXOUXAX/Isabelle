@@ -65,7 +65,6 @@ export class AgendaListActionsHandler implements InteractionHandler {
           description: event.description,
           location: event.location,
           dates: formatDateRangeInput(event.eventStartTime, event.eventEndTime),
-          aiOptions: ['enhance', 'emoji'],
         },
       });
 
