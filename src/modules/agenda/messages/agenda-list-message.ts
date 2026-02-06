@@ -9,8 +9,8 @@ import {
   StringSelectMenuOptionBuilder,
 } from 'discord.js';
 
-export const PLANIFIER_EVENT_SELECT_ID = 'planifier:event-select';
-export const PLANIFIER_EVENT_ACTION_ID = 'planifier:event';
+export const AGENDA_EVENT_SELECT_ID = 'agenda:event-select';
+export const AGENDA_EVENT_ACTION_ID = 'agenda:event';
 
 type AgendaEvent = typeof agendaEvents.$inferSelect;
 
@@ -30,7 +30,7 @@ export function buildEventsOverviewMessage(
       )
       .addTextDisplayComponents((text) =>
         text.setContent(
-          'Aucun événement planifié. Utilise `/planifier create` pour en créer un !',
+          'Aucun événement planifié. Utilise `/agenda create` pour en créer un !',
         ),
       );
     return container;
@@ -53,7 +53,7 @@ export function buildEventsOverviewMessage(
 
 function buildEventSelectMenu(events: AgendaEvent[]): StringSelectMenuBuilder {
   return new StringSelectMenuBuilder()
-    .setCustomId(PLANIFIER_EVENT_SELECT_ID)
+    .setCustomId(AGENDA_EVENT_SELECT_ID)
     .setPlaceholder('Sélectionne un événement pour voir ses détails...')
     .addOptions(
       events.slice(0, 25).map((event) => {
@@ -134,13 +134,13 @@ export function buildEventDetailMessage(
   }
 
   const editButton = new ButtonBuilder()
-    .setCustomId(`${PLANIFIER_EVENT_ACTION_ID}:edit:${event.discordEventId}`)
+    .setCustomId(`${AGENDA_EVENT_ACTION_ID}:edit:${event.discordEventId}`)
     .setLabel('Modifier')
     .setEmoji('✏️')
     .setStyle(ButtonStyle.Primary);
 
   const deleteButton = new ButtonBuilder()
-    .setCustomId(`${PLANIFIER_EVENT_ACTION_ID}:delete:${event.discordEventId}`)
+    .setCustomId(`${AGENDA_EVENT_ACTION_ID}:delete:${event.discordEventId}`)
     .setLabel('Supprimer')
     .setEmoji('🗑️')
     .setStyle(ButtonStyle.Danger);

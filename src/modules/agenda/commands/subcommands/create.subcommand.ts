@@ -9,10 +9,10 @@ import {
   TextInputStyle,
 } from 'discord.js';
 
-export const PLANIFIER_MODAL_CUSTOM_ID = 'planifier-modal';
+export const AGENDA_MODAL_CUSTOM_ID = 'agenda-modal';
 export const AI_OPTIONS_CUSTOM_ID = 'ai-options';
 
-interface PlanifierModalDefaults {
+interface AgendaModalDefaults {
   title?: string;
   description?: string;
   dates?: string;
@@ -20,12 +20,12 @@ interface PlanifierModalDefaults {
   aiOptions?: ('enhance' | 'emoji')[];
 }
 
-export function buildPlanifierModal({
-  customId = PLANIFIER_MODAL_CUSTOM_ID,
+export function buildAgendaModal({
+  customId = AGENDA_MODAL_CUSTOM_ID,
   defaults = {},
 }: {
   customId?: string;
-  defaults?: PlanifierModalDefaults;
+  defaults?: AgendaModalDefaults;
 }): ModalBuilder {
   const modal = new ModalBuilder()
     .setCustomId(customId)
@@ -134,7 +134,7 @@ export function buildPlanifierModal({
 }
 
 /**
- * Handle the /planifier create subcommand.
+ * Handle the /agenda create subcommand.
  * Shows a modal for event creation with optional AI enhancement.
  */
 export async function handleCreateSubcommand(
@@ -151,18 +151,18 @@ export async function handleCreateSubcommand(
   }
 
   // On récupère la config du serveur
-  const { PLANIFIER_FISA_ROLE_ID } = configManager.getGuild(guildId);
-  if (!PLANIFIER_FISA_ROLE_ID) {
+  const { AGENDA_FISA_ROLE_ID } = configManager.getGuild(guildId);
+  if (!AGENDA_FISA_ROLE_ID) {
     await interaction.reply({
       content:
-        "Le rôle FISA n'est pas configuré. Utilise `/planifier config role:<rôle>` pour le définir.",
+        "Le rôle FISA n'est pas configuré. Utilise `/agenda config role:<rôle>` pour le définir.",
       ephemeral: true,
     });
     return;
   }
 
-  const modal = buildPlanifierModal({
-    customId: PLANIFIER_MODAL_CUSTOM_ID,
+  const modal = buildAgendaModal({
+    customId: AGENDA_MODAL_CUSTOM_ID,
     defaults: {
       aiOptions: ['enhance', 'emoji'],
     },

@@ -1,11 +1,11 @@
 import { commandManager } from '@/manager/commands/command.manager.js';
+import { AgendaModule } from '@/modules/agenda/agenda.module.js';
 import { AutomaticResponsesModule } from '@/modules/automatic-responses/automatic-responses.module.js';
 import { CoreModule } from '@/modules/core/core.module.js';
 import { legalManager } from '@/modules/legal/legal.manager.js';
 import { LegalModule } from '@/modules/legal/legal.module.js';
 import { generativeAi } from '@/modules/legal/prompts/generative-ai.prompt.js';
 import { moduleManager } from '@/modules/module-manager.js';
-import { PlanifierModule } from '@/modules/planifier/planifier.module.js';
 import { RoastModule } from '@/modules/roast/roast.module.js';
 import { RussianRoulette } from '@/modules/russian-roulette/russian-roulette.module.js';
 import { Schedule } from '@/modules/schedule/schedule.module.js';
@@ -40,7 +40,7 @@ const MODULES: IsabelleModule[] = [
   new LegalModule(),
   new HotPotato(),
   new AutomaticResponsesModule(),
-  new PlanifierModule(),
+  new AgendaModule(),
   new RussianRoulette(),
   new SutomModule(),
   new Schedule(),

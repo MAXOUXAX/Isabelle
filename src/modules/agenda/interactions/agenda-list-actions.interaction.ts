@@ -1,22 +1,22 @@
 import { configManager } from '@/manager/config.manager.js';
-import { InteractionHandler } from '@/modules/bot-module.js';
 import {
-  buildPlanifierModal,
-  PLANIFIER_MODAL_CUSTOM_ID,
-} from '@/modules/planifier/commands/subcommands/create.subcommand.js';
-import { PLANIFIER_EVENT_ACTION_ID } from '@/modules/planifier/messages/planifier-list-message.js';
+  AGENDA_MODAL_CUSTOM_ID,
+  buildAgendaModal,
+} from '@/modules/agenda/commands/subcommands/create.subcommand.js';
+import { AGENDA_EVENT_ACTION_ID } from '@/modules/agenda/messages/agenda-list-message.js';
 import {
   deleteAgendaEventResources,
   findAgendaEventByDiscordId,
-} from '@/modules/planifier/services/agenda.service.js';
-import { formatDateRangeInput } from '@/modules/planifier/utils/date-parser.js';
+} from '@/modules/agenda/services/agenda.service.js';
+import { formatDateRangeInput } from '@/modules/agenda/utils/date-parser.js';
+import { InteractionHandler } from '@/modules/bot-module.js';
 import { createLogger } from '@/utils/logger.js';
 import { Interaction, MessageFlags } from 'discord.js';
 
-const logger = createLogger('planifier-list-actions');
+const logger = createLogger('agenda-list-actions');
 
-export class PlanifierListActionsHandler implements InteractionHandler {
-  customId: string = PLANIFIER_EVENT_ACTION_ID;
+export class AgendaListActionsHandler implements InteractionHandler {
+  customId: string = AGENDA_EVENT_ACTION_ID;
 
   async handle(interaction: Interaction): Promise<void> {
     if (!interaction.isButton()) {
@@ -37,7 +37,7 @@ export class PlanifierListActionsHandler implements InteractionHandler {
 
     if (!action || !eventId) {
       await interaction.reply({
-        content: 'Action invalide. Utilise `/planifier list` pour réessayer.',
+        content: 'Action invalide. Utilise `/agenda list` pour réessayer.',
         flags: MessageFlags.Ephemeral,
       });
       return;
@@ -51,15 +51,15 @@ export class PlanifierListActionsHandler implements InteractionHandler {
     if (!event) {
       await interaction.reply({
         content:
-          'Impossible de retrouver cet événement. Rafraîchis la liste avec `/planifier list`.',
+          'Impossible de retrouver cet événement. Rafraîchis la liste avec `/agenda list`.',
         flags: MessageFlags.Ephemeral,
       });
       return;
     }
 
     if (action === 'edit') {
-      const modal = buildPlanifierModal({
-        customId: `${PLANIFIER_MODAL_CUSTOM_ID}:edit:${eventId}`,
+      const modal = buildAgendaModal({
+        customId: `${AGENDA_MODAL_CUSTOM_ID}:edit:${eventId}`,
         defaults: {
           title: event.title,
           description: event.description,
@@ -80,7 +80,7 @@ export class PlanifierListActionsHandler implements InteractionHandler {
         const { eventName, threadDeleted } = await deleteAgendaEventResources({
           guild: interaction.guild,
           eventId,
-          forumChannelId: config.PLANIFIER_FORUM_CHANNEL_ID,
+          forumChannelId: config.AGENDA_FORUM_CHANNEL_ID,
           eventRecord: event,
         });
 
@@ -102,7 +102,7 @@ export class PlanifierListActionsHandler implements InteractionHandler {
     }
 
     await interaction.reply({
-      content: 'Action inconnue. Utilise `/planifier list` pour réessayer.',
+      content: 'Action inconnue. Utilise `/agenda list` pour réessayer.',
       flags: MessageFlags.Ephemeral,
     });
   }

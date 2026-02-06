@@ -1,12 +1,12 @@
-import { buildEventsOverviewMessage } from '@/modules/planifier/messages/planifier-list-message.js';
-import { fetchUpcomingAgendaEvents } from '@/modules/planifier/services/agenda.service.js';
+import { buildEventsOverviewMessage } from '@/modules/agenda/messages/agenda-list-message.js';
+import { fetchUpcomingAgendaEvents } from '@/modules/agenda/services/agenda.service.js';
 import { createLogger } from '@/utils/logger.js';
 import { ChatInputCommandInteraction, MessageFlags } from 'discord.js';
 
-const logger = createLogger('planifier-list');
+const logger = createLogger('agenda-list');
 
 /**
- * Handle the /planifier list subcommand.
+ * Handle the /agenda list subcommand.
  * Displays scheduled events with navigation.
  */
 export async function handleListSubcommand(

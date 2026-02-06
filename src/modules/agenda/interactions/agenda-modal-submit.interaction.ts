@@ -1,14 +1,14 @@
 import { configManager } from '@/manager/config.manager.js';
 import {
+  AGENDA_MODAL_CUSTOM_ID,
   AI_OPTIONS_CUSTOM_ID,
-  PLANIFIER_MODAL_CUSTOM_ID,
-} from '@/modules/planifier/commands/subcommands/create.subcommand.js';
+} from '@/modules/agenda/commands/subcommands/create.subcommand.js';
 import {
   createAgendaEvent,
   findAgendaEventByDiscordId,
   updateAgendaEvent,
-} from '@/modules/planifier/services/agenda.service.js';
-import { parseDateRange } from '@/modules/planifier/utils/date-parser.js';
+} from '@/modules/agenda/services/agenda.service.js';
+import { parseDateRange } from '@/modules/agenda/utils/date-parser.js';
 import { createLogger } from '@/utils/logger.js';
 import {
   ChannelType,
@@ -19,7 +19,7 @@ import {
   MessageFlags,
 } from 'discord.js';
 
-const logger = createLogger('planifier-modal-submit');
+const logger = createLogger('agenda-modal-submit');
 
 async function fetchAndValidateChannel({
   guild,
@@ -45,7 +45,7 @@ async function fetchAndValidateChannel({
   }
 }
 
-const EDIT_MODAL_PREFIX = `${PLANIFIER_MODAL_CUSTOM_ID}:edit:`;
+const EDIT_MODAL_PREFIX = `${AGENDA_MODAL_CUSTOM_ID}:edit:`;
 
 function getEditEventId(customId: string): string | null {
   if (!customId.startsWith(EDIT_MODAL_PREFIX)) {
@@ -66,7 +66,7 @@ function parseAiOptions(values: readonly string[]): {
   };
 }
 
-export async function handlePlanifierModalSubmit(
+export async function handleAgendaModalSubmit(
   interaction: Interaction,
 ): Promise<void> {
   if (!interaction.isModalSubmit()) return;
@@ -124,13 +124,13 @@ export async function handlePlanifierModalSubmit(
   }
 
   const config = configManager.getGuild(guildId);
-  const forumChannelId = config.PLANIFIER_FORUM_CHANNEL_ID;
-  const fisaRoleId = config.PLANIFIER_FISA_ROLE_ID;
+  const forumChannelId = config.AGENDA_FORUM_CHANNEL_ID;
+  const fisaRoleId = config.AGENDA_FISA_ROLE_ID;
 
   if (!isEdit && !fisaRoleId) {
     await interaction.reply({
       content:
-        "Le rôle FISA n'est pas configuré. Utilise `/planifier config role:<rôle>` pour le définir.",
+        "Le rôle FISA n'est pas configuré. Utilise `/agenda config role:<rôle>` pour le définir.",
       flags: MessageFlags.Ephemeral,
     });
     return;
@@ -139,7 +139,7 @@ export async function handlePlanifierModalSubmit(
   if (!isEdit && !forumChannelId) {
     await interaction.reply({
       content:
-        "Le salon forum n'a pas été configuré. Utilise `/planifier config forum:<salon>` pour le configurer.",
+        "Le salon forum n'a pas été configuré. Utilise `/agenda config forum:<salon>` pour le configurer.",
       flags: MessageFlags.Ephemeral,
     });
     return;
@@ -157,7 +157,7 @@ export async function handlePlanifierModalSubmit(
       if (!eventRecord) {
         await interaction.editReply({
           content:
-            'Impossible de retrouver cet événement. Relance `/planifier list`.',
+            'Impossible de retrouver cet événement. Relance `/agenda list`.',
         });
         return;
       }
@@ -191,7 +191,7 @@ export async function handlePlanifierModalSubmit(
     if (error === 'not-found') {
       await interaction.editReply({
         content:
-          "Le salon forum n'a pas été trouvé. Reconfigure-le avec `/planifier config forum:<salon>`.",
+          "Le salon forum n'a pas été trouvé. Reconfigure-le avec `/agenda config forum:<salon>`.",
       });
       return;
     }
@@ -199,7 +199,7 @@ export async function handlePlanifierModalSubmit(
     if (error === 'wrong-type') {
       await interaction.editReply({
         content:
-          "Le salon forum configuré n'est plus un salon forum. Reconfigure-le avec `/planifier config forum:<salon>`.",
+          "Le salon forum configuré n'est plus un salon forum. Reconfigure-le avec `/agenda config forum:<salon>`.",
       });
       return;
     }
@@ -220,7 +220,7 @@ export async function handlePlanifierModalSubmit(
       content: `L'événement **${scheduledEvent.name}** a été créé !\n\n📅 Événement : ${scheduledEvent.url}\n💬 Discussion : <#${thread.id}>`,
     });
   } catch (error) {
-    logger.error({ error }, 'Failed to create planifier event');
+    logger.error({ error }, 'Failed to create agenda event');
     await interaction.editReply({
       content:
         "Une erreur est survenue lors de la création de l'événement. Vérifie que le bot a les permissions nécessaires.",

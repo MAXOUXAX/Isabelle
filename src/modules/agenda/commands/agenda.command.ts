@@ -14,13 +14,13 @@ import {
 } from './subcommands/delete.subcommand.js';
 import { handleListSubcommand } from './subcommands/list.subcommand.js';
 
-export class PlanifierCommand extends IsabelleAutocompleteCommandBase {
+export class AgendaCommand extends IsabelleAutocompleteCommandBase {
   commandData: SlashCommandSubcommandsOnlyBuilder;
 
   constructor() {
     super();
     this.commandData = new SlashCommandBuilder()
-      .setName('planifier')
+      .setName('agenda')
       .setDescription(
         'Planifier un événement (créé un événement et un salon de forum dédié)',
       )
@@ -49,7 +49,7 @@ export class PlanifierCommand extends IsabelleAutocompleteCommandBase {
       .addSubcommand((subcommand) =>
         subcommand
           .setName('config')
-          .setDescription('Configurer le module planifier')
+          .setDescription('Configurer le module agenda')
           .addChannelOption((option) =>
             option
               .setName('forum')

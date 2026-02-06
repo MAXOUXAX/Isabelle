@@ -7,7 +7,7 @@ import {
 } from 'discord.js';
 
 /**
- * Handle the /planifier config subcommand.
+ * Handle the /agenda config subcommand.
  * Configures the forum channel for events.
  */
 export async function handleConfigSubcommand(
@@ -56,10 +56,9 @@ export async function handleConfigSubcommand(
 
   await configManager.saveGuild(guildId, {
     ...currentConfig,
-    PLANIFIER_FORUM_CHANNEL_ID:
-      forumChannel?.id ?? currentConfig.PLANIFIER_FORUM_CHANNEL_ID,
-    PLANIFIER_FISA_ROLE_ID:
-      fisaRole?.id ?? currentConfig.PLANIFIER_FISA_ROLE_ID,
+    AGENDA_FORUM_CHANNEL_ID:
+      forumChannel?.id ?? currentConfig.AGENDA_FORUM_CHANNEL_ID,
+    AGENDA_FISA_ROLE_ID: fisaRole?.id ?? currentConfig.AGENDA_FISA_ROLE_ID,
   });
 
   if (forumChannel) {

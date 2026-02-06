@@ -3,12 +3,12 @@ import { agendaEvents } from '@/db/schema.js';
 import {
   DEFAULT_AGENDA_EMOJI,
   agendaAssistant,
-} from '@/modules/planifier/services/ai/agenda-assistant.js';
+} from '@/modules/agenda/services/ai/agenda-assistant.js';
 import {
   formatFrenchDate,
   isDeadlineMode,
-} from '@/modules/planifier/utils/date-parser.js';
-import { parseUrl } from '@/modules/planifier/utils/url-parser.js';
+} from '@/modules/agenda/utils/date-parser.js';
+import { parseUrl } from '@/modules/agenda/utils/url-parser.js';
 import { buildAiFooter } from '@/utils/ai-footer.js';
 import { createLogger } from '@/utils/logger.js';
 import {

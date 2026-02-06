@@ -1,7 +1,7 @@
 import { db } from '@/db/index.js';
 import { agendaEvents } from '@/db/schema.js';
 import { configManager } from '@/manager/config.manager.js';
-import { deleteAgendaEventResources } from '@/modules/planifier/services/agenda.service.js';
+import { deleteAgendaEventResources } from '@/modules/agenda/services/agenda.service.js';
 import {
   AutocompleteOptionHandler,
   filterAutocompleteChoices,
@@ -10,7 +10,7 @@ import { createLogger } from '@/utils/logger.js';
 import { ChatInputCommandInteraction, Guild, MessageFlags } from 'discord.js';
 import { and, eq } from 'drizzle-orm';
 
-const logger = createLogger('planifier-delete');
+const logger = createLogger('agenda-delete');
 
 // Discord has a 3-second timeout for autocomplete responses
 // We use a slightly shorter timeout to ensure we respond in time
@@ -102,7 +102,7 @@ export async function handleDeleteSubcommand(
     if (!eventRecord) {
       await interaction.reply({
         content:
-          'Impossible de retrouver cet événement. Utilise `/planifier list` pour actualiser la liste.',
+          'Impossible de retrouver cet événement. Utilise `/agenda list` pour actualiser la liste.',
         flags: MessageFlags.Ephemeral,
       });
       return;
@@ -112,7 +112,7 @@ export async function handleDeleteSubcommand(
     const { eventName, threadDeleted } = await deleteAgendaEventResources({
       guild: interaction.guild,
       eventId: eventRecord.discordEventId,
-      forumChannelId: config.PLANIFIER_FORUM_CHANNEL_ID,
+      forumChannelId: config.AGENDA_FORUM_CHANNEL_ID,
       eventRecord,
     });
 
