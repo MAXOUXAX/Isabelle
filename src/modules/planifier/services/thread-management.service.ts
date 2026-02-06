@@ -215,10 +215,3 @@ export function startThreadManagementService(): void {
 /**
  * Stops the periodic check for threads to close.
  */
-export function stopThreadAutoCloseService(): void {
-  if (checkIntervalId !== null) {
-    clearInterval(checkIntervalId);
-    checkIntervalId = null;
-    logger.info('Stopped thread auto-close service');
-  }
-}

@@ -15,6 +15,7 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  ChannelType,
   ForumChannel,
   Guild,
   GuildScheduledEvent,
@@ -23,7 +24,7 @@ import {
   ThreadAutoArchiveDuration,
   ThreadChannel,
 } from 'discord.js';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, gte } from 'drizzle-orm';
 
 const logger = createLogger('agenda-service');
 
@@ -302,6 +303,8 @@ interface ThreadMessagePayload {
   aiFooter?: string;
 }
 
+type AgendaEventRecord = typeof agendaEvents.$inferSelect;
+
 function buildThreadMessage({
   eventLabel,
   eventDescription,
@@ -374,6 +377,114 @@ async function saveAgendaEvent(
         threadClosed: false,
       },
     });
+}
+
+export async function fetchUpcomingAgendaEvents(
+  guildId: string,
+  referenceDate: Date = new Date(),
+): Promise<AgendaEventRecord[]> {
+  return db
+    .select()
+    .from(agendaEvents)
+    .where(
+      and(
+        eq(agendaEvents.guildId, guildId),
+        gte(agendaEvents.eventEndTime, referenceDate),
+      ),
+    )
+    .orderBy(agendaEvents.eventStartTime);
+}
+
+export async function findAgendaEventByDiscordId(
+  guildId: string,
+  eventId: string,
+): Promise<AgendaEventRecord | null> {
+  const events = await db
+    .select()
+    .from(agendaEvents)
+    .where(
+      and(
+        eq(agendaEvents.guildId, guildId),
+        eq(agendaEvents.discordEventId, eventId),
+      ),
+    )
+    .limit(1);
+
+  return events.at(0) ?? null;
+}
+
+async function deleteAssociatedThread(
+  guild: Guild,
+  threadId: string,
+  eventName: string,
+): Promise<boolean> {
+  try {
+    const thread = await guild.channels.fetch(threadId);
+    if (thread?.isThread()) {
+      await thread.delete(`Suppression de l'événement associé: ${eventName}`);
+      return true;
+    }
+  } catch (error) {
+    logger.warn(
+      { error, threadId },
+      'Failed to delete associated thread by id',
+    );
+  }
+
+  return false;
+}
+
+export async function deleteAgendaEventResources({
+  guild,
+  eventId,
+  forumChannelId,
+  eventRecord,
+}: {
+  guild: Guild;
+  eventId: string;
+  forumChannelId?: string | null;
+  eventRecord?: AgendaEventRecord | null;
+}): Promise<{ eventName: string; threadDeleted: boolean }> {
+  const record =
+    eventRecord ?? (await findAgendaEventByDiscordId(guild.id, eventId));
+
+  const scheduledEvent = await guild.scheduledEvents.fetch(eventId);
+  const eventName = scheduledEvent.name;
+
+  await scheduledEvent.delete();
+  await deleteAgendaEvent(guild.id, eventId);
+
+  let threadDeleted = false;
+
+  if (record?.discordThreadId) {
+    threadDeleted = await deleteAssociatedThread(
+      guild,
+      record.discordThreadId,
+      eventName,
+    );
+  } else if (forumChannelId) {
+    try {
+      const forum = await guild.channels.fetch(forumChannelId);
+      if (forum?.type === ChannelType.GuildForum) {
+        const { threads } = await forum.threads.fetchActive();
+        const matchingThread = threads.find((t) => t.name.includes(eventName));
+
+        if (matchingThread) {
+          await matchingThread.delete(
+            `Suppression de l'événement associé: ${eventName}`,
+          );
+          threadDeleted = true;
+        }
+      }
+    } catch (error) {
+      logger.warn(
+        { error, forumChannelId },
+        'Failed to find or delete associated forum thread',
+      );
+    }
+  }
+
+  return { eventName, threadDeleted };
 }
 
 /**

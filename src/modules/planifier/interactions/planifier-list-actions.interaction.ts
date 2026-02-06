@@ -1,15 +1,17 @@
-import { db } from '@/db/index.js';
-import { agendaEvents } from '@/db/schema.js';
+import { configManager } from '@/manager/config.manager.js';
 import { InteractionHandler } from '@/modules/bot-module.js';
 import {
   buildPlanifierModal,
   PLANIFIER_MODAL_CUSTOM_ID,
 } from '@/modules/planifier/commands/subcommands/create.subcommand.js';
 import { PLANIFIER_EVENT_ACTION_ID } from '@/modules/planifier/messages/planifier-list-message.js';
+import {
+  deleteAgendaEventResources,
+  findAgendaEventByDiscordId,
+} from '@/modules/planifier/services/agenda.service.js';
 import { formatDateRangeInput } from '@/modules/planifier/utils/date-parser.js';
 import { createLogger } from '@/utils/logger.js';
 import { Interaction, MessageFlags } from 'discord.js';
-import { and, eq } from 'drizzle-orm';
 
 const logger = createLogger('planifier-list-actions');
 
@@ -41,18 +43,10 @@ export class PlanifierListActionsHandler implements InteractionHandler {
       return;
     }
 
-    const events = (await db
-      .select()
-      .from(agendaEvents)
-      .where(
-        and(
-          eq(agendaEvents.guildId, interaction.guildId),
-          eq(agendaEvents.discordEventId, eventId),
-        ),
-      )
-      .limit(1)) as (typeof agendaEvents.$inferSelect)[];
-
-    const event = events.at(0);
+    const event = await findAgendaEventByDiscordId(
+      interaction.guildId,
+      eventId,
+    );
 
     if (!event) {
       await interaction.reply({
@@ -82,38 +76,13 @@ export class PlanifierListActionsHandler implements InteractionHandler {
     if (action === 'delete') {
       await interaction.deferReply({ flags: MessageFlags.Ephemeral });
       try {
-        const scheduledEvent =
-          await interaction.guild.scheduledEvents.fetch(eventId);
-        const eventName = scheduledEvent.name;
-
-        await scheduledEvent.delete();
-
-        await db
-          .delete(agendaEvents)
-          .where(
-            and(
-              eq(agendaEvents.guildId, interaction.guildId),
-              eq(agendaEvents.discordEventId, eventId),
-            ),
-          );
-
-        let threadDeleted = false;
-        try {
-          const thread = await interaction.guild.channels.fetch(
-            event.discordThreadId,
-          );
-          if (thread?.isThread()) {
-            await thread.delete(
-              `Suppression de l'événement associé: ${eventName}`,
-            );
-            threadDeleted = true;
-          }
-        } catch (threadError) {
-          logger.warn(
-            { error: threadError, eventId },
-            'Failed to delete associated thread',
-          );
-        }
+        const config = configManager.getGuild(interaction.guildId);
+        const { eventName, threadDeleted } = await deleteAgendaEventResources({
+          guild: interaction.guild,
+          eventId,
+          forumChannelId: config.PLANIFIER_FORUM_CHANNEL_ID,
+          eventRecord: event,
+        });
 
         await interaction.editReply({
           content: `L'événement **${eventName}** a été supprimé.${

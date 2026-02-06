@@ -1,13 +1,11 @@
-import { db } from '@/db/index.js';
-import { agendaEvents } from '@/db/schema.js';
 import { InteractionHandler } from '@/modules/bot-module.js';
 import {
   buildEventDetailMessage,
   PLANIFIER_EVENT_SELECT_ID,
 } from '@/modules/planifier/messages/planifier-list-message.js';
+import { fetchUpcomingAgendaEvents } from '@/modules/planifier/services/agenda.service.js';
 import { createLogger } from '@/utils/logger.js';
 import { Interaction, MessageFlags } from 'discord.js';
-import { and, eq, gte } from 'drizzle-orm';
 
 const logger = createLogger('planifier-list-navigation');
 
@@ -44,17 +42,9 @@ export class PlanifierListNavigationHandler implements InteractionHandler {
     }
 
     try {
-      const now = new Date();
-      const upcomingEvents = await db
-        .select()
-        .from(agendaEvents)
-        .where(
-          and(
-            eq(agendaEvents.guildId, interaction.guild.id),
-            gte(agendaEvents.eventEndTime, now),
-          ),
-        )
-        .orderBy(agendaEvents.eventStartTime);
+      const upcomingEvents = await fetchUpcomingAgendaEvents(
+        interaction.guild.id,
+      );
 
       const selectedEvent = upcomingEvents.find(
         (event) => event.discordEventId === selectedEventId,

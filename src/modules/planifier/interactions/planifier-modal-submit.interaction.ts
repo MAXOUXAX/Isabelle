@@ -1,5 +1,3 @@
-import { db } from '@/db/index.js';
-import { agendaEvents } from '@/db/schema.js';
 import { configManager } from '@/manager/config.manager.js';
 import {
   AI_OPTIONS_CUSTOM_ID,
@@ -7,6 +5,7 @@ import {
 } from '@/modules/planifier/commands/subcommands/create.subcommand.js';
 import {
   createAgendaEvent,
+  findAgendaEventByDiscordId,
   updateAgendaEvent,
 } from '@/modules/planifier/services/agenda.service.js';
 import { parseDateRange } from '@/modules/planifier/utils/date-parser.js';
@@ -19,7 +18,6 @@ import {
   Interaction,
   MessageFlags,
 } from 'discord.js';
-import { and, eq } from 'drizzle-orm';
 
 const logger = createLogger('planifier-modal-submit');
 
@@ -151,26 +149,18 @@ export async function handlePlanifierModalSubmit(
 
   try {
     if (isEdit && editEventId) {
-      const events = await db
-        .select()
-        .from(agendaEvents)
-        .where(
-          and(
-            eq(agendaEvents.guildId, guildId),
-            eq(agendaEvents.discordEventId, editEventId),
-          ),
-        )
-        .limit(1);
+      const eventRecord = await findAgendaEventByDiscordId(
+        guildId,
+        editEventId,
+      );
 
-      if (events.length === 0) {
+      if (!eventRecord) {
         await interaction.editReply({
           content:
             'Impossible de retrouver cet événement. Relance `/planifier list`.',
         });
         return;
       }
-
-      const [eventRecord] = events;
 
       const { scheduledEvent, thread } = await updateAgendaEvent({
         guild: interaction.guild,
