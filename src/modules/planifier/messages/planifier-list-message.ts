@@ -1,6 +1,8 @@
 import { agendaEvents } from '@/db/schema.js';
 import { colors, emojis } from '@/utils/theme.js';
 import {
+  ButtonBuilder,
+  ButtonStyle,
   ContainerBuilder,
   SeparatorSpacingSize,
   StringSelectMenuBuilder,
@@ -8,6 +10,7 @@ import {
 } from 'discord.js';
 
 export const PLANIFIER_EVENT_SELECT_ID = 'planifier:event-select';
+export const PLANIFIER_EVENT_ACTION_ID = 'planifier:event';
 
 type AgendaEvent = typeof agendaEvents.$inferSelect;
 
@@ -129,6 +132,22 @@ export function buildEventDetailMessage(
     const selectMenu = buildEventSelectMenu(allEvents);
     container.addActionRowComponents((row) => row.addComponents(selectMenu));
   }
+
+  const editButton = new ButtonBuilder()
+    .setCustomId(`${PLANIFIER_EVENT_ACTION_ID}:edit:${event.discordEventId}`)
+    .setLabel('Modifier')
+    .setEmoji('✏️')
+    .setStyle(ButtonStyle.Primary);
+
+  const deleteButton = new ButtonBuilder()
+    .setCustomId(`${PLANIFIER_EVENT_ACTION_ID}:delete:${event.discordEventId}`)
+    .setLabel('Supprimer')
+    .setEmoji('🗑️')
+    .setStyle(ButtonStyle.Danger);
+
+  container.addActionRowComponents((row) =>
+    row.addComponents(editButton, deleteButton),
+  );
 
   // Event details
   const location = event.location;

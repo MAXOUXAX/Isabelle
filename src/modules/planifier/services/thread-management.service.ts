@@ -3,7 +3,7 @@ import { agendaEvents } from '@/db/schema.js';
 import { client } from '@/index.js';
 import { createLogger } from '@/utils/logger.js';
 import { ChannelType } from 'discord.js';
-import { and, eq, lte } from 'drizzle-orm';
+import { and, eq, gte, lte } from 'drizzle-orm';
 
 const logger = createLogger('thread-auto-close');
 
@@ -104,6 +104,61 @@ async function checkAndCloseThreads(): Promise<void> {
   }
 }
 
+/**
+ * Reopens archived threads for upcoming events to prevent auto-archive deletion.
+ */
+async function keepThreadsAlive(): Promise<void> {
+  const now = new Date();
+
+  const threadsToKeep = await db
+    .select()
+    .from(agendaEvents)
+    .where(
+      and(
+        eq(agendaEvents.threadClosed, false),
+        gte(agendaEvents.eventEndTime, now),
+      ),
+    );
+
+  if (threadsToKeep.length === 0) {
+    return;
+  }
+
+  for (const record of threadsToKeep) {
+    try {
+      const guild = await client.guilds.fetch(record.guildId);
+      const thread = await guild.channels.fetch(record.discordThreadId);
+
+      if (!thread?.isThread()) {
+        continue;
+      }
+
+      if (!thread.archived) {
+        continue;
+      }
+
+      await thread.setArchived(
+        false,
+        "Réouverture automatique jusqu'à la fin de l'événement",
+      );
+
+      logger.info(
+        {
+          threadId: record.discordThreadId,
+          threadName: thread.name,
+          guildId: record.guildId,
+        },
+        'Thread reopened to keep event active',
+      );
+    } catch (error) {
+      logger.error(
+        { error, threadId: record.discordThreadId, guildId: record.guildId },
+        'Failed to keep thread alive',
+      );
+    }
+  }
+}
+
 async function markThreadAsClosed(
   guildId: string,
   eventId: string,
@@ -125,15 +180,15 @@ let checkIntervalId: ReturnType<typeof setInterval> | null = null;
  * Starts the periodic check for threads to close.
  * Should be called once when the bot starts.
  */
-export function startThreadAutoCloseService(): void {
+export function startThreadManagementService(): void {
   if (checkIntervalId !== null) {
-    logger.warn('Thread auto-close service already running');
+    logger.warn('Thread management service already running');
     return;
   }
 
   logger.info(
     { intervalMs: CHECK_INTERVAL_MS, delayMs: CLOSE_DELAY_MS },
-    'Starting thread auto-close service',
+    'Starting thread management service',
   );
 
   // Run immediately on start
@@ -141,10 +196,18 @@ export function startThreadAutoCloseService(): void {
     logger.error({ error }, 'Error during initial thread auto-close check');
   });
 
+  keepThreadsAlive().catch((error: unknown) => {
+    logger.error({ error }, 'Error during initial thread keep-alive check');
+  });
+
   // Then run periodically
   checkIntervalId = setInterval(() => {
     checkAndCloseThreads().catch((error: unknown) => {
       logger.error({ error }, 'Error during periodic thread auto-close check');
+    });
+
+    keepThreadsAlive().catch((error: unknown) => {
+      logger.error({ error }, 'Error during periodic thread keep-alive check');
     });
   }, CHECK_INTERVAL_MS);
 }

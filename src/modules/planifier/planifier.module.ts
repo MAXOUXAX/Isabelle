@@ -1,8 +1,9 @@
 import { IsabelleModule, ModuleContributor } from '@/modules/bot-module.js';
 import { PlanifierCommand } from './commands/planifier.command.js';
+import { PlanifierListActionsHandler } from './interactions/planifier-list-actions.interaction.js';
 import { PlanifierListNavigationHandler } from './interactions/planifier-list-navigation.interaction.js';
 import { handlePlanifierModalSubmit } from './interactions/planifier-modal-submit.interaction.js';
-import { startThreadAutoCloseService } from './services/thread-auto-close.service.js';
+import { startThreadManagementService } from './services/thread-management.service.js';
 
 export class PlanifierModule extends IsabelleModule {
   readonly name = 'planifier';
@@ -23,9 +24,10 @@ export class PlanifierModule extends IsabelleModule {
         customId: 'planifier-modal',
         handle: handlePlanifierModalSubmit.bind(this),
       },
+      new PlanifierListActionsHandler(),
       new PlanifierListNavigationHandler(),
     ]);
 
-    startThreadAutoCloseService();
+    startThreadManagementService();
   }
 }

@@ -102,6 +102,20 @@ export function formatFrenchDate(date: Date): string {
   });
 }
 
+function pad2(value: number): string {
+  return String(value).padStart(2, '0');
+}
+
+export function formatDateInput(date: Date): string {
+  const day = pad2(date.getDate());
+  const month = pad2(date.getMonth() + 1);
+  const year = String(date.getFullYear());
+  const hour = pad2(date.getHours());
+  const minute = pad2(date.getMinutes());
+
+  return `${day}/${month}/${year} ${hour}:${minute}`;
+}
+
 export const ONE_MINUTE_MS = 60 * 1000;
 
 /**
@@ -110,4 +124,12 @@ export const ONE_MINUTE_MS = 60 * 1000;
 export function isDeadlineMode(startDate: Date, endDate: Date): boolean {
   const diffMs = endDate.getTime() - startDate.getTime();
   return diffMs <= ONE_MINUTE_MS;
+}
+
+export function formatDateRangeInput(startDate: Date, endDate: Date): string {
+  if (isDeadlineMode(startDate, endDate)) {
+    return formatDateInput(startDate);
+  }
+
+  return `${formatDateInput(startDate)} - ${formatDateInput(endDate)}`;
 }
