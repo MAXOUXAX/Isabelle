@@ -31,9 +31,19 @@ export async function handleConfigSubcommand(
     return;
   }
 
-  const forumChannel = interaction.options.getChannel('forum', true);
+  const forumChannel = interaction.options.getChannel('forum');
+  const fisaRole = interaction.options.getRole('role');
 
-  if (forumChannel.type !== ChannelType.GuildForum) {
+  if (!forumChannel && !fisaRole) {
+    await interaction.reply({
+      content:
+        'Tu dois fournir au moins un paramètre : un salon forum ou un rôle FISA.',
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  if (forumChannel && forumChannel.type !== ChannelType.GuildForum) {
     await interaction.reply({
       content: 'Le salon choisi doit être un salon forum.',
       flags: MessageFlags.Ephemeral,
@@ -42,13 +52,26 @@ export async function handleConfigSubcommand(
   }
 
   const currentConfig = configManager.getGuild(guildId);
+  const updates: string[] = [];
+
   await configManager.saveGuild(guildId, {
     ...currentConfig,
-    PLANIFIER_FORUM_CHANNEL_ID: forumChannel.id,
+    PLANIFIER_FORUM_CHANNEL_ID:
+      forumChannel?.id ?? currentConfig.PLANIFIER_FORUM_CHANNEL_ID,
+    PLANIFIER_FISA_ROLE_ID:
+      fisaRole?.id ?? currentConfig.PLANIFIER_FISA_ROLE_ID,
   });
 
+  if (forumChannel) {
+    updates.push(`Salon forum : <#${forumChannel.id}>`);
+  }
+
+  if (fisaRole) {
+    updates.push(`Rôle FISA : <@&${fisaRole.id}>`);
+  }
+
   await interaction.reply({
-    content: `Le salon forum a été configuré : <#${forumChannel.id}>`,
+    content: `Configuration mise à jour ✅\n${updates.join('\n')}`,
     flags: MessageFlags.Ephemeral,
   });
 }

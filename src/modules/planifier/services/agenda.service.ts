@@ -33,6 +33,7 @@ interface CreateAgendaEventParams {
   eventLocation: string;
   startDate: Date;
   endDate: Date;
+  roleId?: string;
 }
 
 interface CreateAgendaEventResult {
@@ -48,6 +49,7 @@ export async function createAgendaEvent({
   eventLocation,
   startDate,
   endDate,
+  roleId,
 }: CreateAgendaEventParams): Promise<CreateAgendaEventResult> {
   logger.debug({ eventLabel, eventDescription }, 'Enhancing event with AI');
 
@@ -79,7 +81,13 @@ export async function createAgendaEvent({
   const deadlineMode = isDeadlineMode(startDate, endDate);
   const formattedStartDate = formatFrenchDate(startDate);
 
-  let messageContent = `## ${emoji} ${eventLabel}\n\n`;
+  let messageContent = '';
+
+  if (roleId) {
+    messageContent += `<@&${roleId}>\n`;
+  }
+
+  messageContent += `## ${emoji} ${eventLabel}\n\n`;
   messageContent += `${eventDescription}\n\n`;
   messageContent += `**📍 Lieu :** ${eventLocation}\n`;
 

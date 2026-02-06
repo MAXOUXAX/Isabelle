@@ -55,7 +55,13 @@ export class PlanifierCommand extends IsabelleAutocompleteCommandBase {
               .setName('forum')
               .setDescription('Le salon forum pour les événements')
               .addChannelTypes(ChannelType.GuildForum)
-              .setRequired(true),
+              .setRequired(false),
+          )
+          .addRoleOption((option) =>
+            option
+              .setName('role')
+              .setDescription('Le rôle FISA à mentionner sur les événements')
+              .setRequired(false),
           ),
       );
   }

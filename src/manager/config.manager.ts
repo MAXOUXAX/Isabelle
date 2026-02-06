@@ -58,6 +58,7 @@ export interface GuildConfig {
   HOT_POTATO_ROLE_ID?: string;
   HOT_POTATO_TIMEOUT_DURATION?: number;
   PLANIFIER_FORUM_CHANNEL_ID?: string;
+  PLANIFIER_FISA_ROLE_ID?: string;
 }
 
 export const configManager = new ConfigManager();
