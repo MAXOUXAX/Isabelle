@@ -10,6 +10,7 @@ import {
   checkRoastQuota,
   recordRoastUsage,
 } from '@/modules/roast/command/services/roast-throttle.js';
+import { buildAiFooter } from '@/utils/ai-footer.js';
 import { environment } from '@/utils/environment.js';
 import { createLogger } from '@/utils/logger.js';
 import { fetchLastUserMessages } from '@/utils/message-picker.js';
@@ -130,21 +131,12 @@ export class RoastCommand implements IsabelleCommand {
           ? '\n-# *Cooldown contourné - environnement de développement*'
           : '';
 
-      const now = new Date();
-      const generationDateTime = now.toLocaleString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
+      const metadataNote = buildAiFooter({
+        disclaimer:
+          "Ce contenu a été généré par une intelligence artificielle et peut être inexact ou inapproprié. Isabelle n'est pas responsable des propos tenus.",
+        totalTokens: roastResult.totalTokens,
+        modelVersion: roastResult.modelVersion,
       });
-
-      const modelInfo = roastResult.modelVersion
-        ? ` • ${roastResult.modelVersion}`
-        : '';
-
-      const metadataNote = `\n\n-# Ce contenu a été généré par une intelligence artificielle et peut être inexact ou inapproprié. Isabelle n'est pas responsable des propos tenus.\n-# ${generationDateTime}${modelInfo} • ${roastResult.totalTokens.toString()} tokens`;
 
       await safelySendMessage(
         interaction,
