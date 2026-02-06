@@ -12,6 +12,8 @@ import {
   handleDeleteAutocomplete,
   handleDeleteSubcommand,
 } from './subcommands/delete.subcommand.js';
+import { handleListSubcommand } from './subcommands/list.subcommand.js';
+
 export class PlanifierCommand extends IsabelleAutocompleteCommandBase {
   commandData: SlashCommandSubcommandsOnlyBuilder;
 
@@ -26,6 +28,11 @@ export class PlanifierCommand extends IsabelleAutocompleteCommandBase {
         subcommand
           .setName('create')
           .setDescription('Créer un nouvel événement'),
+      )
+      .addSubcommand((subcommand) =>
+        subcommand
+          .setName('list')
+          .setDescription('Afficher la liste des événements planifiés'),
       )
       .addSubcommand((subcommand) =>
         subcommand
@@ -70,6 +77,9 @@ export class PlanifierCommand extends IsabelleAutocompleteCommandBase {
     switch (subcommand) {
       case 'create':
         await handleCreateSubcommand(interaction);
+        break;
+      case 'list':
+        await handleListSubcommand(interaction);
         break;
       case 'delete':
         await handleDeleteSubcommand(interaction);
