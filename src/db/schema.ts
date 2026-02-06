@@ -82,3 +82,17 @@ export const russianRouletteStats = sqliteTable(
     ),
   ],
 );
+
+export const reminders = sqliteTable(
+  'reminders',
+  {
+    id: int('id').primaryKey({ autoIncrement: true }),
+    userId: text('user_id').notNull(),
+    guildId: text('guild_id').notNull(),
+    channelId: text('channel_id').notNull(),
+    message: text('message').notNull(),
+    dueAt: int('due_at', { mode: 'timestamp' }).notNull(),
+    ...base(),
+  },
+  (t) => [index('reminders_due_at_idx').on(t.dueAt)],
+);
