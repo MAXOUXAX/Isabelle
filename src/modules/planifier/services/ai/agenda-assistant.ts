@@ -1,5 +1,6 @@
 import { GEMINI_2_5_FLASH } from '@/ai/models/gemini-models.wrapped.js';
 import { createLogger } from '@/utils/logger.js';
+import { extractModelVersion } from '@/utils/model-version.js';
 import { generateText } from 'ai';
 import { AGENDA_ASSISTANT_PROMPT } from '../prompts/agenda-assistant.prompt.js';
 import type { AiAssistant } from './ai-assistant.interface.js';
@@ -18,6 +19,8 @@ export interface AgendaAssistantOutput {
   title: string;
   description: string;
   emoji: string;
+  modelVersion?: string;
+  totalTokens: number;
 }
 
 class AgendaAssistant implements AiAssistant<
@@ -63,11 +66,15 @@ class AgendaAssistant implements AiAssistant<
         typeof parsed.emoji === 'string' &&
         parsed.emoji.length > 0
       ) {
+        const modelVersion = extractModelVersion(result.response.body);
+
         logger.debug({ original: input, enhanced: parsed }, 'Enhanced event');
         return {
           title: parsed.title,
           description: parsed.description,
           emoji: parsed.emoji,
+          modelVersion,
+          totalTokens: result.usage.totalTokens ?? 0,
         };
       }
 

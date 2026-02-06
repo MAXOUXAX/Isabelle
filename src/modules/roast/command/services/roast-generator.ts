@@ -1,6 +1,7 @@
 import { GEMINI_2_5_FLASH } from '@/ai/models/gemini-models.wrapped.js';
 import { ROAST_PROMPT } from '@/modules/roast/command/templates/roast-prompt.js';
 import { createLogger } from '@/utils/logger.js';
+import { extractModelVersion } from '@/utils/model-version.js';
 import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
 import type { Message } from 'discord.js';
@@ -73,13 +74,7 @@ export async function generateRoast({
     'Generated roast result',
   );
 
-  const modelVersion =
-    result.response.body &&
-    typeof result.response.body === 'object' &&
-    'modelVersion' in result.response.body &&
-    typeof result.response.body.modelVersion === 'string'
-      ? result.response.body.modelVersion
-      : undefined;
+  const modelVersion = extractModelVersion(result.response.body);
 
   return {
     text: result.text.trim(),
