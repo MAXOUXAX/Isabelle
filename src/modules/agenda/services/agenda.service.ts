@@ -62,6 +62,9 @@ interface AgendaAssistantResult {
   modelVersion?: string;
 }
 
+const AI_DISCLAIMER =
+  "Ce contenu a été amélioré par une intelligence artificielle et peut contenir des erreurs. Vérifie les informations importantes avant de t'y fier.";
+
 function isAgendaAssistantOutput(
   value: unknown,
 ): value is AgendaAssistantResult {
@@ -81,6 +84,40 @@ function isAgendaAssistantOutput(
   );
 }
 
+interface AiEnhancementResult {
+  title: string;
+  description: string;
+  emoji: string;
+  footer: string;
+}
+
+async function tryEnhanceWithAi(
+  title: string,
+  description: string,
+): Promise<AiEnhancementResult | null> {
+  logger.debug({ title, description }, 'Enhancing event with AI');
+
+  const result = await agendaAssistant.execute({ title, description });
+
+  if (!isAgendaAssistantOutput(result)) {
+    logger.warn('AI enhancement failed');
+    return null;
+  }
+
+  logger.info({ title, description }, 'Event enhanced with AI');
+
+  return {
+    title: result.title,
+    description: result.description,
+    emoji: result.emoji,
+    footer: buildAiFooter({
+      disclaimer: AI_DISCLAIMER,
+      totalTokens: result.totalTokens,
+      modelVersion: result.modelVersion,
+    }),
+  };
+}
+
 export async function createAgendaEvent({
   guild,
   forumChannel,
@@ -92,38 +129,22 @@ export async function createAgendaEvent({
   aiOptions = { enhanceText: true, enhanceEmoji: true },
   roleId,
 }: CreateAgendaEventParams): Promise<CreateAgendaEventResult> {
-  let enhanced: AgendaAssistantResult | null = null;
-  let aiUsed = false;
+  const shouldEnhance = aiOptions.enhanceText || aiOptions.enhanceEmoji;
+  const aiResult = shouldEnhance
+    ? await tryEnhanceWithAi(eventLabel, eventDescription)
+    : null;
 
-  if (aiOptions.enhanceText || aiOptions.enhanceEmoji) {
-    logger.debug({ eventLabel, eventDescription }, 'Enhancing event with AI');
-    const enhancedResult = await agendaAssistant.execute({
-      title: eventLabel,
-      description: eventDescription,
-    });
-
-    enhanced = isAgendaAssistantOutput(enhancedResult) ? enhancedResult : null;
-
-    if (enhanced) {
-      aiUsed = true;
-      logger.info({ eventLabel, eventDescription }, 'Event enhanced with AI');
-    } else {
-      logger.warn('AI enhancement failed, using original values');
-    }
-  }
-
-  if (enhanced && aiOptions.enhanceText) {
-    eventLabel = enhanced.title;
-    eventDescription = enhanced.description;
-  }
-
-  const emoji = aiOptions.enhanceEmoji
-    ? (enhanced?.emoji ?? DEFAULT_AGENDA_EMOJI)
-    : DEFAULT_AGENDA_EMOJI;
+  const finalLabel =
+    aiOptions.enhanceText && aiResult ? aiResult.title : eventLabel;
+  const finalDescription =
+    aiOptions.enhanceText && aiResult ? aiResult.description : eventDescription;
+  const emoji =
+    aiOptions.enhanceEmoji && aiResult ? aiResult.emoji : DEFAULT_AGENDA_EMOJI;
+  const aiFooter = aiResult?.footer;
 
   const scheduledEvent = await guild.scheduledEvents.create({
-    name: eventLabel,
-    description: eventDescription,
+    name: finalLabel,
+    description: finalDescription,
     entityType: GuildScheduledEventEntityType.External,
     scheduledStartTime: startDate,
     scheduledEndTime: endDate,
@@ -131,21 +152,9 @@ export async function createAgendaEvent({
     privacyLevel: GuildScheduledEventPrivacyLevel.GuildOnly,
   });
 
-  const aiTokens = enhanced?.totalTokens ?? 0;
-  const aiModelVersion = enhanced?.modelVersion;
-
-  const aiFooter = aiUsed
-    ? buildAiFooter({
-        disclaimer:
-          "Ce contenu a été amélioré par une intelligence artificielle et peut contenir des erreurs. Vérifie les informations importantes avant de t'y fier.",
-        totalTokens: aiTokens,
-        modelVersion: aiModelVersion,
-      })
-    : undefined;
-
   const { messageContent, components, threadName } = buildThreadMessage({
-    eventLabel,
-    eventDescription,
+    eventLabel: finalLabel,
+    eventDescription: finalDescription,
     eventLocation,
     startDate,
     endDate,
@@ -163,8 +172,8 @@ export async function createAgendaEvent({
   await saveAgendaEvent({
     guildId: guild.id,
     emoji,
-    title: eventLabel,
-    description: eventDescription,
+    title: finalLabel,
+    description: finalDescription,
     location: eventLocation,
     discordEventId: scheduledEvent.id,
     discordThreadId: thread.id,
@@ -202,59 +211,30 @@ export async function updateAgendaEvent({
   baseEmoji,
   threadId,
 }: UpdateAgendaEventParams): Promise<CreateAgendaEventResult> {
-  let enhanced: AgendaAssistantResult | null = null;
-  let aiUsed = false;
+  const shouldEnhance = aiOptions.enhanceText || aiOptions.enhanceEmoji;
+  const aiResult = shouldEnhance
+    ? await tryEnhanceWithAi(eventLabel, eventDescription)
+    : null;
 
-  if (aiOptions.enhanceText || aiOptions.enhanceEmoji) {
-    logger.debug({ eventLabel, eventDescription }, 'Enhancing event with AI');
-    const enhancedResult = await agendaAssistant.execute({
-      title: eventLabel,
-      description: eventDescription,
-    });
-
-    enhanced = isAgendaAssistantOutput(enhancedResult) ? enhancedResult : null;
-
-    if (enhanced) {
-      aiUsed = true;
-      logger.info({ eventLabel, eventDescription }, 'Event enhanced with AI');
-    } else {
-      logger.warn('AI enhancement failed, using original values');
-    }
-  }
-
-  if (enhanced && aiOptions.enhanceText) {
-    eventLabel = enhanced.title;
-    eventDescription = enhanced.description;
-  }
-
-  const emoji = aiOptions.enhanceEmoji
-    ? (enhanced?.emoji ?? baseEmoji)
-    : baseEmoji;
+  const finalLabel =
+    aiOptions.enhanceText && aiResult ? aiResult.title : eventLabel;
+  const finalDescription =
+    aiOptions.enhanceText && aiResult ? aiResult.description : eventDescription;
+  const emoji = aiOptions.enhanceEmoji && aiResult ? aiResult.emoji : baseEmoji;
+  const aiFooter = aiResult?.footer;
 
   const scheduledEvent = await guild.scheduledEvents.fetch(eventId);
   await scheduledEvent.edit({
-    name: eventLabel,
-    description: eventDescription,
+    name: finalLabel,
+    description: finalDescription,
     scheduledStartTime: startDate,
     scheduledEndTime: endDate,
     entityMetadata: { location: eventLocation },
   });
 
-  const aiTokens = enhanced?.totalTokens ?? 0;
-  const aiModelVersion = enhanced?.modelVersion;
-
-  const aiFooter = aiUsed
-    ? buildAiFooter({
-        disclaimer:
-          "Ce contenu a été amélioré par une intelligence artificielle et peut contenir des erreurs. Vérifie les informations importantes avant de t'y fier.",
-        totalTokens: aiTokens,
-        modelVersion: aiModelVersion,
-      })
-    : undefined;
-
   const { messageContent, components, threadName } = buildThreadMessage({
-    eventLabel,
-    eventDescription,
+    eventLabel: finalLabel,
+    eventDescription: finalDescription,
     eventLocation,
     startDate,
     endDate,
@@ -278,8 +258,8 @@ export async function updateAgendaEvent({
   await db
     .update(agendaEvents)
     .set({
-      title: eventLabel,
-      description: eventDescription,
+      title: finalLabel,
+      description: finalDescription,
       location: eventLocation,
       emoji,
       eventStartTime: startDate,
