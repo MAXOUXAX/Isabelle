@@ -1,6 +1,7 @@
 import { db } from '@/db/index.js';
 import { automaticResponses } from '@/db/schema.js';
 import { cacheStore } from '@/utils/cache.js';
+import { HOUR_IN_MS } from '@/utils/date.js';
 import { Message } from 'discord.js';
 import { eq, isNull } from 'drizzle-orm';
 
@@ -34,7 +35,7 @@ async function getCachedResponses(guildId: string | null) {
   const globalCacheKey = `automatic-responses-global`;
   const globalCacheEntry = cacheStore.useCache<
     (typeof automaticResponses.$inferSelect)[]
-  >(globalCacheKey, () => queryAutomaticResponses(null));
+  >(globalCacheKey, () => queryAutomaticResponses(null), HOUR_IN_MS);
 
   if (guildId == null) {
     const globalResponses = await globalCacheEntry.get();
@@ -45,7 +46,7 @@ async function getCachedResponses(guildId: string | null) {
   const guildCacheKey = `automatic-responses-guild-${guildId}`;
   const guildCacheEntry = cacheStore.useCache<
     (typeof automaticResponses.$inferSelect)[]
-  >(guildCacheKey, () => queryAutomaticResponses(guildId));
+  >(guildCacheKey, () => queryAutomaticResponses(guildId), HOUR_IN_MS);
 
   const [guildResponses, globalResponses] = await Promise.all([
     guildCacheEntry.get(),
@@ -147,7 +148,10 @@ async function checkAndSendResponse(
   const randomResponse =
     responses[Math.floor(Math.random() * responses.length)];
 
-  await message.reply(randomResponse);
+  await message.reply({
+    content: randomResponse,
+    allowedMentions: { parse: [] },
+  });
   return true;
 }
 
