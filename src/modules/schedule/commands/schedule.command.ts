@@ -18,12 +18,11 @@ import {
   TimestampStyles,
 } from 'discord.js';
 
-const formatDateInput = (date: Date): string => {
-  const formatter = Intl.DateTimeFormat('fr-FR', {
-    dateStyle: 'full',
-  });
-  return formatter.format(date);
-};
+const autocompleteDisplayFormatter = new Intl.DateTimeFormat('fr-FR', {
+  dateStyle: 'full',
+});
+
+const autocompleteValueFormatter = new Intl.DateTimeFormat('fr-FR');
 
 export class ScheduleCommand extends IsabelleAutocompleteCommandBase {
   commandData = new SlashCommandBuilder()
@@ -75,8 +74,8 @@ export class ScheduleCommand extends IsabelleAutocompleteCommandBase {
         const today = new Date();
         const suggestions = Array.from({ length: 90 }, (_, i) => {
           const date = addDays(today, i);
-          const name = formatDateInput(date);
-          const value = date.toLocaleDateString('fr-FR');
+          const name = autocompleteDisplayFormatter.format(date);
+          const value = autocompleteValueFormatter.format(date);
           return { name, value };
         });
 
