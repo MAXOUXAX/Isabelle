@@ -11,7 +11,6 @@ import { createLogger } from '@/utils/logger.js';
 import {
   ChannelType,
   ChatInputCommandInteraction,
-  MessageFlags,
   PermissionFlagsBits,
 } from 'discord.js';
 
@@ -48,6 +47,8 @@ export const handleConfigSubcommand = withAgendaErrorHandling(
     const currentConfig = configManager.getGuild(guildId);
     const updates: string[] = [];
 
+    await interaction.deferReply({ ephemeral: true });
+
     await configManager.saveGuild(guildId, {
       ...currentConfig,
       AGENDA_FORUM_CHANNEL_ID:
@@ -64,9 +65,8 @@ export const handleConfigSubcommand = withAgendaErrorHandling(
       updates.push(`Rôle à mentionner : <@&${roleToMention.id}>`);
     }
 
-    await interaction.reply({
+    await interaction.editReply({
       content: `Configuration mise à jour ✅\n${updates.join('\n')}`,
-      flags: MessageFlags.Ephemeral,
     });
   },
   'Impossible de mettre à jour la configuration pour le moment.',

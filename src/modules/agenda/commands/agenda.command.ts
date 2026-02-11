@@ -26,7 +26,7 @@ export class AgendaCommand extends IsabelleAutocompleteCommandBase {
     this.commandData = new SlashCommandBuilder()
       .setName('agenda')
       .setDescription(
-        'Planifier un événement (créé un événement et un salon de forum dédié)',
+        'Planifier un événement (crée un événement et un salon de forum dédié)',
       )
       .addSubcommand((subcommand) =>
         subcommand

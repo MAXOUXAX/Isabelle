@@ -21,28 +21,37 @@ const wait = (delayMs: number): Promise<void> =>
     setTimeout(resolve, delayMs);
   });
 
-async function archiveThreadWithRetry(
+async function setArchivedWithRetry(
   thread: ThreadChannel,
+  archived: boolean,
   reason: string,
 ): Promise<void> {
   let attempt = 0;
 
   while (attempt <= ARCHIVE_MAX_RETRIES) {
     try {
-      await thread.setArchived(true, reason);
+      await thread.setArchived(archived, reason);
       return;
     } catch (error) {
       const isRateLimit =
         error instanceof DiscordAPIError && error.status === 429;
+      const isServerError =
+        error instanceof DiscordAPIError && error.status >= 500;
+      const isRetryable = isRateLimit || isServerError;
 
-      if (!isRateLimit || attempt === ARCHIVE_MAX_RETRIES) {
+      if (!isRetryable || attempt === ARCHIVE_MAX_RETRIES) {
         throw error;
       }
 
       const backoffMs = ARCHIVE_BACKOFF_BASE_MS * 2 ** attempt;
       logger.warn(
-        { attempt: attempt + 1, threadId: thread.id, backoffMs },
-        'Rate limited while archiving thread, backing off',
+        {
+          attempt: attempt + 1,
+          threadId: thread.id,
+          backoffMs,
+          archived,
+        },
+        'Rate limited while updating thread archive state, backing off',
       );
       await wait(backoffMs);
       attempt += 1;
@@ -98,8 +107,9 @@ async function checkAndCloseThreads(): Promise<void> {
         continue;
       }
 
-      await archiveThreadWithRetry(
+      await setArchivedWithRetry(
         thread,
+        true,
         `Fermeture automatique 24h après la fin de l'événement`,
       );
 
@@ -152,7 +162,8 @@ async function keepThreadsAlive(): Promise<void> {
         continue;
       }
 
-      await thread.setArchived(
+      await setArchivedWithRetry(
+        thread,
         false,
         "Réouverture automatique jusqu'à la fin de l'événement",
       );
@@ -171,6 +182,8 @@ async function keepThreadsAlive(): Promise<void> {
         'Failed to keep thread alive',
       );
     }
+
+    await wait(ARCHIVE_DELAY_MS);
   }
 }
 
@@ -215,7 +228,37 @@ async function fetchThread(
   return channel;
 }
 
-let checkIntervalId: ReturnType<typeof setInterval> | null = null;
+let checkIntervalId: ReturnType<typeof setTimeout> | null = null;
+let isThreadManagementRunning = false;
+
+async function runThreadManagementCycle(): Promise<void> {
+  if (isThreadManagementRunning) {
+    logger.warn('Thread management service already running');
+    return;
+  }
+
+  isThreadManagementRunning = true;
+
+  try {
+    await checkAndCloseThreads();
+  } catch (error) {
+    logger.error({ error }, 'Error during thread auto-close check');
+  }
+
+  try {
+    await keepThreadsAlive();
+  } catch (error) {
+    logger.error({ error }, 'Error during thread keep-alive check');
+  }
+
+  isThreadManagementRunning = false;
+
+  if (checkIntervalId !== null) {
+    checkIntervalId = setTimeout(() => {
+      void runThreadManagementCycle();
+    }, CHECK_INTERVAL_MS);
+  }
+}
 
 /**
  * Starts the periodic check for threads to close.
@@ -232,25 +275,9 @@ export function startThreadManagementService(): void {
     'Starting thread management service',
   );
 
-  // Run immediately on start
-  checkAndCloseThreads().catch((error: unknown) => {
-    logger.error({ error }, 'Error during initial thread auto-close check');
-  });
-
-  keepThreadsAlive().catch((error: unknown) => {
-    logger.error({ error }, 'Error during initial thread keep-alive check');
-  });
-
-  // Then run periodically
-  checkIntervalId = setInterval(() => {
-    checkAndCloseThreads().catch((error: unknown) => {
-      logger.error({ error }, 'Error during periodic thread auto-close check');
-    });
-
-    keepThreadsAlive().catch((error: unknown) => {
-      logger.error({ error }, 'Error during periodic thread keep-alive check');
-    });
-  }, CHECK_INTERVAL_MS);
+  checkIntervalId = setTimeout(() => {
+    void runThreadManagementCycle();
+  }, 0);
 }
 
 /**
@@ -262,7 +289,7 @@ export function stopThreadManagementService(): void {
     return;
   }
 
-  clearInterval(checkIntervalId);
+  clearTimeout(checkIntervalId);
   checkIntervalId = null;
 
   logger.info('Thread management service stopped');

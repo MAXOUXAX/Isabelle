@@ -71,47 +71,78 @@ export async function createAgendaEvent({
     options: aiOptions,
   });
 
-  const scheduledEvent = await guild.scheduledEvents.create({
-    name: title,
-    description,
-    entityType: GuildScheduledEventEntityType.External,
-    scheduledStartTime: startDate,
-    scheduledEndTime: endDate,
-    entityMetadata: { location: eventLocation },
-    privacyLevel: GuildScheduledEventPrivacyLevel.GuildOnly,
-  });
+  let scheduledEvent: GuildScheduledEvent | null = null;
+  let thread: ThreadChannel | null = null;
 
-  const { messageContent, components, threadName } = buildAgendaThreadMessage({
-    eventLabel: title,
-    eventDescription: description,
-    eventLocation,
-    startDate,
-    endDate,
-    emoji,
-    roleId,
-    aiFooter: footer,
-  });
+  try {
+    scheduledEvent = await guild.scheduledEvents.create({
+      name: title,
+      description,
+      entityType: GuildScheduledEventEntityType.External,
+      scheduledStartTime: startDate,
+      scheduledEndTime: endDate,
+      entityMetadata: { location: eventLocation },
+      privacyLevel: GuildScheduledEventPrivacyLevel.GuildOnly,
+    });
 
-  const thread = await forumChannel.threads.create({
-    name: threadName,
-    autoArchiveDuration: ThreadAutoArchiveDuration.OneWeek,
-    message: { content: messageContent, components },
-    reason: `Événement planifié: ${eventLabel}`,
-  });
+    const { messageContent, components, threadName } = buildAgendaThreadMessage(
+      {
+        eventLabel: title,
+        eventDescription: description,
+        eventLocation,
+        startDate,
+        endDate,
+        emoji,
+        roleId,
+        aiFooter: footer,
+      },
+    );
 
-  await upsertAgendaEvent({
-    guildId: guild.id,
-    emoji,
-    title,
-    description,
-    location: eventLocation,
-    discordEventId: scheduledEvent.id,
-    discordThreadId: thread.id,
-    eventStartTime: startDate,
-    eventEndTime: endDate,
-  });
+    thread = await forumChannel.threads.create({
+      name: threadName,
+      autoArchiveDuration: ThreadAutoArchiveDuration.OneWeek,
+      message: { content: messageContent, components },
+      reason: `Événement planifié: ${eventLabel}`,
+    });
 
-  return { scheduledEvent, thread };
+    await upsertAgendaEvent({
+      guildId: guild.id,
+      emoji,
+      title,
+      description,
+      location: eventLocation,
+      discordEventId: scheduledEvent.id,
+      discordThreadId: thread.id,
+      eventStartTime: startDate,
+      eventEndTime: endDate,
+    });
+
+    return { scheduledEvent, thread };
+  } catch (error) {
+    if (thread) {
+      try {
+        await thread.delete("Nettoyage après échec de création de l'événement");
+      } catch (cleanupError) {
+        logger.warn(
+          { error: cleanupError, threadId: thread.id },
+          'Failed to cleanup agenda thread after create error',
+        );
+      }
+    }
+
+    if (scheduledEvent) {
+      try {
+        await scheduledEvent.delete();
+      } catch (cleanupError) {
+        logger.warn(
+          { error: cleanupError, eventId: scheduledEvent.id },
+          'Failed to cleanup scheduled event after create error',
+        );
+      }
+    }
+
+    throw error;
+  }
 }
 
 export async function updateAgendaEvent({
@@ -208,6 +239,10 @@ async function upsertAgendaEvent(
     .onConflictDoUpdate({
       target: [agendaEvents.guildId, agendaEvents.discordEventId],
       set: {
+        title: event.title,
+        description: event.description,
+        location: event.location,
+        emoji: event.emoji,
         discordThreadId: event.discordThreadId,
         eventStartTime: event.eventStartTime,
         eventEndTime: event.eventEndTime,
