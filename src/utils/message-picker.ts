@@ -3,6 +3,7 @@ import type { TextChannel } from 'discord.js';
 import {
   ChannelType,
   Guild,
+  GuildMember,
   Message,
   PermissionFlagsBits,
   Snowflake,
@@ -42,9 +43,18 @@ const isChannelAccessible = (
   channel: TextChannel,
   botMember: Guild['members']['me'],
   botUserId: Snowflake,
+  invokerMember?: GuildMember | null,
 ): boolean => {
   if (!channel.viewable) {
     return false;
+  }
+
+  // Check invoker permissions if provided
+  if (invokerMember) {
+    const invokerPermissions = channel.permissionsFor(invokerMember);
+    if (!invokerPermissions.has(PermissionFlagsBits.ViewChannel)) {
+      return false;
+    }
   }
 
   const permissions = botMember
@@ -68,13 +78,19 @@ const getAccessibleChannels = (
   guild: Guild,
   botMember: Guild['members']['me'],
   botUserId: Snowflake,
+  invokerMember?: GuildMember | null,
 ): TextChannel[] => {
   const textChannels = guild.channels.cache.filter(
     (channel): channel is TextChannel => channel.type === ChannelType.GuildText,
   );
 
   return Array.from(textChannels.values()).filter((channel) => {
-    const accessible = isChannelAccessible(channel, botMember, botUserId);
+    const accessible = isChannelAccessible(
+      channel,
+      botMember,
+      botUserId,
+      invokerMember,
+    );
     if (!accessible) {
       logger.debug(
         { channelId: channel.id, guildId: guild.id },
@@ -201,15 +217,34 @@ export const fetchLastUserMessages = async (
   userId: Snowflake,
   minMessages = 0,
   maxMessages = 100,
+  invokerId?: Snowflake,
 ): Promise<Message[]> => {
   if (!guild) {
     return [];
   }
 
+  let invokerMember: GuildMember | null = null;
+  if (invokerId) {
+    try {
+      invokerMember = await guild.members.fetch(invokerId);
+    } catch (error) {
+      logger.warn(
+        { guildId: guild.id, invokerId, error },
+        'Failed to fetch invoker member',
+      );
+      return [];
+    }
+  }
+
   const botMember = guild.members.me;
   const botUserId = guild.client.user.id;
 
-  const accessibleChannels = getAccessibleChannels(guild, botMember, botUserId);
+  const accessibleChannels = getAccessibleChannels(
+    guild,
+    botMember,
+    botUserId,
+    invokerMember,
+  );
 
   if (accessibleChannels.length === 0) {
     logger.warn(
