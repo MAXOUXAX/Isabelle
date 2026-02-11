@@ -1,6 +1,6 @@
 import { GuildConfig } from '@/manager/config.manager.js';
 import { sql } from 'drizzle-orm';
-import { int, sqliteTable, text, unique, index } from 'drizzle-orm/sqlite-core';
+import { index, int, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
 
 const base = () => {
   return {
@@ -80,5 +80,30 @@ export const russianRouletteStats = sqliteTable(
       t.guildId,
       t.timeoutMinutes,
     ),
+  ],
+);
+
+export const agendaEvents = sqliteTable(
+  'agenda_events',
+  {
+    id: int('id').primaryKey({ autoIncrement: true }),
+    guildId: text('guild_id').notNull(),
+    title: text('title').notNull(),
+    emoji: text('emoji').notNull(),
+    description: text('description').notNull(),
+    location: text('location').notNull(),
+    discordEventId: text('discord_event_id').notNull(),
+    discordThreadId: text('discord_thread_id').notNull(),
+    eventStartTime: int('event_start_time', { mode: 'timestamp' }).notNull(),
+    eventEndTime: int('event_end_time', { mode: 'timestamp' }).notNull(),
+    threadClosed: int('thread_closed', { mode: 'boolean' })
+      .default(false)
+      .notNull(),
+    ...base(),
+  },
+  (t) => [
+    unique().on(t.guildId, t.discordEventId),
+    index('agenda_events_idx').on(t.guildId, t.eventStartTime, t.eventEndTime),
+    index('agenda_events_thread_close_idx').on(t.threadClosed, t.eventEndTime),
   ],
 );
