@@ -1,0 +1,1 @@
+CREATE INDEX `russian_roulette_stats_guild_timeout_idx` ON `russian_roulette_stats` (`guild_id`,`timeout_minutes`);
