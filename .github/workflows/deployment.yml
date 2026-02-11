@@ -64,34 +64,75 @@ jobs:
           echo "panel_host_with_port=$PANEL_HOST_WITH_PORT" >> $GITHUB_OUTPUT
           echo "panel_port=$PANEL_PORT" >> $GITHUB_OUTPUT
 
-      - name: Install Cloudflared
-        run: |
-          curl -L --output cloudflared.deb "https://github.com/cloudflare/cloudflared/releases/download/${CLOUDLARED_VERSION}/cloudflared-linux-amd64.deb"
-          ACTUAL_SHA256="$(shasum -a 256 cloudflared.deb | awk '{print $1}')"
-          if [ "$ACTUAL_SHA256" != "$CLOUDLARED_SHA256" ]; then
-            echo "Error: cloudflared.deb SHA256 mismatch"
-            echo "Expected: $CLOUDLARED_SHA256"
-            echo "Actual:   $ACTUAL_SHA256"
-            exit 1
-          fi
-          sudo dpkg -i cloudflared.deb
-
-      - name: Start Cloudflare Access proxy
+      - name: Start Cloudflare Access Proxy
         env:
           CF_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
           CF_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
           PANEL_HOST: ${{ steps.normalize-panel.outputs.panel_host }}
         run: |
           LOCAL_PORT="8080"
-          echo "Starting cloudflared tunnel on 127.0.0.1:${LOCAL_PORT}..."
-          nohup cloudflared access tcp --hostname "$PANEL_HOST" --url "127.0.0.1:${LOCAL_PORT}" \
-            --service-token-id "$CF_ID" \
-            --service-token-secret "$CF_SECRET" > cloudflared.log 2>&1 &
-          sleep 5
-          echo "Testing panel connectivity via local tunnel..."
+          echo "Starting Node.js Proxy on 127.0.0.1:${LOCAL_PORT} -> ${PANEL_HOST}..."
+
+          # Create simple Node.js proxy script
+          cat << 'EOF' > proxy.cjs
+          const http = require('http');
+          const https = require('https');
+
+          const LOCAL_PORT = 8080;
+          const PROXY_TARGET = process.env.PANEL_HOST;
+          const CF_ID = (process.env.CF_ID || '').trim();
+          const CF_SECRET = (process.env.CF_SECRET || '').trim();
+
+          if (!CF_ID || !CF_SECRET || !PROXY_TARGET) {
+            console.error('Error: Missing required environment variables');
+            process.exit(1);
+          }
+
+          const server = http.createServer((clientReq, clientRes) => {
+            const options = {
+              hostname: PROXY_TARGET,
+              port: 443,
+              path: clientReq.url,
+              method: clientReq.method,
+              headers: {
+                ...clientReq.headers,
+                'CF-Access-Client-Id': CF_ID,
+                'CF-Access-Client-Secret': CF_SECRET,
+                'Host': PROXY_TARGET // IMPORTANT: Override Host header for SNI
+              }
+            };
+
+            const proxyReq = https.request(options, (proxyRes) => {
+              clientRes.writeHead(proxyRes.statusCode, proxyRes.headers);
+              proxyRes.pipe(clientRes, { end: true });
+            });
+
+            proxyReq.on('error', (e) => {
+              console.error(`Proxy Request Error: ${e.message}`);
+              if (!clientRes.headersSent) {
+                clientRes.writeHead(502);
+                clientRes.end('Bad Gateway');
+              }
+            });
+
+            clientReq.pipe(proxyReq, { end: true });
+          });
+
+          server.listen(LOCAL_PORT, '127.0.0.1', () => {
+            console.log(`Node.js Proxy running on http://127.0.0.1:${LOCAL_PORT}`);
+          });
+          EOF
+
+          # Run proxy in background
+          nohup node proxy.cjs > proxy.log 2>&1 &
+
+          echo "Waiting for proxy to start..."
+          sleep 3
+
+          echo "Testing panel connectivity via local proxy..."
           if ! curl -f -I --max-time 5 --retry 5 --retry-delay 2 --retry-all-errors "http://127.0.0.1:${LOCAL_PORT}"; then
-            echo "Cloudflared failed to start. Recent logs:"
-            cat cloudflared.log
+            echo "Proxy failed. Recent logs:"
+            cat proxy.log
             exit 1
           fi
 
