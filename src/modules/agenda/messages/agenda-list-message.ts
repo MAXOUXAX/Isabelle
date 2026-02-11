@@ -133,7 +133,7 @@ export function buildEventDetailMessage(
     .addTextDisplayComponents((text) => text.setContent(header));
 
   // Navigation dropdown
-  if (allEvents.length > 0) {
+  if (allEvents.length > 1) {
     const selectMenu = buildEventSelectMenu(allEvents);
     container.addActionRowComponents((row) => row.addComponents(selectMenu));
   }
@@ -164,9 +164,7 @@ export function buildEventDetailMessage(
     includeHeading: true,
   });
 
-  if (event.discordEventId) {
-    details += `\n[Voir l'événement Discord](https://discord.com/events/${event.guildId}/${event.discordEventId})`;
-  }
+  details += `\n[Voir l'événement Discord](https://discord.com/events/${event.guildId}/${event.discordEventId})`;
 
   container
     .addSeparatorComponents((sep) =>

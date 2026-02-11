@@ -78,7 +78,7 @@ async function replyWithError(
     if (!(error instanceof DiscordAPIError) || error.code !== 10008) {
       throw error;
     }
-    // If the channel was deleted, ignore the reply failure
+    // Ignore reply failures when the message was deleted or is unknown (10008).
   }
 }
 

@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "f743000d-64c3-453d-959e-3d4a9720b2ec",
+  "id": "41537f40-a26f-4076-a487-476f94882d22",
   "prevId": "dc24cec2-56c1-4d5a-bdf2-24a3462237d7",
   "tables": {
     "agenda_events": {
@@ -106,9 +106,16 @@
         "agenda_events_idx": {
           "name": "agenda_events_idx",
           "columns": [
+            "guild_id",
             "event_start_time",
-            "title",
-            "description",
+            "event_end_time"
+          ],
+          "isUnique": false
+        },
+        "agenda_events_thread_close_idx": {
+          "name": "agenda_events_thread_close_idx",
+          "columns": [
+            "thread_closed",
             "event_end_time"
           ],
           "isUnique": false

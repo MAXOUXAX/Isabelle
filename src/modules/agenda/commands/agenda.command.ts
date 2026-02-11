@@ -1,8 +1,10 @@
 import { IsabelleAutocompleteCommandBase } from '@/manager/commands/command.interface.js';
 import type { AutocompleteOptionHandler } from '@/utils/autocomplete.js';
+import { createLogger } from '@/utils/logger.js';
 import {
   ChannelType,
   ChatInputCommandInteraction,
+  MessageFlags,
   SlashCommandBuilder,
   SlashCommandSubcommandsOnlyBuilder,
 } from 'discord.js';
@@ -13,6 +15,8 @@ import {
   handleDeleteSubcommand,
 } from './subcommands/delete.subcommand.js';
 import { handleListSubcommand } from './subcommands/list.subcommand.js';
+
+const logger = createLogger('agenda-command');
 
 export class AgendaCommand extends IsabelleAutocompleteCommandBase {
   commandData: SlashCommandSubcommandsOnlyBuilder;
@@ -60,7 +64,7 @@ export class AgendaCommand extends IsabelleAutocompleteCommandBase {
           .addRoleOption((option) =>
             option
               .setName('role')
-              .setDescription('Le rôle FISA à mentionner sur les événements')
+              .setDescription('Le rôle à mentionner sur les événements')
               .setRequired(false),
           ),
       );
@@ -92,6 +96,21 @@ export class AgendaCommand extends IsabelleAutocompleteCommandBase {
         break;
       case 'config':
         await handleConfigSubcommand(interaction);
+        break;
+      default:
+        logger.error(
+          {
+            subcommand,
+            interactionId: interaction.id,
+            userId: interaction.user.id,
+          },
+          'Unexpected agenda subcommand',
+        );
+        await interaction.reply({
+          content:
+            'Sous-commande inconnue. Réessaie avec `/agenda` ou contacte un admin si le problème persiste.',
+          flags: MessageFlags.Ephemeral,
+        });
         break;
     }
   }

@@ -56,6 +56,10 @@ async function fetchAndValidateChannel({
 
     return fetchedChannel;
   } catch (error) {
+    if (error instanceof AgendaUserError) {
+      throw error;
+    }
+
     logger.error({ error, channelId }, 'Failed to fetch channel');
     throw new AgendaUserError(
       "Le salon forum n'a pas été trouvé. Reconfigure-le avec `/agenda config forum:<salon>`.",
@@ -131,12 +135,12 @@ export async function handleAgendaModalSubmit(
 
       const config = configManager.getGuild(guildId);
       const forumChannelId = config.AGENDA_FORUM_CHANNEL_ID;
-      const fisaRoleId = config.AGENDA_FISA_ROLE_ID;
+      const roleToMentionId = config.AGENDA_ROLE_TO_MENTION;
 
       if (!isEdit) {
         requireConfigValue(
-          fisaRoleId,
-          "Le rôle FISA n'est pas configuré. Utilise `/agenda config role:<rôle>` pour le définir.",
+          roleToMentionId,
+          "Le rôle à mentionner n'est pas configuré. Utilise `/agenda config role:<rôle>` pour le définir.",
         );
         requireConfigValue(
           forumChannelId,
@@ -167,7 +171,7 @@ export async function handleAgendaModalSubmit(
           startDate,
           endDate,
           aiOptions,
-          roleId: fisaRoleId,
+          roleId: roleToMentionId,
           baseEmoji: eventRecord.emoji,
           threadId: eventRecord.discordThreadId,
         });
@@ -193,7 +197,7 @@ export async function handleAgendaModalSubmit(
         startDate,
         endDate,
         aiOptions,
-        roleId: fisaRoleId,
+        roleId: roleToMentionId,
       });
 
       await modalInteraction.editReply({

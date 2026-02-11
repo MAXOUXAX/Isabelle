@@ -19,10 +19,15 @@ export const handleCreateSubcommand = withAgendaErrorHandling(
   async (interaction: ChatInputCommandInteraction): Promise<void> => {
     const { guildId } = requireGuild(interaction);
 
-    const { AGENDA_FISA_ROLE_ID } = configManager.getGuild(guildId);
+    const { AGENDA_FORUM_CHANNEL_ID, AGENDA_ROLE_TO_MENTION } =
+      configManager.getGuild(guildId);
     requireConfigValue(
-      AGENDA_FISA_ROLE_ID,
-      "Le rôle FISA n'est pas configuré. Utilise `/agenda config role:<rôle>` pour le définir.",
+      AGENDA_ROLE_TO_MENTION,
+      "Le rôle à mentionner n'est pas configuré. Utilise `/agenda config role:<rôle>` pour le définir.",
+    );
+    requireConfigValue(
+      AGENDA_FORUM_CHANNEL_ID,
+      "Le salon forum n'a pas été configuré. Utilise `/agenda config forum:<salon>` pour le configurer.",
     );
 
     const modal = buildAgendaModal({

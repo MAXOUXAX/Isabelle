@@ -103,11 +103,7 @@ export const agendaEvents = sqliteTable(
   },
   (t) => [
     unique().on(t.guildId, t.discordEventId),
-    index('agenda_events_idx').on(
-      t.eventStartTime,
-      t.title,
-      t.description,
-      t.eventEndTime,
-    ),
+    index('agenda_events_idx').on(t.guildId, t.eventStartTime, t.eventEndTime),
+    index('agenda_events_thread_close_idx').on(t.threadClosed, t.eventEndTime),
   ],
 );

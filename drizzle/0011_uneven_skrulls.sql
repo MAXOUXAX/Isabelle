@@ -14,5 +14,6 @@ CREATE TABLE `agenda_events` (
 	`updated_at` integer DEFAULT (unixepoch()) NOT NULL
 );
 --> statement-breakpoint
-CREATE INDEX `agenda_events_idx` ON `agenda_events` (`event_start_time`,`title`,`description`,`event_end_time`);--> statement-breakpoint
+CREATE INDEX `agenda_events_idx` ON `agenda_events` (`guild_id`,`event_start_time`,`event_end_time`);--> statement-breakpoint
+CREATE INDEX `agenda_events_thread_close_idx` ON `agenda_events` (`thread_closed`,`event_end_time`);--> statement-breakpoint
 CREATE UNIQUE INDEX `agenda_events_guild_id_discord_event_id_unique` ON `agenda_events` (`guild_id`,`discord_event_id`);

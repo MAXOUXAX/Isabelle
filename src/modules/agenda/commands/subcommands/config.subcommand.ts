@@ -33,11 +33,11 @@ export const handleConfigSubcommand = withAgendaErrorHandling(
     const { guildId } = requireGuild(interaction);
 
     const forumChannel = interaction.options.getChannel('forum');
-    const fisaRole = interaction.options.getRole('role');
+    const roleToMention = interaction.options.getRole('role');
 
-    if (!forumChannel && !fisaRole) {
+    if (!forumChannel && !roleToMention) {
       throw new AgendaUserError(
-        'Tu dois fournir au moins un paramètre : un salon forum ou un rôle FISA.',
+        'Tu dois fournir au moins un paramètre : un salon forum ou un rôle à mentionner.',
       );
     }
 
@@ -52,15 +52,16 @@ export const handleConfigSubcommand = withAgendaErrorHandling(
       ...currentConfig,
       AGENDA_FORUM_CHANNEL_ID:
         forumChannel?.id ?? currentConfig.AGENDA_FORUM_CHANNEL_ID,
-      AGENDA_FISA_ROLE_ID: fisaRole?.id ?? currentConfig.AGENDA_FISA_ROLE_ID,
+      AGENDA_ROLE_TO_MENTION:
+        roleToMention?.id ?? currentConfig.AGENDA_ROLE_TO_MENTION,
     });
 
     if (forumChannel) {
       updates.push(`Salon forum : <#${forumChannel.id}>`);
     }
 
-    if (fisaRole) {
-      updates.push(`Rôle FISA : <@&${fisaRole.id}>`);
+    if (roleToMention) {
+      updates.push(`Rôle à mentionner : <@&${roleToMention.id}>`);
     }
 
     await interaction.reply({

@@ -5,6 +5,7 @@ import {
   applyAiEnhancements,
   type AiEnhancementOptions,
 } from '@/modules/agenda/services/agenda-ai.service.js';
+import { AgendaUserError } from '@/modules/agenda/utils/agenda-errors.js';
 import { createLogger } from '@/utils/logger.js';
 import {
   ChannelType,
@@ -133,7 +134,19 @@ export async function updateAgendaEvent({
     baseEmoji,
   });
 
-  const scheduledEvent = await guild.scheduledEvents.fetch(eventId);
+  let scheduledEvent: GuildScheduledEvent;
+
+  try {
+    scheduledEvent = await guild.scheduledEvents.fetch(eventId);
+  } catch (error) {
+    logger.warn(
+      { error, eventId, guildId: guild.id },
+      'Scheduled event not found while updating',
+    );
+    throw new AgendaUserError(
+      'Événement Discord introuvable. Il a peut-être été supprimé.',
+    );
+  }
   await scheduledEvent.edit({
     name: title,
     description,
@@ -155,7 +168,7 @@ export async function updateAgendaEvent({
 
   const thread = await guild.channels.fetch(threadId);
   if (!thread?.isThread()) {
-    throw new Error('Thread introuvable pour mise à jour');
+    throw new AgendaUserError('Thread introuvable pour mise à jour');
   }
 
   await thread.setName(threadName);
@@ -272,10 +285,18 @@ export async function deleteAgendaEventResources({
   const record =
     eventRecord ?? (await findAgendaEventByDiscordId(guild.id, eventId));
 
-  const scheduledEvent = await guild.scheduledEvents.fetch(eventId);
-  const eventName = scheduledEvent.name;
+  let eventName = record?.title ?? eventId;
 
-  await scheduledEvent.delete();
+  try {
+    const scheduledEvent = await guild.scheduledEvents.fetch(eventId);
+    eventName = scheduledEvent.name;
+    await scheduledEvent.delete();
+  } catch (error) {
+    logger.debug(
+      { error, eventId, guildId: guild.id },
+      'Scheduled event already deleted',
+    );
+  }
   await deleteAgendaEvent(guild.id, eventId);
 
   let threadDeleted = false;
@@ -291,7 +312,9 @@ export async function deleteAgendaEventResources({
       const forum = await guild.channels.fetch(forumChannelId);
       if (forum?.type === ChannelType.GuildForum) {
         const { threads } = await forum.threads.fetchActive();
-        const matchingThread = threads.find((t) => t.name.includes(eventName));
+        const matchingThread = threads.find(
+          (t) => t.name === eventName || t.name.endsWith(` ${eventName}`),
+        );
 
         if (matchingThread) {
           await matchingThread.delete(

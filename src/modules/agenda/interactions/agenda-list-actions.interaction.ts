@@ -71,6 +71,8 @@ export class AgendaListActionsHandler implements InteractionHandler {
         }
 
         if (action === 'delete') {
+          await buttonInteraction.deferReply({ flags: MessageFlags.Ephemeral });
+
           const config = configManager.getGuild(guildId);
           const { eventName, threadDeleted } = await deleteAgendaEventResources(
             {
@@ -82,13 +84,12 @@ export class AgendaListActionsHandler implements InteractionHandler {
           );
 
           try {
-            await buttonInteraction.reply({
+            await buttonInteraction.editReply({
               content: `L'événement **${eventName}** a été supprimé.${
                 threadDeleted
                   ? ' Le fil de discussion associé a également été supprimé.'
                   : ''
               }`,
-              flags: MessageFlags.Ephemeral,
             });
           } catch (error) {
             if (!(error instanceof DiscordAPIError) || error.code !== 10008) {

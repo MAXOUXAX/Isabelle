@@ -1,4 +1,5 @@
 const FRENCH_DATE_REGEX = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d+):(\d{2})$/;
+export const ONE_MINUTE_MS = 60 * 1000;
 
 /**
  * Parse a French date string (DD/MM/YYYY HH:mm) and (DD/MM/YYYY H:mm) to a Date object.
@@ -115,8 +116,6 @@ export function formatDateInput(date: Date): string {
 
   return `${day}/${month}/${year} ${hour}:${minute}`;
 }
-
-export const ONE_MINUTE_MS = 60 * 1000;
 
 /**
  * Check if two dates are approximately 1 minute apart (deadline mode).

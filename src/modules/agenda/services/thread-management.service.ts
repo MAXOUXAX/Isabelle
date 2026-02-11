@@ -2,7 +2,7 @@ import { db } from '@/db/index.js';
 import { agendaEvents } from '@/db/schema.js';
 import { client } from '@/index.js';
 import { createLogger } from '@/utils/logger.js';
-import { ChannelType, ThreadChannel } from 'discord.js';
+import { ChannelType, DiscordAPIError, ThreadChannel } from 'discord.js';
 import { and, eq, gte, lte } from 'drizzle-orm';
 
 const logger = createLogger('thread-auto-close');
@@ -12,6 +12,43 @@ const CHECK_INTERVAL_MS = 5 * 60 * 1000;
 
 // Delay after event ends before closing thread: 24 hours
 const CLOSE_DELAY_MS = 24 * 60 * 60 * 1000;
+const ARCHIVE_DELAY_MS = 150;
+const ARCHIVE_MAX_RETRIES = 3;
+const ARCHIVE_BACKOFF_BASE_MS = 500;
+
+const wait = (delayMs: number): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, delayMs);
+  });
+
+async function archiveThreadWithRetry(
+  thread: ThreadChannel,
+  reason: string,
+): Promise<void> {
+  let attempt = 0;
+
+  while (attempt <= ARCHIVE_MAX_RETRIES) {
+    try {
+      await thread.setArchived(true, reason);
+      return;
+    } catch (error) {
+      const isRateLimit =
+        error instanceof DiscordAPIError && error.status === 429;
+
+      if (!isRateLimit || attempt === ARCHIVE_MAX_RETRIES) {
+        throw error;
+      }
+
+      const backoffMs = ARCHIVE_BACKOFF_BASE_MS * 2 ** attempt;
+      logger.warn(
+        { attempt: attempt + 1, threadId: thread.id, backoffMs },
+        'Rate limited while archiving thread, backing off',
+      );
+      await wait(backoffMs);
+      attempt += 1;
+    }
+  }
+}
 
 /**
  * Checks for threads that should be closed (24h after their event ended)
@@ -61,8 +98,8 @@ async function checkAndCloseThreads(): Promise<void> {
         continue;
       }
 
-      await thread.setArchived(
-        true,
+      await archiveThreadWithRetry(
+        thread,
         `Fermeture automatique 24h après la fin de l'événement`,
       );
 
@@ -82,6 +119,8 @@ async function checkAndCloseThreads(): Promise<void> {
         'Failed to close thread',
       );
     }
+
+    await wait(ARCHIVE_DELAY_MS);
   }
 }
 

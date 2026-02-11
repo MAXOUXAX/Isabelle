@@ -93,6 +93,8 @@ export const handleDeleteSubcommand = withAgendaErrorHandling(
       );
     }
 
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
     const config = configManager.getGuild(guildId);
     const { eventName, threadDeleted } = await deleteAgendaEventResources({
       guild,
@@ -101,13 +103,12 @@ export const handleDeleteSubcommand = withAgendaErrorHandling(
       eventRecord,
     });
 
-    await interaction.reply({
+    await interaction.editReply({
       content: `L'événement **${eventName}** a été supprimé.${
         threadDeleted
           ? ' Le fil de discussion associé a également été supprimé.'
           : ''
       }`,
-      flags: MessageFlags.Ephemeral,
     });
   },
   "Une erreur est survenue lors de la suppression de l'événement. Vérifie que j'ai les permissions nécessaires.",

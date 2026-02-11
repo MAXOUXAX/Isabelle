@@ -64,6 +64,8 @@ class AgendaAssistant implements AiAssistant<
         typeof parsed.title === 'string' &&
         typeof parsed.description === 'string' &&
         typeof parsed.emoji === 'string' &&
+        parsed.title.trim().length > 0 &&
+        parsed.description.trim().length > 0 &&
         parsed.emoji.length > 0
       ) {
         const modelVersion = extractModelVersion(result.response.body);

@@ -26,26 +26,32 @@ export function buildAgendaEventDetailsText(params: {
   includeHeading?: boolean;
 }): string {
   const { location, schedule, includeHeading = false } = params;
-  let details = includeHeading ? '### Détails\n\n' : '';
+  const lines: string[] = [];
 
   const { shouldDisplayLocation } = getAgendaLocationPresentation(location);
 
   if (shouldDisplayLocation) {
-    details += `\n**📍 Lieu :** ${location}`;
+    lines.push(`**📍 Lieu :** ${location}`);
   }
 
   if (schedule.deadlineLabel) {
-    details += `\n**🕐 Échéance :** ${schedule.deadlineLabel}`;
-    return details;
+    lines.push(`**🕐 Échéance :** ${schedule.deadlineLabel}`);
+    const body = lines.join('\n\n');
+    return includeHeading ? `### Détails\n\n${body}` : body;
   }
 
   if (schedule.startLabel) {
-    details += `\n**🕐 Début :** ${schedule.startLabel}`;
+    lines.push(`**🕐 Début :** ${schedule.startLabel}`);
   }
 
   if (schedule.endLabel) {
-    details += `\n**🕐 Fin :** ${schedule.endLabel}`;
+    lines.push(`**🕐 Fin :** ${schedule.endLabel}`);
   }
 
-  return details;
+  const body = lines.join('\n\n');
+  if (!includeHeading) {
+    return body;
+  }
+
+  return body ? `### Détails\n\n${body}` : '### Détails';
 }
