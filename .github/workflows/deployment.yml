@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to deploy (git tag)"
+        description: 'Version to deploy (git tag)'
         required: true
         type: string
 
@@ -26,17 +26,115 @@ jobs:
       PANEL_URL: ${{ secrets.PANEL_URL }}
       PANEL_SERVER_ID: ${{ secrets.PANEL_SERVER_ID }}
       PANEL_API_KEY: ${{ secrets.PANEL_API_KEY }}
+      CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+      CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+      CLOUDLARED_VERSION: 2026.2.0
+      CLOUDLARED_SHA256: e90aa057bfe72c15071eb2706f739097550623b55c4e3ab98286f45e9bf145f4
 
     steps:
-      - name: Verify Required Secrets
+      - name: Verify secrets & normalize panel URL
+        id: normalize-panel
         run: |
-          if [ -z "$PANEL_URL" ] || [ -z "$PANEL_SERVER_ID" ] || [ -z "$PANEL_API_KEY" ]; then
+          if [ -z "$PANEL_URL" ] || [ -z "$PANEL_SERVER_ID" ] || [ -z "$PANEL_API_KEY" ] || [ -z "$CF_ACCESS_CLIENT_ID" ] || [ -z "$CF_ACCESS_CLIENT_SECRET" ]; then
             echo "Error: Required environment variables are not set"
             exit 1
           fi
           # Remove trailing slashes from URL if present
           PANEL_URL="${PANEL_URL%/}"
-          echo "PANEL_URL=$PANEL_URL" >> $GITHUB_ENV
+          PANEL_SCHEME="https"
+          if [[ "$PANEL_URL" == http://* ]]; then
+            PANEL_SCHEME="http"
+          fi
+          PANEL_HOST_WITH_PORT="${PANEL_URL#http://}"
+          PANEL_HOST_WITH_PORT="${PANEL_HOST_WITH_PORT#https://}"
+          PANEL_HOST_WITH_PORT="${PANEL_HOST_WITH_PORT%%/*}"
+          PANEL_HOST="${PANEL_HOST_WITH_PORT%%:*}"
+          PANEL_PORT="${PANEL_HOST_WITH_PORT##*:}"
+          if [ "$PANEL_PORT" = "$PANEL_HOST_WITH_PORT" ]; then
+            if [ "$PANEL_SCHEME" = "http" ]; then
+              PANEL_PORT="80"
+            else
+              PANEL_PORT="443"
+            fi
+          fi
+          PANEL_REMOTE_ORIGIN="${PANEL_SCHEME}://${PANEL_HOST_WITH_PORT}"
+          echo "panel_url=$PANEL_URL" >> $GITHUB_OUTPUT
+          echo "panel_remote_origin=$PANEL_REMOTE_ORIGIN" >> $GITHUB_OUTPUT
+          echo "panel_host=$PANEL_HOST" >> $GITHUB_OUTPUT
+          echo "panel_host_with_port=$PANEL_HOST_WITH_PORT" >> $GITHUB_OUTPUT
+          echo "panel_port=$PANEL_PORT" >> $GITHUB_OUTPUT
+
+      - name: Start Cloudflare Access Proxy
+        env:
+          CF_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+          PANEL_HOST: ${{ steps.normalize-panel.outputs.panel_host }}
+        run: |
+          LOCAL_PORT="8080"
+          echo "Starting Node.js Proxy on 127.0.0.1:${LOCAL_PORT} -> ${PANEL_HOST}..."
+
+          # Create simple Node.js proxy script
+          cat << 'EOF' > proxy.cjs
+          const http = require('http');
+          const https = require('https');
+
+          const LOCAL_PORT = 8080;
+          const PROXY_TARGET = process.env.PANEL_HOST;
+          const CF_ID = (process.env.CF_ID || '').trim();
+          const CF_SECRET = (process.env.CF_SECRET || '').trim();
+
+          if (!CF_ID || !CF_SECRET || !PROXY_TARGET) {
+            console.error('Error: Missing required environment variables');
+            process.exit(1);
+          }
+
+          const server = http.createServer((clientReq, clientRes) => {
+            const options = {
+              hostname: PROXY_TARGET,
+              port: 443,
+              path: clientReq.url,
+              method: clientReq.method,
+              headers: {
+                ...clientReq.headers,
+                'CF-Access-Client-Id': CF_ID,
+                'CF-Access-Client-Secret': CF_SECRET,
+                'Host': PROXY_TARGET // IMPORTANT: Override Host header for SNI
+              }
+            };
+
+            const proxyReq = https.request(options, (proxyRes) => {
+              clientRes.writeHead(proxyRes.statusCode, proxyRes.headers);
+              proxyRes.pipe(clientRes, { end: true });
+            });
+
+            proxyReq.on('error', (e) => {
+              console.error(`Proxy Request Error: ${e.message}`);
+              if (!clientRes.headersSent) {
+                clientRes.writeHead(502);
+                clientRes.end('Bad Gateway');
+              }
+            });
+
+            clientReq.pipe(proxyReq, { end: true });
+          });
+
+          server.listen(LOCAL_PORT, '127.0.0.1', () => {
+            console.log(`Node.js Proxy running on http://127.0.0.1:${LOCAL_PORT}`);
+          });
+          EOF
+
+          # Run proxy in background
+          nohup node proxy.cjs > proxy.log 2>&1 &
+
+          echo "Waiting for proxy to start..."
+          sleep 3
+
+          echo "Testing panel connectivity via local proxy..."
+          if ! curl -f -I --max-time 5 --retry 5 --retry-delay 2 --retry-all-errors "http://127.0.0.1:${LOCAL_PORT}"; then
+            echo "Proxy failed. Recent logs:"
+            cat proxy.log
+            exit 1
+          fi
 
       - name: Generate safe artifact name
         id: artifact-name
@@ -54,12 +152,9 @@ jobs:
         id: create-backup
         uses: maxouxax/pterodactyl-create-backup-action@v1
         with:
-          panel-url: ${{ secrets.PANEL_URL }}
+          panel-url: http://127.0.0.1:8080
           api-key: ${{ secrets.PANEL_API_KEY }}
           server-id: ${{ secrets.PANEL_SERVER_ID }}
-          headers: |
-            CF-Access-Client-Id: ${{ secrets.CF_ACCESS_CLIENT_ID }}
-            CF-Access-Client-Secret: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
 
       - name: Create Archive for Upload
         run: |
@@ -69,7 +164,7 @@ jobs:
         id: upload
         uses: rexlManu/pterodactyl-upload-action@v2.5
         with:
-          panel-host: ${{ secrets.PANEL_URL }}
+          panel-host: http://127.0.0.1:8080
           api-key: ${{ secrets.PANEL_API_KEY }}
           restart: true
           server-id: ${{ secrets.PANEL_SERVER_ID }}
