@@ -40,7 +40,12 @@ export const executeLeaderboardCommand = async (
       })
       .from(russianRouletteStats)
       .where(eq(russianRouletteStats.guildId, guild.id))
-      .orderBy(desc(russianRouletteStats.timeoutMinutes));
+      .orderBy(
+        desc(russianRouletteStats.timeoutMinutes),
+        desc(russianRouletteStats.deaths),
+        desc(russianRouletteStats.shots),
+      )
+      .limit(LEADERBOARD_ROWS_COUNT);
 
     // No one played yet
     if (stats.length === 0) {
