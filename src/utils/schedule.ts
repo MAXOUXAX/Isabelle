@@ -4,6 +4,15 @@ import { createLogger } from '@/utils/logger.js';
 import { ColorResolvable, EmbedBuilder } from 'discord.js';
 import { VEvent, fromURL } from 'node-ical';
 import * as dateUtils from './date.js';
+
+// Helper to handle node-ical ParameterValue which can be a string or an object
+function getICSValue(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (value && typeof value === 'object' && 'val' in value) {
+    return (value as { val: string }).val;
+  }
+  return '';
+}
 import { humanDate, humanTime } from './date.js';
 
 const logger = createLogger('schedule');
@@ -208,13 +217,17 @@ function createLessonsFromData(data: VEvent[]): Lesson[] {
 
     const { start, end } = adjustSchedule(startDate, endDate);
 
+    const summary = getICSValue(lesson.summary);
+    const description = getICSValue(lesson.description);
+    const location = getICSValue(lesson.location);
+
     return {
-      name: lesson.summary,
+      name: summary,
       start,
       end,
-      room: lesson.location.replaceAll('Remicourt_', '').toUpperCase(), // Balek du Remicourt
-      teacher: extractTeacherName(lesson.description, lesson.summary),
-      color: getLessonColor(lesson.summary),
+      room: location.replaceAll('Remicourt_', '').toUpperCase(), // Balek du Remicourt
+      teacher: extractTeacherName(description, summary),
+      color: getLessonColor(summary),
     };
   });
 }
