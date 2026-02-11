@@ -1,6 +1,6 @@
 import { GuildConfig } from '@/manager/config.manager.js';
 import { sql } from 'drizzle-orm';
-import { int, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
+import { int, sqliteTable, text, unique, index } from 'drizzle-orm/sqlite-core';
 
 const base = () => {
   return {
@@ -34,25 +34,33 @@ export const guildConfigs = sqliteTable('guild_configs', {
   ...base(),
 });
 
-export const automaticResponses = sqliteTable('automatic_responses', {
-  id: int('id').primaryKey({ autoIncrement: true }),
-  guildId: text('guild_id'), // guildId is nullable for global responses
-  configuration: text('configuration', { mode: 'json' })
-    .$type<{
-      triggers: string[];
-      responses: string[];
-    }>()
-    .notNull(),
-  probability: int('probability').default(100).notNull(),
-  ...base(),
-});
+export const automaticResponses = sqliteTable(
+  'automatic_responses',
+  {
+    id: int('id').primaryKey({ autoIncrement: true }),
+    guildId: text('guild_id'), // guildId is nullable for global responses
+    configuration: text('configuration', { mode: 'json' })
+      .$type<{
+        triggers: string[];
+        responses: string[];
+      }>()
+      .notNull(),
+    probability: int('probability').default(100).notNull(),
+    ...base(),
+  },
+  (t) => [index('automatic_responses_guild_id_idx').on(t.guildId)],
+);
 
-export const roastUsage = sqliteTable('roast_usage', {
-  id: int('id').primaryKey({ autoIncrement: true }),
-  guildId: text('guild_id').notNull(),
-  userId: text('user_id').notNull(),
-  ...base(),
-});
+export const roastUsage = sqliteTable(
+  'roast_usage',
+  {
+    id: int('id').primaryKey({ autoIncrement: true }),
+    guildId: text('guild_id').notNull(),
+    userId: text('user_id').notNull(),
+    ...base(),
+  },
+  (t) => [index('roast_usage_idx').on(t.guildId, t.userId, t.createdAt)],
+);
 
 export const russianRouletteStats = sqliteTable(
   'russian_roulette_stats',
