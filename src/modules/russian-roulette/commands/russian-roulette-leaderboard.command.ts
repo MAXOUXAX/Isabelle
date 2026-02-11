@@ -30,6 +30,7 @@ export const executeLeaderboardCommand = async (
   await interaction.deferReply();
 
   try {
+    // Optimization: Limit fetch to top N to reduce memory usage and API calls to Discord
     const stats = await db
       .select({
         userId: russianRouletteStats.userId,
@@ -40,7 +41,12 @@ export const executeLeaderboardCommand = async (
       })
       .from(russianRouletteStats)
       .where(eq(russianRouletteStats.guildId, guild.id))
-      .orderBy(desc(russianRouletteStats.timeoutMinutes));
+      .orderBy(
+        desc(russianRouletteStats.timeoutMinutes),
+        desc(russianRouletteStats.deaths),
+        desc(russianRouletteStats.shots),
+      )
+      .limit(LEADERBOARD_ROWS_COUNT);
 
     // No one played yet
     if (stats.length === 0) {
