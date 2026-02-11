@@ -57,6 +57,9 @@ jobs:
           panel-url: ${{ secrets.PANEL_URL }}
           api-key: ${{ secrets.PANEL_API_KEY }}
           server-id: ${{ secrets.PANEL_SERVER_ID }}
+          headers: |
+            CF-Access-Client-Id: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+            CF-Access-Client-Secret: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
 
       - name: Create Archive for Upload
         run: |
