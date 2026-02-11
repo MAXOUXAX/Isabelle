@@ -199,6 +199,19 @@ function extractTeacherName(
 }
 
 /*
+ * Helper to safely extract string values from node-ical properties
+ */
+function getStringValue(value: unknown): string {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  // node-ical can return ParameterValue objects { val: string; params: any }
+  if (typeof value === 'object' && 'val' in value) {
+    return (value as { val: string }).val;
+  }
+  return '';
+}
+
+/*
  * Crée un tableau de cours à partir des données du fichier ICS
  */
 function createLessonsFromData(data: VEvent[]): Lesson[] {
@@ -212,7 +225,9 @@ function createLessonsFromData(data: VEvent[]): Lesson[] {
       name: lesson.summary,
       start,
       end,
-      room: lesson.location.replaceAll('Remicourt_', '').toUpperCase(), // Balek du Remicourt
+      room: getStringValue(lesson.location)
+        .replaceAll('Remicourt_', '')
+        .toUpperCase(), // Balek du Remicourt
       teacher: extractTeacherName(lesson.description, lesson.summary),
       color: getLessonColor(lesson.summary),
     };
