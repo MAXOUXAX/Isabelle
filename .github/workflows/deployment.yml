@@ -76,27 +76,24 @@ jobs:
           fi
           sudo dpkg -i cloudflared.deb
 
-      - name: Map panel host to localhost
-        env:
-          PANEL_HOST: ${{ steps.normalize-panel.outputs.panel_host }}
-        run: |
-          echo "127.0.0.1 $PANEL_HOST" | sudo tee -a /etc/hosts
-
       - name: Start Cloudflare Access proxy
         env:
           CF_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
           CF_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
           PANEL_HOST: ${{ steps.normalize-panel.outputs.panel_host }}
-          PANEL_REMOTE_ORIGIN: ${{ steps.normalize-panel.outputs.panel_remote_origin }}
-          PANEL_PORT: ${{ steps.normalize-panel.outputs.panel_port }}
         run: |
-          echo "Starting cloudflared tunnel on 127.0.0.1:${PANEL_PORT}..."
-          sudo nohup cloudflared access tcp --hostname "$PANEL_HOST" --url "127.0.0.1:${PANEL_PORT}" \
+          LOCAL_PORT="8080"
+          echo "Starting cloudflared tunnel on 127.0.0.1:${LOCAL_PORT}..."
+          nohup cloudflared access tcp --hostname "$PANEL_HOST" --url "127.0.0.1:${LOCAL_PORT}" \
             --service-token-id "$CF_ID" \
             --service-token-secret "$CF_SECRET" > cloudflared.log 2>&1 &
           sleep 5
           echo "Testing panel connectivity via local tunnel..."
-          curl -f -I --max-time 5 --retry 5 --retry-delay 2 --retry-all-errors "$PANEL_REMOTE_ORIGIN"
+          if ! curl -f -I --max-time 5 --retry 5 --retry-delay 2 --retry-all-errors "http://127.0.0.1:${LOCAL_PORT}"; then
+            echo "Cloudflared failed to start. Recent logs:"
+            cat cloudflared.log
+            exit 1
+          fi
 
       - name: Generate safe artifact name
         id: artifact-name
@@ -114,7 +111,7 @@ jobs:
         id: create-backup
         uses: maxouxax/pterodactyl-create-backup-action@v1
         with:
-          panel-url: ${{ steps.normalize-panel.outputs.panel_remote_origin }}
+          panel-url: http://127.0.0.1:8080
           api-key: ${{ secrets.PANEL_API_KEY }}
           server-id: ${{ secrets.PANEL_SERVER_ID }}
 
@@ -126,7 +123,7 @@ jobs:
         id: upload
         uses: rexlManu/pterodactyl-upload-action@v2.5
         with:
-          panel-host: ${{ steps.normalize-panel.outputs.panel_remote_origin }}
+          panel-host: http://127.0.0.1:8080
           api-key: ${{ secrets.PANEL_API_KEY }}
           restart: true
           server-id: ${{ secrets.PANEL_SERVER_ID }}
