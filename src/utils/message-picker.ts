@@ -3,6 +3,7 @@ import type { TextChannel } from 'discord.js';
 import {
   ChannelType,
   Guild,
+  GuildMember,
   Message,
   PermissionFlagsBits,
   Snowflake,
@@ -42,6 +43,7 @@ const isChannelAccessible = (
   channel: TextChannel,
   botMember: Guild['members']['me'],
   botUserId: Snowflake,
+  invokerMember?: GuildMember | null,
 ): boolean => {
   if (!channel.viewable) {
     return false;
@@ -55,10 +57,25 @@ const isChannelAccessible = (
     return false;
   }
 
-  return (
-    permissions.has(PermissionFlagsBits.ViewChannel) &&
-    permissions.has(PermissionFlagsBits.ReadMessageHistory)
-  );
+  if (
+    !permissions.has(PermissionFlagsBits.ViewChannel) ||
+    !permissions.has(PermissionFlagsBits.ReadMessageHistory)
+  ) {
+    return false;
+  }
+
+  // If an invoker is specified, ensure they also have access to the channel
+  if (invokerMember) {
+    const invokerPermissions = channel.permissionsFor(invokerMember);
+    if (
+      !invokerPermissions.has(PermissionFlagsBits.ViewChannel) ||
+      !invokerPermissions.has(PermissionFlagsBits.ReadMessageHistory)
+    ) {
+      return false;
+    }
+  }
+
+  return true;
 };
 
 /**
@@ -68,13 +85,19 @@ const getAccessibleChannels = (
   guild: Guild,
   botMember: Guild['members']['me'],
   botUserId: Snowflake,
+  invokerMember?: GuildMember | null,
 ): TextChannel[] => {
   const textChannels = guild.channels.cache.filter(
     (channel): channel is TextChannel => channel.type === ChannelType.GuildText,
   );
 
   return Array.from(textChannels.values()).filter((channel) => {
-    const accessible = isChannelAccessible(channel, botMember, botUserId);
+    const accessible = isChannelAccessible(
+      channel,
+      botMember,
+      botUserId,
+      invokerMember,
+    );
     if (!accessible) {
       logger.debug(
         { channelId: channel.id, guildId: guild.id },
@@ -201,6 +224,7 @@ export const fetchLastUserMessages = async (
   userId: Snowflake,
   minMessages = 0,
   maxMessages = 100,
+  invokerId?: Snowflake,
 ): Promise<Message[]> => {
   if (!guild) {
     return [];
@@ -209,7 +233,26 @@ export const fetchLastUserMessages = async (
   const botMember = guild.members.me;
   const botUserId = guild.client.user.id;
 
-  const accessibleChannels = getAccessibleChannels(guild, botMember, botUserId);
+  let invokerMember: GuildMember | null = null;
+  if (invokerId) {
+    try {
+      invokerMember = await guild.members.fetch(invokerId);
+    } catch (error) {
+      logger.warn(
+        { guildId: guild.id, invokerId, error },
+        'Failed to fetch invoker member for permission check',
+      );
+      // Fail secure: if we cannot verify permissions, do not fetch messages
+      return [];
+    }
+  }
+
+  const accessibleChannels = getAccessibleChannels(
+    guild,
+    botMember,
+    botUserId,
+    invokerMember,
+  );
 
   if (accessibleChannels.length === 0) {
     logger.warn(
