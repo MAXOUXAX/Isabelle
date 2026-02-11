@@ -33,8 +33,10 @@ jobs:
     steps:
       - name: Verify Required Secrets
         id: normalize-panel
+        env:
+          CLOUDLARED_SHA256: e90aa057bfe72c15071eb2706f739097550623b55c4e3ab98286f45e9bf145f4
         run: |
-          if [ -z "$PANEL_URL" ] || [ -z "$PANEL_SERVER_ID" ] || [ -z "$PANEL_API_KEY" ] || [ -z "$CF_ACCESS_CLIENT_ID" ] || [ -z "$CF_ACCESS_CLIENT_SECRET" ]; then
+          if [ -z "$PANEL_URL" ] || [ -z "$PANEL_SERVER_ID" ] || [ -z "$PANEL_API_KEY" ] || [ -z "$CF_ACCESS_CLIENT_ID" ] || [ -z "$CF_ACCESS_CLIENT_SECRET" ] || [ -z "$CLOUDLARED_SHA256" ]; then
             echo "Error: Required environment variables are not set"
             exit 1
           fi
@@ -55,8 +57,17 @@ jobs:
           echo "panel_host_with_port=$PANEL_HOST_WITH_PORT" >> $GITHUB_OUTPUT
 
       - name: Install Cloudflared
+        env:
+          CLOUDLARED_SHA256: e90aa057bfe72c15071eb2706f739097550623b55c4e3ab98286f45e9bf145f4
         run: |
           curl -L --output cloudflared.deb "https://github.com/cloudflare/cloudflared/releases/download/${CLOUDLARED_VERSION}/cloudflared-linux-amd64.deb"
+          ACTUAL_SHA256="$(shasum -a 256 cloudflared.deb | awk '{print $1}')"
+          if [ "$ACTUAL_SHA256" != "$CLOUDLARED_SHA256" ]; then
+            echo "Error: cloudflared.deb SHA256 mismatch"
+            echo "Expected: $CLOUDLARED_SHA256"
+            echo "Actual:   $ACTUAL_SHA256"
+            exit 1
+          fi
           sudo dpkg -i cloudflared.deb
 
       - name: Map panel host to localhost
@@ -70,13 +81,14 @@ jobs:
           CF_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
           CF_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
           PANEL_HOST: ${{ steps.normalize-panel.outputs.panel_host }}
+          PANEL_ORIGIN: ${{ steps.normalize-panel.outputs.panel_origin }}
         run: |
           sudo nohup cloudflared access tcp --hostname "$PANEL_HOST" --url 127.0.0.1:443 \
             --service-token-id "$CF_ID" \
             --service-token-secret "$CF_SECRET" > cloudflared.log 2>&1 &
           sleep 5
           echo "Testing panel connectivity via local tunnel..."
-          curl -f -I --max-time 5 --retry 5 --retry-delay 2 --retry-all-errors "https://$PANEL_HOST"
+          curl -f -I --max-time 5 --retry 5 --retry-delay 2 --retry-all-errors "$PANEL_ORIGIN"
 
       - name: Generate safe artifact name
         id: artifact-name
