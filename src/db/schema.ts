@@ -107,3 +107,21 @@ export const agendaEvents = sqliteTable(
     index('agenda_events_thread_close_idx').on(t.threadClosed, t.eventEndTime),
   ],
 );
+
+export const birthdays = sqliteTable(
+  'birthdays',
+  {
+    id: int('id').primaryKey({ autoIncrement: true }),
+    guildId: text('guild_id').notNull(),
+    userId: text('user_id').notNull(),
+    day: int('day').notNull(),
+    month: int('month').notNull(),
+    year: int('year'), // Nullable
+    lastCelebratedYear: int('last_celebrated_year').default(0).notNull(),
+    ...base(),
+  },
+  (t) => [
+    unique().on(t.guildId, t.userId),
+    index('birthdays_date_idx').on(t.guildId, t.month, t.day),
+  ],
+);
