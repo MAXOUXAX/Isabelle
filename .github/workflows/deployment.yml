@@ -26,17 +26,44 @@ jobs:
       PANEL_URL: ${{ secrets.PANEL_URL }}
       PANEL_SERVER_ID: ${{ secrets.PANEL_SERVER_ID }}
       PANEL_API_KEY: ${{ secrets.PANEL_API_KEY }}
+      CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+      CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
 
     steps:
       - name: Verify Required Secrets
         run: |
-          if [ -z "$PANEL_URL" ] || [ -z "$PANEL_SERVER_ID" ] || [ -z "$PANEL_API_KEY" ]; then
+          if [ -z "$PANEL_URL" ] || [ -z "$PANEL_SERVER_ID" ] || [ -z "$PANEL_API_KEY" ] || [ -z "$CF_ACCESS_CLIENT_ID" ] || [ -z "$CF_ACCESS_CLIENT_SECRET" ]; then
             echo "Error: Required environment variables are not set"
             exit 1
           fi
           # Remove trailing slashes from URL if present
           PANEL_URL="${PANEL_URL%/}"
           echo "PANEL_URL=$PANEL_URL" >> $GITHUB_ENV
+          PANEL_HOST="${PANEL_URL#http://}"
+          PANEL_HOST="${PANEL_HOST#https://}"
+          PANEL_HOST="${PANEL_HOST%%/*}"
+          echo "PANEL_HOST=$PANEL_HOST" >> $GITHUB_ENV
+
+      - name: Install Cloudflared
+        run: |
+          curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          sudo dpkg -i cloudflared.deb
+
+      - name: Map panel host to localhost
+        run: |
+          echo "127.0.0.1 $PANEL_HOST" | sudo tee -a /etc/hosts
+
+      - name: Start Cloudflare Access proxy
+        env:
+          CF_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: |
+          sudo nohup cloudflared access tcp --hostname "$PANEL_HOST" --url 127.0.0.1:443 \
+            --service-token-id "$CF_ID" \
+            --service-token-secret "$CF_SECRET" > cloudflared.log 2>&1 &
+          sleep 5
+          echo "Testing panel connectivity via local tunnel..."
+          curl -I "https://$PANEL_HOST" || echo "Warning: panel probe failed"
 
       - name: Generate safe artifact name
         id: artifact-name
@@ -54,12 +81,9 @@ jobs:
         id: create-backup
         uses: maxouxax/pterodactyl-create-backup-action@v1
         with:
-          panel-url: ${{ secrets.PANEL_URL }}
-          api-key: ${{ secrets.PANEL_API_KEY }}
-          server-id: ${{ secrets.PANEL_SERVER_ID }}
-          headers: |
-            CF-Access-Client-Id: ${{ secrets.CF_ACCESS_CLIENT_ID }}
-            CF-Access-Client-Secret: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+          panel-url: ${{ env.PANEL_URL }}
+          api-key: ${{ env.PANEL_API_KEY }}
+          server-id: ${{ env.PANEL_SERVER_ID }}
 
       - name: Create Archive for Upload
         run: |
@@ -69,10 +93,10 @@ jobs:
         id: upload
         uses: rexlManu/pterodactyl-upload-action@v2.5
         with:
-          panel-host: ${{ secrets.PANEL_URL }}
-          api-key: ${{ secrets.PANEL_API_KEY }}
+          panel-host: ${{ env.PANEL_URL }}
+          api-key: ${{ env.PANEL_API_KEY }}
           restart: true
-          server-id: ${{ secrets.PANEL_SERVER_ID }}
+          server-id: ${{ env.PANEL_SERVER_ID }}
           source: app.tgz
           decompress-target: true
           target: app.tgz
