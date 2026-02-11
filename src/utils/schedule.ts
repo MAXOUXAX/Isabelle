@@ -2,7 +2,7 @@ import { config } from '@/config.js';
 import { cacheStore } from '@/utils/cache.js';
 import { createLogger } from '@/utils/logger.js';
 import { ColorResolvable, EmbedBuilder } from 'discord.js';
-import { VEvent, fromURL } from 'node-ical';
+import { VEvent, fromURL, type ParameterValue } from 'node-ical';
 import * as dateUtils from './date.js';
 import { humanDate, humanTime } from './date.js';
 
@@ -150,6 +150,15 @@ function adjustSchedule(
 }
 
 /*
+ * Récupère la valeur d'un paramètre ICS (qui peut être une string ou un objet)
+ */
+function getParameterValue(value: ParameterValue | undefined): string {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  return value.val || '';
+}
+
+/*
  * Extrait le nom du professeur de la description
  */
 function extractTeacherName(
@@ -208,13 +217,17 @@ function createLessonsFromData(data: VEvent[]): Lesson[] {
 
     const { start, end } = adjustSchedule(startDate, endDate);
 
+    const summary = getParameterValue(lesson.summary);
+    const location = getParameterValue(lesson.location);
+    const description = getParameterValue(lesson.description);
+
     return {
-      name: lesson.summary,
+      name: summary,
       start,
       end,
-      room: lesson.location.replaceAll('Remicourt_', '').toUpperCase(), // Balek du Remicourt
-      teacher: extractTeacherName(lesson.description, lesson.summary),
-      color: getLessonColor(lesson.summary),
+      room: location.replaceAll('Remicourt_', '').toUpperCase(), // Balek du Remicourt
+      teacher: extractTeacherName(description, summary),
+      color: getLessonColor(summary),
     };
   });
 }
