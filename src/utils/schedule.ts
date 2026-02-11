@@ -149,10 +149,27 @@ function adjustSchedule(
   return { start: adjustedStart, end: adjustedEnd };
 }
 
+// Patterns à ignorer pour l'extraction des enseignants
+const TEACHER_IGNORE_PATTERNS = [
+  // Métadonnées et IDs
+  /^\d+$/, // IDs numériques
+  /^\(Modifié le:/i,
+  /^\(Exporté le:/i,
+
+  // Groupes et Promos
+  /TELECOM/i,
+  /Apprentis/i,
+  /FISEA/i,
+  /FISA/i,
+  /\b\d[A]\b/i, // 1A, 2A, 3A
+];
+
+const TEACHER_EXPLICIT_PATTERN = /^Enseignant\s?:/i;
+
 /*
  * Extrait le nom du professeur de la description
  */
-function extractTeacherName(
+export function extractTeacherName(
   description: string | undefined,
   summary: string,
 ): string {
@@ -163,36 +180,34 @@ function extractTeacherName(
     .map((l) => l.trim())
     .filter((l) => l.length > 0);
 
-  // Patterns à ignorer
-  const ignorePatterns = [
-    // Métadonnées et IDs
-    /^\d+$/, // IDs numériques
-    /^\(Modifié le:/i,
-    /^\(Exporté le:/i,
-
-    // Groupes et Promos
-    /TELECOM/i,
-    /Apprentis/i,
-    /FISEA/i,
-    /FISA/i,
-    /\b\d[A]\b/i, // 1A, 2A, 3A
-  ];
-
   const candidates = lines.filter((l) => {
     if (l.toLowerCase() === summary.toLowerCase()) return false;
-    for (const pattern of ignorePatterns) {
+    for (const pattern of TEACHER_IGNORE_PATTERNS) {
       if (pattern.test(l)) return false;
     }
     return true;
   });
 
-  const explicit = lines.find((l) => /^Enseignant\s?:/i.test(l));
+  const explicit = lines.find((l) => TEACHER_EXPLICIT_PATTERN.test(l));
   if (explicit) {
-    return explicit.replace(/^Enseignant\s?:/i, '').trim();
+    return explicit.replace(TEACHER_EXPLICIT_PATTERN, '').trim();
   }
 
   if (candidates.length > 0) {
     return candidates[0];
+  }
+
+  return '';
+}
+
+function getParamValue(value: unknown): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (value && typeof value === 'object' && 'val' in value) {
+    const val = (value as { val: unknown }).val;
+    return typeof val === 'string' ? val : '';
   }
 
   return '';
@@ -208,13 +223,17 @@ function createLessonsFromData(data: VEvent[]): Lesson[] {
 
     const { start, end } = adjustSchedule(startDate, endDate);
 
+    const location = getParamValue(lesson.location);
+    const summary = getParamValue(lesson.summary);
+    const description = getParamValue(lesson.description);
+
     return {
-      name: lesson.summary,
+      name: summary,
       start,
       end,
-      room: lesson.location.replaceAll('Remicourt_', '').toUpperCase(), // Balek du Remicourt
-      teacher: extractTeacherName(lesson.description, lesson.summary),
-      color: getLessonColor(lesson.summary),
+      room: location.replaceAll('Remicourt_', '').toUpperCase(), // Balek du Remicourt
+      teacher: extractTeacherName(description, summary),
+      color: getLessonColor(summary),
     };
   });
 }
@@ -372,10 +391,13 @@ function sortLessons(lessons: Lesson[]): Lesson[] {
   });
 }
 
-function getLessonColor(title: string): string {
+const LESSON_COLOR_EXAM = /note|noté|examen/;
+const LESSON_COLOR_PERIOD = /periode|période/;
+
+export function getLessonColor(title: string): string {
   const titleLower = title.toLowerCase();
 
-  if (/note|noté|examen/.test(titleLower)) {
+  if (LESSON_COLOR_EXAM.test(titleLower)) {
     return '#e60000';
   } else if (titleLower.includes('cm')) {
     return '#ff8000';
@@ -383,7 +405,7 @@ function getLessonColor(title: string): string {
     return '#008000';
   } else if (titleLower.includes('tp')) {
     return '#0066cc';
-  } else if (/periode|période/.test(titleLower)) {
+  } else if (LESSON_COLOR_PERIOD.test(titleLower)) {
     return '#663300';
   } else if (titleLower.includes('anglais')) {
     return '#9966ff';
