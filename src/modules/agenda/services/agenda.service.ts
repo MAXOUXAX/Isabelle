@@ -1,24 +1,12 @@
 import { db } from '@/db/index.js';
 import { agendaEvents } from '@/db/schema.js';
+import { buildAgendaThreadMessage } from '@/modules/agenda/messages/agenda-thread-message.js';
 import {
-  DEFAULT_AGENDA_EMOJI,
-  agendaAssistant,
-} from '@/modules/agenda/services/ai/agenda-assistant.js';
-import {
-  buildAgendaEventDetailsText,
-  buildAgendaEventHeader,
-} from '@/modules/agenda/utils/agenda-display.js';
-import {
-  formatFrenchDate,
-  isDeadlineMode,
-} from '@/modules/agenda/utils/date-parser.js';
-import { getAgendaLocationPresentation } from '@/modules/agenda/utils/location-presentation.js';
-import { buildAiFooter } from '@/utils/ai-footer.js';
+  applyAiEnhancements,
+  type AiEnhancementOptions,
+} from '@/modules/agenda/services/agenda-ai.service.js';
 import { createLogger } from '@/utils/logger.js';
 import {
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
   ChannelType,
   ForumChannel,
   Guild,
@@ -31,6 +19,8 @@ import {
 import { and, eq, gte } from 'drizzle-orm';
 
 const logger = createLogger('agenda-service');
+
+type AgendaEventRecord = typeof agendaEvents.$inferSelect;
 
 interface CreateAgendaEventParams {
   guild: Guild;
@@ -49,73 +39,18 @@ interface CreateAgendaEventResult {
   thread: ThreadChannel;
 }
 
-export interface AiEnhancementOptions {
-  enhanceText: boolean;
-  enhanceEmoji: boolean;
-}
-
-interface AgendaAssistantResult {
-  title: string;
-  description: string;
-  emoji: string;
-  totalTokens: number;
-  modelVersion?: string;
-}
-
-const AI_DISCLAIMER =
-  "Ce contenu a été amélioré par une intelligence artificielle et peut contenir des erreurs. Vérifie les informations importantes avant de t'y fier.";
-
-function isAgendaAssistantOutput(
-  value: unknown,
-): value is AgendaAssistantResult {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'title' in value &&
-    typeof value.title === 'string' &&
-    'description' in value &&
-    typeof value.description === 'string' &&
-    'emoji' in value &&
-    typeof value.emoji === 'string' &&
-    'totalTokens' in value &&
-    typeof value.totalTokens === 'number' &&
-    (!('modelVersion' in value) ||
-      typeof (value as { modelVersion?: unknown }).modelVersion === 'string')
-  );
-}
-
-interface AiEnhancementResult {
-  title: string;
-  description: string;
-  emoji: string;
-  footer: string;
-}
-
-async function tryEnhanceWithAi(
-  title: string,
-  description: string,
-): Promise<AiEnhancementResult | null> {
-  logger.debug({ title, description }, 'Enhancing event with AI');
-
-  const result = await agendaAssistant.execute({ title, description });
-
-  if (!isAgendaAssistantOutput(result)) {
-    logger.warn('AI enhancement failed');
-    return null;
-  }
-
-  logger.info({ title, description }, 'Event enhanced with AI');
-
-  return {
-    title: result.title,
-    description: result.description,
-    emoji: result.emoji,
-    footer: buildAiFooter({
-      disclaimer: AI_DISCLAIMER,
-      totalTokens: result.totalTokens,
-      modelVersion: result.modelVersion,
-    }),
-  };
+interface UpdateAgendaEventParams {
+  guild: Guild;
+  eventId: string;
+  eventLabel: string;
+  eventDescription: string;
+  eventLocation: string;
+  startDate: Date;
+  endDate: Date;
+  aiOptions?: AiEnhancementOptions;
+  roleId?: string;
+  baseEmoji: string;
+  threadId: string;
 }
 
 export async function createAgendaEvent({
@@ -129,22 +64,15 @@ export async function createAgendaEvent({
   aiOptions = { enhanceText: true, enhanceEmoji: true },
   roleId,
 }: CreateAgendaEventParams): Promise<CreateAgendaEventResult> {
-  const shouldEnhance = aiOptions.enhanceText || aiOptions.enhanceEmoji;
-  const aiResult = shouldEnhance
-    ? await tryEnhanceWithAi(eventLabel, eventDescription)
-    : null;
-
-  const finalLabel =
-    aiOptions.enhanceText && aiResult ? aiResult.title : eventLabel;
-  const finalDescription =
-    aiOptions.enhanceText && aiResult ? aiResult.description : eventDescription;
-  const emoji =
-    aiOptions.enhanceEmoji && aiResult ? aiResult.emoji : DEFAULT_AGENDA_EMOJI;
-  const aiFooter = aiResult?.footer;
+  const { title, description, emoji, footer } = await applyAiEnhancements({
+    title: eventLabel,
+    description: eventDescription,
+    options: aiOptions,
+  });
 
   const scheduledEvent = await guild.scheduledEvents.create({
-    name: finalLabel,
-    description: finalDescription,
+    name: title,
+    description,
     entityType: GuildScheduledEventEntityType.External,
     scheduledStartTime: startDate,
     scheduledEndTime: endDate,
@@ -152,16 +80,17 @@ export async function createAgendaEvent({
     privacyLevel: GuildScheduledEventPrivacyLevel.GuildOnly,
   });
 
-  const { messageContent, components, threadName } = buildThreadMessage({
-    eventLabel: finalLabel,
-    eventDescription: finalDescription,
+  const { messageContent, components, threadName } = buildAgendaThreadMessage({
+    eventLabel: title,
+    eventDescription: description,
     eventLocation,
     startDate,
     endDate,
     emoji,
     roleId,
-    aiFooter,
+    aiFooter: footer,
   });
+
   const thread = await forumChannel.threads.create({
     name: threadName,
     autoArchiveDuration: ThreadAutoArchiveDuration.OneWeek,
@@ -169,11 +98,11 @@ export async function createAgendaEvent({
     reason: `Événement planifié: ${eventLabel}`,
   });
 
-  await saveAgendaEvent({
+  await upsertAgendaEvent({
     guildId: guild.id,
     emoji,
-    title: finalLabel,
-    description: finalDescription,
+    title,
+    description,
     location: eventLocation,
     discordEventId: scheduledEvent.id,
     discordThreadId: thread.id,
@@ -182,20 +111,6 @@ export async function createAgendaEvent({
   });
 
   return { scheduledEvent, thread };
-}
-
-interface UpdateAgendaEventParams {
-  guild: Guild;
-  eventId: string;
-  eventLabel: string;
-  eventDescription: string;
-  eventLocation: string;
-  startDate: Date;
-  endDate: Date;
-  aiOptions?: AiEnhancementOptions;
-  roleId?: string;
-  baseEmoji: string;
-  threadId: string;
 }
 
 export async function updateAgendaEvent({
@@ -211,36 +126,31 @@ export async function updateAgendaEvent({
   baseEmoji,
   threadId,
 }: UpdateAgendaEventParams): Promise<CreateAgendaEventResult> {
-  const shouldEnhance = aiOptions.enhanceText || aiOptions.enhanceEmoji;
-  const aiResult = shouldEnhance
-    ? await tryEnhanceWithAi(eventLabel, eventDescription)
-    : null;
-
-  const finalLabel =
-    aiOptions.enhanceText && aiResult ? aiResult.title : eventLabel;
-  const finalDescription =
-    aiOptions.enhanceText && aiResult ? aiResult.description : eventDescription;
-  const emoji = aiOptions.enhanceEmoji && aiResult ? aiResult.emoji : baseEmoji;
-  const aiFooter = aiResult?.footer;
+  const { title, description, emoji, footer } = await applyAiEnhancements({
+    title: eventLabel,
+    description: eventDescription,
+    options: aiOptions,
+    baseEmoji,
+  });
 
   const scheduledEvent = await guild.scheduledEvents.fetch(eventId);
   await scheduledEvent.edit({
-    name: finalLabel,
-    description: finalDescription,
+    name: title,
+    description,
     scheduledStartTime: startDate,
     scheduledEndTime: endDate,
     entityMetadata: { location: eventLocation },
   });
 
-  const { messageContent, components, threadName } = buildThreadMessage({
-    eventLabel: finalLabel,
-    eventDescription: finalDescription,
+  const { messageContent, components, threadName } = buildAgendaThreadMessage({
+    eventLabel: title,
+    eventDescription: description,
     eventLocation,
     startDate,
     endDate,
     emoji,
     roleId,
-    aiFooter,
+    aiFooter: footer,
   });
 
   const thread = await guild.channels.fetch(threadId);
@@ -258,8 +168,8 @@ export async function updateAgendaEvent({
   await db
     .update(agendaEvents)
     .set({
-      title: finalLabel,
-      description: finalDescription,
+      title,
+      description,
       location: eventLocation,
       emoji,
       eventStartTime: startDate,
@@ -276,81 +186,7 @@ export async function updateAgendaEvent({
   return { scheduledEvent, thread };
 }
 
-interface ThreadMessagePayload {
-  eventLabel: string;
-  eventDescription: string;
-  eventLocation: string;
-  startDate: Date;
-  endDate: Date;
-  emoji: string;
-  roleId?: string;
-  aiFooter?: string;
-}
-
-type AgendaEventRecord = typeof agendaEvents.$inferSelect;
-
-function buildThreadMessage({
-  eventLabel,
-  eventDescription,
-  eventLocation,
-  startDate,
-  endDate,
-  emoji,
-  roleId,
-  aiFooter,
-}: ThreadMessagePayload): {
-  messageContent: string;
-  components: ActionRowBuilder<ButtonBuilder>[];
-  threadName: string;
-} {
-  const deadlineMode = isDeadlineMode(startDate, endDate);
-  const formattedStartDate = formatFrenchDate(startDate);
-
-  let messageContent = '';
-
-  if (roleId) {
-    messageContent += `<@&${roleId}>\n`;
-  }
-
-  messageContent += buildAgendaEventHeader({
-    emoji,
-    title: eventLabel,
-    description: eventDescription,
-  });
-
-  const formattedEndDate = deadlineMode ? undefined : formatFrenchDate(endDate);
-  messageContent += buildAgendaEventDetailsText({
-    location: eventLocation,
-    schedule: {
-      deadlineLabel: deadlineMode ? formattedStartDate : undefined,
-      startLabel: deadlineMode ? undefined : formattedStartDate,
-      endLabel: formattedEndDate,
-    },
-  });
-
-  if (aiFooter) {
-    messageContent += aiFooter;
-  }
-
-  const components: ActionRowBuilder<ButtonBuilder>[] = [];
-
-  const { locationUrl } = getAgendaLocationPresentation(eventLocation);
-  if (locationUrl) {
-    const button = new ButtonBuilder()
-      .setStyle(ButtonStyle.Link)
-      .setURL(eventLocation)
-      .setLabel(`Voir sur ${locationUrl.hostname}`);
-    components.push(
-      new ActionRowBuilder<ButtonBuilder>().addComponents(button),
-    );
-  }
-
-  const threadName = `${emoji} ${eventLabel}`.slice(0, 100);
-
-  return { messageContent, components, threadName };
-}
-
-async function saveAgendaEvent(
+async function upsertAgendaEvent(
   event: typeof agendaEvents.$inferInsert,
 ): Promise<void> {
   await db
@@ -475,9 +311,6 @@ export async function deleteAgendaEventResources({
   return { eventName, threadDeleted };
 }
 
-/**
- * Removes the agenda record from the database
- */
 export async function deleteAgendaEvent(
   guildId: string,
   eventId: string,
