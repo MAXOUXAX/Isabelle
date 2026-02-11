@@ -4,6 +4,9 @@ import { cacheStore } from '@/utils/cache.js';
 import { Message } from 'discord.js';
 import { eq, isNull } from 'drizzle-orm';
 
+// Cache compiled regexes to avoid recompilation on every message
+const triggerRegexCache = new Map<string, RegExp>();
+
 /**
  * Fetches automatic response definitions scoped to a specific guild or global (guild-agnostic) responses.
  *
@@ -32,9 +35,10 @@ async function queryAutomaticResponses(
  */
 async function getCachedResponses(guildId: string | null) {
   const globalCacheKey = `automatic-responses-global`;
+  // Cache global responses for 60 seconds
   const globalCacheEntry = cacheStore.useCache<
     (typeof automaticResponses.$inferSelect)[]
-  >(globalCacheKey, () => queryAutomaticResponses(null));
+  >(globalCacheKey, () => queryAutomaticResponses(null), 60_000);
 
   if (guildId == null) {
     const globalResponses = await globalCacheEntry.get();
@@ -43,9 +47,10 @@ async function getCachedResponses(guildId: string | null) {
 
   // Per-guild cache (only contains guild-specific responses)
   const guildCacheKey = `automatic-responses-guild-${guildId}`;
+  // Cache guild responses for 60 seconds
   const guildCacheEntry = cacheStore.useCache<
     (typeof automaticResponses.$inferSelect)[]
-  >(guildCacheKey, () => queryAutomaticResponses(guildId));
+  >(guildCacheKey, () => queryAutomaticResponses(guildId), 60_000);
 
   const [guildResponses, globalResponses] = await Promise.all([
     guildCacheEntry.get(),
@@ -65,6 +70,9 @@ async function getCachedResponses(guildId: string | null) {
  * @param guildId The guild ID to invalidate the cache for, or null for global responses
  */
 export async function invalidateResponseCache(guildId: string | null) {
+  // Clear the regex cache to prevent stale entries/memory leaks
+  triggerRegexCache.clear();
+
   if (guildId == null) {
     const globalEntry = cacheStore.useCache('automatic-responses-global');
     await globalEntry.revalidate();
@@ -130,8 +138,13 @@ async function checkAndSendResponse(
 
   // Improved trigger matching: match only whole words (with word boundaries)
   const hasTrigger = triggers.some((t) => {
-    // Pad trigger with spaces for strict word boundary
-    const pattern = new RegExp(`\\b${escapeRegex(t)}\\b`, 'i');
+    // Check cache first
+    let pattern = triggerRegexCache.get(t);
+    if (!pattern) {
+      // Pad trigger with spaces for strict word boundary
+      pattern = new RegExp(`\\b${escapeRegex(t)}\\b`, 'i');
+      triggerRegexCache.set(t, pattern);
+    }
     return pattern.test(content);
   });
 
