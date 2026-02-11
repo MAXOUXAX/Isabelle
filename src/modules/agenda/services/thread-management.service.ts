@@ -2,7 +2,7 @@ import { db } from '@/db/index.js';
 import { agendaEvents } from '@/db/schema.js';
 import { client } from '@/index.js';
 import { createLogger } from '@/utils/logger.js';
-import { ChannelType } from 'discord.js';
+import { ChannelType, ThreadChannel } from 'discord.js';
 import { and, eq, gte, lte } from 'drizzle-orm';
 
 const logger = createLogger('thread-auto-close');
@@ -45,31 +45,13 @@ async function checkAndCloseThreads(): Promise<void> {
 
   for (const record of threadsToClose) {
     try {
-      const guild = await client.guilds.fetch(record.guildId);
-      const thread = await guild.channels.fetch(record.discordThreadId);
+      const thread = await fetchThread(record.guildId, record.discordThreadId);
 
       if (!thread) {
-        logger.warn(
-          { threadId: record.discordThreadId, guildId: record.guildId },
-          'Thread not found, marking as closed',
-        );
         await markThreadAsClosed(record.guildId, record.discordEventId);
         continue;
       }
 
-      if (
-        thread.type !== ChannelType.PublicThread &&
-        thread.type !== ChannelType.PrivateThread
-      ) {
-        logger.warn(
-          { threadId: record.discordThreadId, channelType: thread.type },
-          'Channel is not a thread, marking as closed',
-        );
-        await markThreadAsClosed(record.guildId, record.discordEventId);
-        continue;
-      }
-
-      // Check if thread is already archived (closed)
       if (thread.archived) {
         logger.debug(
           { threadId: record.discordThreadId },
@@ -79,7 +61,6 @@ async function checkAndCloseThreads(): Promise<void> {
         continue;
       }
 
-      // Close (archive) the thread
       await thread.setArchived(
         true,
         `Fermeture automatique 24h après la fin de l'événement`,
@@ -126,14 +107,9 @@ async function keepThreadsAlive(): Promise<void> {
 
   for (const record of threadsToKeep) {
     try {
-      const guild = await client.guilds.fetch(record.guildId);
-      const thread = await guild.channels.fetch(record.discordThreadId);
+      const thread = await fetchThread(record.guildId, record.discordThreadId);
 
-      if (!thread?.isThread()) {
-        continue;
-      }
-
-      if (!thread.archived) {
+      if (!thread?.archived) {
         continue;
       }
 
@@ -172,6 +148,32 @@ async function markThreadAsClosed(
         eq(agendaEvents.discordEventId, eventId),
       ),
     );
+}
+
+async function fetchThread(
+  guildId: string,
+  threadId: string,
+): Promise<ThreadChannel | null> {
+  const guild = await client.guilds.fetch(guildId);
+  const channel = await guild.channels.fetch(threadId);
+
+  if (!channel) {
+    logger.warn({ threadId, guildId }, 'Thread not found, marking as closed');
+    return null;
+  }
+
+  if (
+    channel.type !== ChannelType.PublicThread &&
+    channel.type !== ChannelType.PrivateThread
+  ) {
+    logger.warn(
+      { threadId, channelType: channel.type },
+      'Channel is not a thread, marking as closed',
+    );
+    return null;
+  }
+
+  return channel;
 }
 
 let checkIntervalId: ReturnType<typeof setInterval> | null = null;
@@ -215,3 +217,14 @@ export function startThreadManagementService(): void {
 /**
  * Stops the periodic check for threads to close.
  */
+export function stopThreadManagementService(): void {
+  if (checkIntervalId === null) {
+    logger.warn('Thread management service already stopped');
+    return;
+  }
+
+  clearInterval(checkIntervalId);
+  checkIntervalId = null;
+
+  logger.info('Thread management service stopped');
+}
