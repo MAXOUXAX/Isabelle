@@ -26,10 +26,6 @@ jobs:
       PANEL_URL: ${{ secrets.PANEL_URL }}
       PANEL_SERVER_ID: ${{ secrets.PANEL_SERVER_ID }}
       PANEL_API_KEY: ${{ secrets.PANEL_API_KEY }}
-      CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
-      CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
-      CLOUDLARED_VERSION: 2026.2.0
-      CLOUDLARED_SHA256: e90aa057bfe72c15071eb2706f739097550623b55c4e3ab98286f45e9bf145f4
 
     steps:
       - name: Verify secrets & normalize panel URL
