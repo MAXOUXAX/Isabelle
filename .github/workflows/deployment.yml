@@ -29,14 +29,13 @@ jobs:
       CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
       CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
       CLOUDLARED_VERSION: 2026.2.0
+      CLOUDLARED_SHA256: e90aa057bfe72c15071eb2706f739097550623b55c4e3ab98286f45e9bf145f4
 
     steps:
       - name: Verify secrets & normalize panel URL
         id: normalize-panel
-        env:
-          CLOUDLARED_SHA256: e90aa057bfe72c15071eb2706f739097550623b55c4e3ab98286f45e9bf145f4
         run: |
-          if [ -z "$PANEL_URL" ] || [ -z "$PANEL_SERVER_ID" ] || [ -z "$PANEL_API_KEY" ] || [ -z "$CF_ACCESS_CLIENT_ID" ] || [ -z "$CF_ACCESS_CLIENT_SECRET" ] || [ -z "$CLOUDLARED_SHA256" ]; then
+          if [ -z "$PANEL_URL" ] || [ -z "$PANEL_SERVER_ID" ] || [ -z "$PANEL_API_KEY" ] || [ -z "$CF_ACCESS_CLIENT_ID" ] || [ -z "$CF_ACCESS_CLIENT_SECRET" ]; then
             echo "Error: Required environment variables are not set"
             exit 1
           fi
@@ -50,15 +49,22 @@ jobs:
           PANEL_HOST_WITH_PORT="${PANEL_HOST_WITH_PORT#https://}"
           PANEL_HOST_WITH_PORT="${PANEL_HOST_WITH_PORT%%/*}"
           PANEL_HOST="${PANEL_HOST_WITH_PORT%%:*}"
-          PANEL_ORIGIN="${PANEL_SCHEME}://${PANEL_HOST_WITH_PORT}"
+          PANEL_PORT="${PANEL_HOST_WITH_PORT##*:}"
+          if [ "$PANEL_PORT" = "$PANEL_HOST_WITH_PORT" ]; then
+            if [ "$PANEL_SCHEME" = "http" ]; then
+              PANEL_PORT="80"
+            else
+              PANEL_PORT="443"
+            fi
+          fi
+          PANEL_REMOTE_ORIGIN="${PANEL_SCHEME}://${PANEL_HOST_WITH_PORT}"
           echo "panel_url=$PANEL_URL" >> $GITHUB_OUTPUT
-          echo "panel_origin=$PANEL_ORIGIN" >> $GITHUB_OUTPUT
+          echo "panel_remote_origin=$PANEL_REMOTE_ORIGIN" >> $GITHUB_OUTPUT
           echo "panel_host=$PANEL_HOST" >> $GITHUB_OUTPUT
           echo "panel_host_with_port=$PANEL_HOST_WITH_PORT" >> $GITHUB_OUTPUT
+          echo "panel_port=$PANEL_PORT" >> $GITHUB_OUTPUT
 
       - name: Install Cloudflared
-        env:
-          CLOUDLARED_SHA256: e90aa057bfe72c15071eb2706f739097550623b55c4e3ab98286f45e9bf145f4
         run: |
           curl -L --output cloudflared.deb "https://github.com/cloudflare/cloudflared/releases/download/${CLOUDLARED_VERSION}/cloudflared-linux-amd64.deb"
           ACTUAL_SHA256="$(shasum -a 256 cloudflared.deb | awk '{print $1}')"
@@ -81,14 +87,16 @@ jobs:
           CF_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
           CF_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
           PANEL_HOST: ${{ steps.normalize-panel.outputs.panel_host }}
-          PANEL_ORIGIN: ${{ steps.normalize-panel.outputs.panel_origin }}
+          PANEL_REMOTE_ORIGIN: ${{ steps.normalize-panel.outputs.panel_remote_origin }}
+          PANEL_PORT: ${{ steps.normalize-panel.outputs.panel_port }}
         run: |
-          sudo nohup cloudflared access tcp --hostname "$PANEL_HOST" --url 127.0.0.1:443 \
+          echo "Starting cloudflared tunnel on 127.0.0.1:${PANEL_PORT}..."
+          sudo nohup cloudflared access tcp --hostname "$PANEL_HOST" --url "127.0.0.1:${PANEL_PORT}" \
             --service-token-id "$CF_ID" \
             --service-token-secret "$CF_SECRET" > cloudflared.log 2>&1 &
           sleep 5
           echo "Testing panel connectivity via local tunnel..."
-          curl -f -I --max-time 5 --retry 5 --retry-delay 2 --retry-all-errors "$PANEL_ORIGIN"
+          curl -f -I --max-time 5 --retry 5 --retry-delay 2 --retry-all-errors "$PANEL_REMOTE_ORIGIN"
 
       - name: Generate safe artifact name
         id: artifact-name
@@ -106,7 +114,7 @@ jobs:
         id: create-backup
         uses: maxouxax/pterodactyl-create-backup-action@v1
         with:
-          panel-url: ${{ steps.normalize-panel.outputs.panel_origin }}
+          panel-url: ${{ steps.normalize-panel.outputs.panel_remote_origin }}
           api-key: ${{ secrets.PANEL_API_KEY }}
           server-id: ${{ secrets.PANEL_SERVER_ID }}
 
@@ -118,7 +126,7 @@ jobs:
         id: upload
         uses: rexlManu/pterodactyl-upload-action@v2.5
         with:
-          panel-host: ${{ steps.normalize-panel.outputs.panel_origin }}
+          panel-host: ${{ steps.normalize-panel.outputs.panel_remote_origin }}
           api-key: ${{ secrets.PANEL_API_KEY }}
           restart: true
           server-id: ${{ secrets.PANEL_SERVER_ID }}
