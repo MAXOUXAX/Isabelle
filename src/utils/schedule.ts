@@ -3,6 +3,7 @@ import { cacheStore } from '@/utils/cache.js';
 import { createLogger } from '@/utils/logger.js';
 import { ColorResolvable, EmbedBuilder } from 'discord.js';
 import { VEvent, fromURL } from 'node-ical';
+import type { ParameterValue } from 'node-ical';
 import * as dateUtils from './date.js';
 import { humanDate, humanTime } from './date.js';
 
@@ -198,6 +199,13 @@ function extractTeacherName(
   return '';
 }
 
+function getIcalValue(value: string | ParameterValue | undefined): string {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if ('val' in value) return value.val;
+  return '';
+}
+
 /*
  * Crée un tableau de cours à partir des données du fichier ICS
  */
@@ -208,13 +216,17 @@ function createLessonsFromData(data: VEvent[]): Lesson[] {
 
     const { start, end } = adjustSchedule(startDate, endDate);
 
+    const summary = getIcalValue(lesson.summary);
+    const location = getIcalValue(lesson.location);
+    const description = getIcalValue(lesson.description);
+
     return {
-      name: lesson.summary,
+      name: summary,
       start,
       end,
-      room: lesson.location.replaceAll('Remicourt_', '').toUpperCase(), // Balek du Remicourt
-      teacher: extractTeacherName(lesson.description, lesson.summary),
-      color: getLessonColor(lesson.summary),
+      room: location.replaceAll('Remicourt_', '').toUpperCase(), // Balek du Remicourt
+      teacher: extractTeacherName(description, summary),
+      color: getLessonColor(summary),
     };
   });
 }
