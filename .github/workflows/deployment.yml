@@ -31,7 +31,7 @@ jobs:
       CLOUDLARED_VERSION: 2026.2.0
 
     steps:
-      - name: Verify Required Secrets
+      - name: Verify secrets & normalize panel URL
         id: normalize-panel
         env:
           CLOUDLARED_SHA256: e90aa057bfe72c15071eb2706f739097550623b55c4e3ab98286f45e9bf145f4
