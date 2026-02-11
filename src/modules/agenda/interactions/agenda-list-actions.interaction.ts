@@ -1,17 +1,27 @@
 import { configManager } from '@/manager/config.manager.js';
+import { AGENDA_EVENT_ACTION_ID } from '@/modules/agenda/messages/agenda-list-message.js';
 import {
   AGENDA_MODAL_CUSTOM_ID,
   buildAgendaModal,
-} from '@/modules/agenda/commands/subcommands/create.subcommand.js';
-import { AGENDA_EVENT_ACTION_ID } from '@/modules/agenda/messages/agenda-list-message.js';
+} from '@/modules/agenda/messages/agenda-modal.js';
+import {
+  AgendaUserError,
+  withAgendaErrorHandling,
+} from '@/modules/agenda/utils/agenda-errors.js';
+import { formatDateRangeInput } from '@/modules/agenda/utils/date-parser.js';
+import { requireGuild } from '@/modules/agenda/utils/interaction-guards.js';
+import { InteractionHandler } from '@/modules/bot-module.js';
+import { createLogger } from '@/utils/logger.js';
+import {
+  ButtonInteraction,
+  DiscordAPIError,
+  Interaction,
+  MessageFlags,
+} from 'discord.js';
 import {
   deleteAgendaEventResources,
   findAgendaEventByDiscordId,
-} from '@/modules/agenda/services/agenda.service.js';
-import { formatDateRangeInput } from '@/modules/agenda/utils/date-parser.js';
-import { InteractionHandler } from '@/modules/bot-module.js';
-import { createLogger } from '@/utils/logger.js';
-import { Interaction, MessageFlags } from 'discord.js';
+} from '../services/agenda.service.js';
 
 const logger = createLogger('agenda-list-actions');
 
@@ -22,87 +32,81 @@ export class AgendaListActionsHandler implements InteractionHandler {
     if (!interaction.isButton()) {
       return;
     }
+    const handler = withAgendaErrorHandling(
+      logger,
+      async (buttonInteraction: ButtonInteraction): Promise<void> => {
+        const { guild, guildId } = requireGuild(buttonInteraction);
+        const [, , action, eventId] = buttonInteraction.customId.split(':');
 
-    if (!interaction.guild || !interaction.guildId) {
-      await interaction.reply({
-        content: 'Cette interaction doit être utilisée dans un serveur.',
-        flags: MessageFlags.Ephemeral,
-      });
-      return;
-    }
+        if (!action || !eventId) {
+          throw new AgendaUserError(
+            'Action invalide. Utilise `/agenda list` pour réessayer.',
+          );
+        }
 
-    const parts = interaction.customId.split(':');
-    const action = parts[2];
-    const eventId = parts[3];
+        const event = await findAgendaEventByDiscordId(guildId, eventId);
 
-    if (!action || !eventId) {
-      await interaction.reply({
-        content: 'Action invalide. Utilise `/agenda list` pour réessayer.',
-        flags: MessageFlags.Ephemeral,
-      });
-      return;
-    }
+        if (!event) {
+          throw new AgendaUserError(
+            'Impossible de retrouver cet événement. Rafraîchis la liste avec `/agenda list`.',
+          );
+        }
 
-    const event = await findAgendaEventByDiscordId(
-      interaction.guildId,
-      eventId,
+        if (action === 'edit') {
+          const modal = buildAgendaModal({
+            customId: `${AGENDA_MODAL_CUSTOM_ID}:edit:${eventId}`,
+            defaults: {
+              title: event.title,
+              description: event.description,
+              location: event.location,
+              dates: formatDateRangeInput(
+                event.eventStartTime,
+                event.eventEndTime,
+              ),
+            },
+          });
+
+          await buttonInteraction.showModal(modal);
+          return;
+        }
+
+        if (action === 'delete') {
+          const config = configManager.getGuild(guildId);
+          const { eventName, threadDeleted } = await deleteAgendaEventResources(
+            {
+              guild,
+              eventId,
+              forumChannelId: config.AGENDA_FORUM_CHANNEL_ID,
+              eventRecord: event,
+            },
+          );
+
+          try {
+            await buttonInteraction.reply({
+              content: `L'événement **${eventName}** a été supprimé.${
+                threadDeleted
+                  ? ' Le fil de discussion associé a également été supprimé.'
+                  : ''
+              }`,
+              flags: MessageFlags.Ephemeral,
+            });
+          } catch (error) {
+            if (!(error instanceof DiscordAPIError) || error.code !== 10008) {
+              throw error;
+            }
+            // If the channel was deleted, ignore the reply failure
+          }
+          return;
+        }
+
+        throw new AgendaUserError(
+          'Action inconnue. Utilise `/agenda list` pour réessayer.',
+        );
+      },
+      "Une erreur est survenue lors de l'action agenda. Vérifie que j'ai les permissions nécessaires.",
+      'edit',
     );
 
-    if (!event) {
-      await interaction.reply({
-        content:
-          'Impossible de retrouver cet événement. Rafraîchis la liste avec `/agenda list`.',
-        flags: MessageFlags.Ephemeral,
-      });
-      return;
-    }
-
-    if (action === 'edit') {
-      const modal = buildAgendaModal({
-        customId: `${AGENDA_MODAL_CUSTOM_ID}:edit:${eventId}`,
-        defaults: {
-          title: event.title,
-          description: event.description,
-          location: event.location,
-          dates: formatDateRangeInput(event.eventStartTime, event.eventEndTime),
-        },
-      });
-
-      await interaction.showModal(modal);
-      return;
-    }
-
-    if (action === 'delete') {
-      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-      try {
-        const config = configManager.getGuild(interaction.guildId);
-        const { eventName, threadDeleted } = await deleteAgendaEventResources({
-          guild: interaction.guild,
-          eventId,
-          forumChannelId: config.AGENDA_FORUM_CHANNEL_ID,
-          eventRecord: event,
-        });
-
-        await interaction.editReply({
-          content: `L'événement **${eventName}** a été supprimé.${
-            threadDeleted
-              ? ' Le fil de discussion associé a également été supprimé.'
-              : ''
-          }`,
-        });
-      } catch (error) {
-        logger.error({ error, eventId }, 'Failed to delete scheduled event');
-        await interaction.editReply({
-          content:
-            "Une erreur est survenue lors de la suppression de l'événement. Vérifie que j'ai les permissions nécessaires.",
-        });
-      }
-      return;
-    }
-
-    await interaction.reply({
-      content: 'Action inconnue. Utilise `/agenda list` pour réessayer.',
-      flags: MessageFlags.Ephemeral,
-    });
+    await handler(interaction);
   }
 }

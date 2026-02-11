@@ -3,9 +3,18 @@ import {
   buildEventDetailMessage,
 } from '@/modules/agenda/messages/agenda-list-message.js';
 import { fetchUpcomingAgendaEvents } from '@/modules/agenda/services/agenda.service.js';
+import {
+  AgendaUserError,
+  withAgendaErrorHandling,
+} from '@/modules/agenda/utils/agenda-errors.js';
+import { requireGuild } from '@/modules/agenda/utils/interaction-guards.js';
 import { InteractionHandler } from '@/modules/bot-module.js';
 import { createLogger } from '@/utils/logger.js';
-import { Interaction, MessageFlags } from 'discord.js';
+import {
+  Interaction,
+  MessageFlags,
+  StringSelectMenuInteraction,
+} from 'discord.js';
 
 const logger = createLogger('agenda-list-navigation');
 
@@ -16,63 +25,53 @@ export class AgendaListNavigationHandler implements InteractionHandler {
     if (!interaction.isStringSelectMenu()) {
       return;
     }
+    const handler = withAgendaErrorHandling(
+      logger,
+      async (menuInteraction: StringSelectMenuInteraction): Promise<void> => {
+        const selectedEventId = menuInteraction.values[0];
 
-    const selectedEventId = interaction.values[0];
+        if (!selectedEventId) {
+          logger.warn('No event selected in agenda dropdown');
+          throw new AgendaUserError(
+            'Aucun événement sélectionné. Utilise `/agenda list` pour voir les événements.',
+          );
+        }
 
-    if (!selectedEventId) {
-      logger.warn('No event selected in agenda dropdown');
-      await interaction.reply({
-        content:
-          'Aucun événement sélectionné. Utilise `/agenda list` pour voir les événements.',
-        flags: MessageFlags.Ephemeral,
-      });
-      return;
-    }
+        const { guild } = requireGuild(menuInteraction);
 
-    if (!interaction.guild) {
-      await interaction.reply({
-        content: 'Cette interaction doit être utilisée dans un serveur.',
-        flags: MessageFlags.Ephemeral,
-      });
-      return;
-    }
+        if (!menuInteraction.deferred && !menuInteraction.replied) {
+          await menuInteraction.deferUpdate();
+        }
 
-    if (!interaction.deferred && !interaction.replied) {
-      await interaction.deferUpdate();
-    }
+        const upcomingEvents = await fetchUpcomingAgendaEvents(guild.id);
 
-    try {
-      const upcomingEvents = await fetchUpcomingAgendaEvents(
-        interaction.guild.id,
-      );
+        const selectedEvent = upcomingEvents.find(
+          (event) => event.discordEventId === selectedEventId,
+        );
 
-      const selectedEvent = upcomingEvents.find(
-        (event) => event.discordEventId === selectedEventId,
-      );
+        if (!selectedEvent) {
+          await menuInteraction.followUp({
+            content:
+              "Cet événement n'existe plus ou a été annulé. Utilise `/agenda list` pour voir les événements disponibles.",
+            flags: MessageFlags.Ephemeral,
+          });
+          return;
+        }
 
-      if (!selectedEvent) {
-        await interaction.followUp({
-          content:
-            "Cet événement n'existe plus ou a été annulé. Utilise `/agenda list` pour voir les événements disponibles.",
-          flags: MessageFlags.Ephemeral,
+        const container = buildEventDetailMessage(
+          selectedEvent,
+          upcomingEvents,
+        );
+
+        await menuInteraction.editReply({
+          components: [container],
+          flags: MessageFlags.IsComponentsV2,
         });
-        return;
-      }
+      },
+      'Impossible de récupérer les événements du serveur pour le moment. Réessaie dans quelques instants.',
+      'followUp',
+    );
 
-      const container = buildEventDetailMessage(selectedEvent, upcomingEvents);
-
-      await interaction.editReply({
-        components: [container],
-        flags: MessageFlags.IsComponentsV2,
-      });
-    } catch (error) {
-      logger.error({ error }, 'Failed to fetch agenda events');
-      await interaction.followUp({
-        content:
-          'Impossible de récupérer les événements du serveur pour le moment. Réessaie dans quelques instants.',
-        flags: MessageFlags.Ephemeral,
-      });
-      return;
-    }
+    await handler(interaction);
   }
 }

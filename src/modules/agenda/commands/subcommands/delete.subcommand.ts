@@ -3,6 +3,14 @@ import { agendaEvents } from '@/db/schema.js';
 import { configManager } from '@/manager/config.manager.js';
 import { deleteAgendaEventResources } from '@/modules/agenda/services/agenda.service.js';
 import {
+  AgendaUserError,
+  withAgendaErrorHandling,
+} from '@/modules/agenda/utils/agenda-errors.js';
+import {
+  requireConfigValue,
+  requireGuild,
+} from '@/modules/agenda/utils/interaction-guards.js';
+import {
   AutocompleteOptionHandler,
   filterAutocompleteChoices,
 } from '@/utils/autocomplete.js';
@@ -55,62 +63,39 @@ export const handleDeleteAutocomplete: AutocompleteOptionHandler = async ({
   return filterAutocompleteChoices(options, focusedValue);
 };
 
-export async function handleDeleteSubcommand(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
-  if (!interaction.guild || !interaction.guildId) {
-    await interaction.reply({
-      content: 'Cette commande doit être utilisée dans un serveur.',
-      flags: MessageFlags.Ephemeral,
-    });
-    return;
-  }
+export const handleDeleteSubcommand = withAgendaErrorHandling(
+  logger,
+  async (interaction: ChatInputCommandInteraction): Promise<void> => {
+    const { guild, guildId } = requireGuild(interaction);
+    const eventId = requireConfigValue(
+      interaction.options.getString('event'),
+      'Vous devez spécifier un événement à supprimer.',
+    );
 
-  const eventId = interaction.options.getString('event');
-
-  if (!eventId) {
-    await interaction.reply({
-      content: 'Vous devez spécifier un événement à supprimer.',
-      flags: MessageFlags.Ephemeral,
-    });
-    return;
-  }
-
-  try {
     const internalId = Number(eventId);
     if (Number.isNaN(internalId)) {
-      await interaction.reply({
-        content: "L'identifiant de l'événement est invalide.",
-        flags: MessageFlags.Ephemeral,
-      });
-      return;
+      throw new AgendaUserError("L'identifiant de l'événement est invalide.");
     }
 
     const record = await db
       .select()
       .from(agendaEvents)
       .where(
-        and(
-          eq(agendaEvents.id, internalId),
-          eq(agendaEvents.guildId, interaction.guildId),
-        ),
+        and(eq(agendaEvents.id, internalId), eq(agendaEvents.guildId, guildId)),
       )
       .limit(1);
 
     const eventRecord = record.at(0);
 
     if (!eventRecord) {
-      await interaction.reply({
-        content:
-          'Impossible de retrouver cet événement. Utilise `/agenda list` pour actualiser la liste.',
-        flags: MessageFlags.Ephemeral,
-      });
-      return;
+      throw new AgendaUserError(
+        'Impossible de retrouver cet événement. Utilise `/agenda list` pour actualiser la liste.',
+      );
     }
 
-    const config = configManager.getGuild(interaction.guildId);
+    const config = configManager.getGuild(guildId);
     const { eventName, threadDeleted } = await deleteAgendaEventResources({
-      guild: interaction.guild,
+      guild,
       eventId: eventRecord.discordEventId,
       forumChannelId: config.AGENDA_FORUM_CHANNEL_ID,
       eventRecord,
@@ -124,12 +109,6 @@ export async function handleDeleteSubcommand(
       }`,
       flags: MessageFlags.Ephemeral,
     });
-  } catch (error) {
-    logger.error({ error, eventId }, 'Failed to delete scheduled event');
-    await interaction.reply({
-      content:
-        "Une erreur est survenue lors de la suppression de l'événement. Vérifiez que j'ai les permissions nécessaires.",
-      flags: MessageFlags.Ephemeral,
-    });
-  }
-}
+  },
+  "Une erreur est survenue lors de la suppression de l'événement. Vérifie que j'ai les permissions nécessaires.",
+);

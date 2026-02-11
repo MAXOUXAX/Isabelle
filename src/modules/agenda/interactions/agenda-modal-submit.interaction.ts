@@ -2,13 +2,16 @@ import { configManager } from '@/manager/config.manager.js';
 import {
   AGENDA_MODAL_CUSTOM_ID,
   AI_OPTIONS_CUSTOM_ID,
-} from '@/modules/agenda/commands/subcommands/create.subcommand.js';
+} from '@/modules/agenda/messages/agenda-modal.js';
 import {
-  createAgendaEvent,
-  findAgendaEventByDiscordId,
-  updateAgendaEvent,
-} from '@/modules/agenda/services/agenda.service.js';
+  AgendaUserError,
+  withAgendaErrorHandling,
+} from '@/modules/agenda/utils/agenda-errors.js';
 import { parseDateRange } from '@/modules/agenda/utils/date-parser.js';
+import {
+  requireConfigValue,
+  requireGuild,
+} from '@/modules/agenda/utils/interaction-guards.js';
 import { createLogger } from '@/utils/logger.js';
 import {
   ChannelType,
@@ -17,7 +20,13 @@ import {
   GuildBasedChannel,
   Interaction,
   MessageFlags,
+  ModalSubmitInteraction,
 } from 'discord.js';
+import {
+  createAgendaEvent,
+  findAgendaEventByDiscordId,
+  updateAgendaEvent,
+} from '../services/agenda.service.js';
 
 const logger = createLogger('agenda-modal-submit');
 
@@ -29,19 +38,28 @@ async function fetchAndValidateChannel({
   guild: Guild;
   channelId: string;
   channelType: ChannelType;
-}): Promise<{
-  channel: GuildBasedChannel | null;
-  error: 'wrong-type' | 'not-found' | null;
-}> {
+}): Promise<GuildBasedChannel> {
   try {
     const fetchedChannel = await guild.channels.fetch(channelId);
-    if (fetchedChannel?.type !== channelType) {
-      return { channel: null, error: 'wrong-type' };
+
+    if (!fetchedChannel) {
+      throw new AgendaUserError(
+        "Le salon forum n'a pas été trouvé. Reconfigure-le avec `/agenda config forum:<salon>`.",
+      );
     }
-    return { channel: fetchedChannel, error: null };
+
+    if (fetchedChannel.type !== channelType) {
+      throw new AgendaUserError(
+        "Le salon forum configuré n'est plus un salon forum. Reconfigure-le avec `/agenda config forum:<salon>`.",
+      );
+    }
+
+    return fetchedChannel;
   } catch (error) {
     logger.error({ error, channelId }, 'Failed to fetch channel');
-    return { channel: null, error: 'not-found' };
+    throw new AgendaUserError(
+      "Le salon forum n'a pas été trouvé. Reconfigure-le avec `/agenda config forum:<salon>`.",
+    );
   }
 }
 
@@ -70,101 +88,105 @@ export async function handleAgendaModalSubmit(
   interaction: Interaction,
 ): Promise<void> {
   if (!interaction.isModalSubmit()) return;
+  const handler = withAgendaErrorHandling(
+    logger,
+    async (modalInteraction: ModalSubmitInteraction): Promise<void> => {
+      const { guild, guildId } = requireGuild(modalInteraction);
 
-  const guildId = interaction.guildId;
-  if (!guildId || !interaction.guild) {
-    await interaction.reply({
-      content: 'Cette commande doit être utilisée dans un serveur.',
-      flags: MessageFlags.Ephemeral,
-    });
-    return;
-  }
+      const eventLabel =
+        modalInteraction.fields.getTextInputValue('event-label');
+      const eventDescription =
+        modalInteraction.fields.getTextInputValue('event-description');
+      const eventDatesStr =
+        modalInteraction.fields.getTextInputValue('event-dates');
+      const eventLocation =
+        modalInteraction.fields.getTextInputValue('event-location');
+      const aiOptionsValues =
+        modalInteraction.fields.getStringSelectValues(AI_OPTIONS_CUSTOM_ID);
 
-  const eventLabel = interaction.fields.getTextInputValue('event-label');
-  const eventDescription =
-    interaction.fields.getTextInputValue('event-description');
-  const eventDatesStr = interaction.fields.getTextInputValue('event-dates');
-  const eventLocation = interaction.fields.getTextInputValue('event-location');
-  const aiOptionsValues =
-    interaction.fields.getStringSelectValues(AI_OPTIONS_CUSTOM_ID);
+      const aiOptions = parseAiOptions(aiOptionsValues);
+      const dateRange = parseDateRange(eventDatesStr);
 
-  const aiOptions = parseAiOptions(aiOptionsValues);
+      if (!dateRange) {
+        throw new AgendaUserError(
+          'Les dates ne sont pas valides.\nFormats acceptés:\n• `26/03/2025 14:00` (deadline)\n• `26/03/2025 14:00 - 26/03/2025 16:00` (plage)',
+        );
+      }
 
-  const dateRange = parseDateRange(eventDatesStr);
+      const { startDate, endDate } = dateRange;
+      const editEventId = getEditEventId(modalInteraction.customId);
+      const isEdit = Boolean(editEventId);
 
-  if (!dateRange) {
-    await interaction.reply({
-      content:
-        'Les dates ne sont pas valides.\nFormats acceptés:\n• `26/03/2025 14:00` (deadline)\n• `26/03/2025 14:00 - 26/03/2025 16:00` (plage)',
-      flags: MessageFlags.Ephemeral,
-    });
-    return;
-  }
+      if (!isEdit && startDate.getTime() < Date.now()) {
+        throw new AgendaUserError(
+          "La date de début est dans le passé. Choisis une date future pour créer l'événement.",
+        );
+      }
 
-  const { startDate, endDate } = dateRange;
+      if (startDate >= endDate) {
+        throw new AgendaUserError(
+          'La date de fin doit être après la date de début.',
+        );
+      }
 
-  const editEventId = getEditEventId(interaction.customId);
-  const isEdit = Boolean(editEventId);
+      const config = configManager.getGuild(guildId);
+      const forumChannelId = config.AGENDA_FORUM_CHANNEL_ID;
+      const fisaRoleId = config.AGENDA_FISA_ROLE_ID;
 
-  if (!isEdit && startDate.getTime() < Date.now()) {
-    await interaction.reply({
-      content:
-        "La date de début est dans le passé. Choisis une date future pour créer l'événement.",
-      flags: MessageFlags.Ephemeral,
-    });
-    return;
-  }
+      if (!isEdit) {
+        requireConfigValue(
+          fisaRoleId,
+          "Le rôle FISA n'est pas configuré. Utilise `/agenda config role:<rôle>` pour le définir.",
+        );
+        requireConfigValue(
+          forumChannelId,
+          "Le salon forum n'a pas été configuré. Utilise `/agenda config forum:<salon>` pour le configurer.",
+        );
+      }
 
-  if (startDate >= endDate) {
-    await interaction.reply({
-      content: 'La date de fin doit être après la date de début.',
-      flags: MessageFlags.Ephemeral,
-    });
-    return;
-  }
+      await modalInteraction.deferReply({ flags: MessageFlags.Ephemeral });
 
-  const config = configManager.getGuild(guildId);
-  const forumChannelId = config.AGENDA_FORUM_CHANNEL_ID;
-  const fisaRoleId = config.AGENDA_FISA_ROLE_ID;
+      if (isEdit && editEventId) {
+        const eventRecord = await findAgendaEventByDiscordId(
+          guildId,
+          editEventId,
+        );
 
-  if (!isEdit && !fisaRoleId) {
-    await interaction.reply({
-      content:
-        "Le rôle FISA n'est pas configuré. Utilise `/agenda config role:<rôle>` pour le définir.",
-      flags: MessageFlags.Ephemeral,
-    });
-    return;
-  }
-
-  if (!isEdit && !forumChannelId) {
-    await interaction.reply({
-      content:
-        "Le salon forum n'a pas été configuré. Utilise `/agenda config forum:<salon>` pour le configurer.",
-      flags: MessageFlags.Ephemeral,
-    });
-    return;
-  }
-
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-
-  try {
-    if (isEdit && editEventId) {
-      const eventRecord = await findAgendaEventByDiscordId(
-        guildId,
-        editEventId,
-      );
-
-      if (!eventRecord) {
-        await interaction.editReply({
-          content:
+        if (!eventRecord) {
+          throw new AgendaUserError(
             'Impossible de retrouver cet événement. Relance `/agenda list`.',
+          );
+        }
+
+        const { scheduledEvent, thread } = await updateAgendaEvent({
+          guild,
+          eventId: editEventId,
+          eventLabel,
+          eventDescription,
+          eventLocation,
+          startDate,
+          endDate,
+          aiOptions,
+          roleId: fisaRoleId,
+          baseEmoji: eventRecord.emoji,
+          threadId: eventRecord.discordThreadId,
+        });
+
+        await modalInteraction.editReply({
+          content: `L'événement **${scheduledEvent.name}** a été modifié !\n\n📅 Événement : ${scheduledEvent.url}\n💬 Discussion : <#${thread.id}>`,
         });
         return;
       }
 
-      const { scheduledEvent, thread } = await updateAgendaEvent({
-        guild: interaction.guild,
-        eventId: editEventId,
+      const forumChannel = await fetchAndValidateChannel({
+        guild,
+        channelId: forumChannelId ?? '',
+        channelType: ChannelType.GuildForum,
+      });
+
+      const { scheduledEvent, thread } = await createAgendaEvent({
+        guild,
+        forumChannel: forumChannel as ForumChannel,
         eventLabel,
         eventDescription,
         eventLocation,
@@ -172,58 +194,15 @@ export async function handleAgendaModalSubmit(
         endDate,
         aiOptions,
         roleId: fisaRoleId,
-        baseEmoji: eventRecord.emoji,
-        threadId: eventRecord.discordThreadId,
       });
 
-      await interaction.editReply({
-        content: `L'événement **${scheduledEvent.name}** a été modifié !\n\n📅 Événement : ${scheduledEvent.url}\n💬 Discussion : <#${thread.id}>`,
+      await modalInteraction.editReply({
+        content: `L'événement **${scheduledEvent.name}** a été créé !\n\n📅 Événement : ${scheduledEvent.url}\n💬 Discussion : <#${thread.id}>`,
       });
-      return;
-    }
+    },
+    "Une erreur est survenue lors de la création de l'événement. Vérifie que le bot a les permissions nécessaires.",
+    'edit',
+  );
 
-    const { channel: forumChannel, error } = await fetchAndValidateChannel({
-      guild: interaction.guild,
-      channelId: forumChannelId ?? '',
-      channelType: ChannelType.GuildForum,
-    });
-
-    if (error === 'not-found') {
-      await interaction.editReply({
-        content:
-          "Le salon forum n'a pas été trouvé. Reconfigure-le avec `/agenda config forum:<salon>`.",
-      });
-      return;
-    }
-
-    if (error === 'wrong-type') {
-      await interaction.editReply({
-        content:
-          "Le salon forum configuré n'est plus un salon forum. Reconfigure-le avec `/agenda config forum:<salon>`.",
-      });
-      return;
-    }
-
-    const { scheduledEvent, thread } = await createAgendaEvent({
-      guild: interaction.guild,
-      forumChannel: forumChannel as ForumChannel,
-      eventLabel,
-      eventDescription,
-      eventLocation,
-      startDate,
-      endDate,
-      aiOptions,
-      roleId: fisaRoleId,
-    });
-
-    await interaction.editReply({
-      content: `L'événement **${scheduledEvent.name}** a été créé !\n\n📅 Événement : ${scheduledEvent.url}\n💬 Discussion : <#${thread.id}>`,
-    });
-  } catch (error) {
-    logger.error({ error }, 'Failed to create agenda event');
-    await interaction.editReply({
-      content:
-        "Une erreur est survenue lors de la création de l'événement. Vérifie que le bot a les permissions nécessaires.",
-    });
-  }
+  await handler(interaction);
 }
