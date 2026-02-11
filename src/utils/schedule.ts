@@ -3,6 +3,7 @@ import { cacheStore } from '@/utils/cache.js';
 import { createLogger } from '@/utils/logger.js';
 import { ColorResolvable, EmbedBuilder } from 'discord.js';
 import { VEvent, fromURL } from 'node-ical';
+import type { ParameterValue } from 'node-ical';
 import * as dateUtils from './date.js';
 import { humanDate, humanTime } from './date.js';
 
@@ -149,6 +150,12 @@ function adjustSchedule(
   return { start: adjustedStart, end: adjustedEnd };
 }
 
+function extractString(value: ParameterValue | undefined): string {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  return value.val;
+}
+
 /*
  * Extrait le nom du professeur de la description
  */
@@ -208,13 +215,17 @@ function createLessonsFromData(data: VEvent[]): Lesson[] {
 
     const { start, end } = adjustSchedule(startDate, endDate);
 
+    const summary = extractString(lesson.summary);
+    const description = extractString(lesson.description);
+    const location = extractString(lesson.location);
+
     return {
-      name: lesson.summary,
+      name: summary,
       start,
       end,
-      room: lesson.location.replaceAll('Remicourt_', '').toUpperCase(), // Balek du Remicourt
-      teacher: extractTeacherName(lesson.description, lesson.summary),
-      color: getLessonColor(lesson.summary),
+      room: location.replaceAll('Remicourt_', '').toUpperCase(), // Balek du Remicourt
+      teacher: extractTeacherName(description, summary),
+      color: getLessonColor(summary),
     };
   });
 }
