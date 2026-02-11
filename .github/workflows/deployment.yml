@@ -31,7 +31,7 @@ jobs:
       - name: Verify secrets & normalize panel URL
         id: normalize-panel
         run: |
-          if [ -z "$PANEL_URL" ] || [ -z "$PANEL_SERVER_ID" ] || [ -z "$PANEL_API_KEY" ] || [ -z "$CF_ACCESS_CLIENT_ID" ] || [ -z "$CF_ACCESS_CLIENT_SECRET" ]; then
+          if [ -z "$PANEL_URL" ] || [ -z "$PANEL_SERVER_ID" ] || [ -z "$PANEL_API_KEY" ]; then
             echo "Error: Required environment variables are not set"
             exit 1
           fi
