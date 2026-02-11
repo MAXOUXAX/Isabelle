@@ -352,6 +352,16 @@ export async function deleteAgendaEventResources({
         );
 
         if (matchingThread) {
+          logger.info(
+            {
+              eventName,
+              forumChannelId,
+              threadId: matchingThread.id,
+              threadName: matchingThread.name,
+              fallbackMatching: true,
+            },
+            'Using fallback forum thread name matching for agenda deletion',
+          );
           await matchingThread.delete(
             `Suppression de l'événement associé: ${eventName}`,
           );
