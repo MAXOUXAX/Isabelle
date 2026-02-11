@@ -28,9 +28,11 @@ jobs:
       PANEL_API_KEY: ${{ secrets.PANEL_API_KEY }}
       CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
       CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+      CLOUDLARED_VERSION: 2026.2.0
 
     steps:
       - name: Verify Required Secrets
+        id: normalize-panel
         run: |
           if [ -z "$PANEL_URL" ] || [ -z "$PANEL_SERVER_ID" ] || [ -z "$PANEL_API_KEY" ] || [ -z "$CF_ACCESS_CLIENT_ID" ] || [ -z "$CF_ACCESS_CLIENT_SECRET" ]; then
             echo "Error: Required environment variables are not set"
@@ -38,18 +40,28 @@ jobs:
           fi
           # Remove trailing slashes from URL if present
           PANEL_URL="${PANEL_URL%/}"
-          echo "PANEL_URL=$PANEL_URL" >> $GITHUB_ENV
-          PANEL_HOST="${PANEL_URL#http://}"
-          PANEL_HOST="${PANEL_HOST#https://}"
-          PANEL_HOST="${PANEL_HOST%%/*}"
-          echo "PANEL_HOST=$PANEL_HOST" >> $GITHUB_ENV
+          PANEL_SCHEME="https"
+          if [[ "$PANEL_URL" == http://* ]]; then
+            PANEL_SCHEME="http"
+          fi
+          PANEL_HOST_WITH_PORT="${PANEL_URL#http://}"
+          PANEL_HOST_WITH_PORT="${PANEL_HOST_WITH_PORT#https://}"
+          PANEL_HOST_WITH_PORT="${PANEL_HOST_WITH_PORT%%/*}"
+          PANEL_HOST="${PANEL_HOST_WITH_PORT%%:*}"
+          PANEL_ORIGIN="${PANEL_SCHEME}://${PANEL_HOST_WITH_PORT}"
+          echo "panel_url=$PANEL_URL" >> $GITHUB_OUTPUT
+          echo "panel_origin=$PANEL_ORIGIN" >> $GITHUB_OUTPUT
+          echo "panel_host=$PANEL_HOST" >> $GITHUB_OUTPUT
+          echo "panel_host_with_port=$PANEL_HOST_WITH_PORT" >> $GITHUB_OUTPUT
 
       - name: Install Cloudflared
         run: |
-          curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          curl -L --output cloudflared.deb "https://github.com/cloudflare/cloudflared/releases/download/${CLOUDLARED_VERSION}/cloudflared-linux-amd64.deb"
           sudo dpkg -i cloudflared.deb
 
       - name: Map panel host to localhost
+        env:
+          PANEL_HOST: ${{ steps.normalize-panel.outputs.panel_host }}
         run: |
           echo "127.0.0.1 $PANEL_HOST" | sudo tee -a /etc/hosts
 
@@ -57,13 +69,14 @@ jobs:
         env:
           CF_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
           CF_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+          PANEL_HOST: ${{ steps.normalize-panel.outputs.panel_host }}
         run: |
           sudo nohup cloudflared access tcp --hostname "$PANEL_HOST" --url 127.0.0.1:443 \
             --service-token-id "$CF_ID" \
             --service-token-secret "$CF_SECRET" > cloudflared.log 2>&1 &
           sleep 5
           echo "Testing panel connectivity via local tunnel..."
-          curl -I "https://$PANEL_HOST" || echo "Warning: panel probe failed"
+          curl -f -I --max-time 5 --retry 5 --retry-delay 2 --retry-all-errors "https://$PANEL_HOST"
 
       - name: Generate safe artifact name
         id: artifact-name
@@ -81,9 +94,9 @@ jobs:
         id: create-backup
         uses: maxouxax/pterodactyl-create-backup-action@v1
         with:
-          panel-url: ${{ env.PANEL_URL }}
-          api-key: ${{ env.PANEL_API_KEY }}
-          server-id: ${{ env.PANEL_SERVER_ID }}
+          panel-url: ${{ steps.normalize-panel.outputs.panel_origin }}
+          api-key: ${{ secrets.PANEL_API_KEY }}
+          server-id: ${{ secrets.PANEL_SERVER_ID }}
 
       - name: Create Archive for Upload
         run: |
@@ -93,10 +106,10 @@ jobs:
         id: upload
         uses: rexlManu/pterodactyl-upload-action@v2.5
         with:
-          panel-host: ${{ env.PANEL_URL }}
-          api-key: ${{ env.PANEL_API_KEY }}
+          panel-host: ${{ steps.normalize-panel.outputs.panel_origin }}
+          api-key: ${{ secrets.PANEL_API_KEY }}
           restart: true
-          server-id: ${{ env.PANEL_SERVER_ID }}
+          server-id: ${{ secrets.PANEL_SERVER_ID }}
           source: app.tgz
           decompress-target: true
           target: app.tgz
