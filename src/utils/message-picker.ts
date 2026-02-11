@@ -42,6 +42,7 @@ const isChannelAccessible = (
   channel: TextChannel,
   botMember: Guild['members']['me'],
   botUserId: Snowflake,
+  invokerId?: Snowflake,
 ): boolean => {
   if (!channel.viewable) {
     return false;
@@ -55,10 +56,21 @@ const isChannelAccessible = (
     return false;
   }
 
-  return (
-    permissions.has(PermissionFlagsBits.ViewChannel) &&
-    permissions.has(PermissionFlagsBits.ReadMessageHistory)
-  );
+  if (
+    !permissions.has(PermissionFlagsBits.ViewChannel) ||
+    !permissions.has(PermissionFlagsBits.ReadMessageHistory)
+  ) {
+    return false;
+  }
+
+  if (invokerId) {
+    const invokerPermissions = channel.permissionsFor(invokerId);
+    if (!invokerPermissions?.has(PermissionFlagsBits.ViewChannel)) {
+      return false;
+    }
+  }
+
+  return true;
 };
 
 /**
@@ -68,13 +80,19 @@ const getAccessibleChannels = (
   guild: Guild,
   botMember: Guild['members']['me'],
   botUserId: Snowflake,
+  invokerId?: Snowflake,
 ): TextChannel[] => {
   const textChannels = guild.channels.cache.filter(
     (channel): channel is TextChannel => channel.type === ChannelType.GuildText,
   );
 
   return Array.from(textChannels.values()).filter((channel) => {
-    const accessible = isChannelAccessible(channel, botMember, botUserId);
+    const accessible = isChannelAccessible(
+      channel,
+      botMember,
+      botUserId,
+      invokerId,
+    );
     if (!accessible) {
       logger.debug(
         { channelId: channel.id, guildId: guild.id },
@@ -201,6 +219,7 @@ export const fetchLastUserMessages = async (
   userId: Snowflake,
   minMessages = 0,
   maxMessages = 100,
+  invokerId?: Snowflake,
 ): Promise<Message[]> => {
   if (!guild) {
     return [];
@@ -209,7 +228,12 @@ export const fetchLastUserMessages = async (
   const botMember = guild.members.me;
   const botUserId = guild.client.user.id;
 
-  const accessibleChannels = getAccessibleChannels(guild, botMember, botUserId);
+  const accessibleChannels = getAccessibleChannels(
+    guild,
+    botMember,
+    botUserId,
+    invokerId,
+  );
 
   if (accessibleChannels.length === 0) {
     logger.warn(
