@@ -6,6 +6,38 @@ import { eq, isNull } from 'drizzle-orm';
 
 // Cache compiled regexes to avoid recompilation on every message
 const triggerRegexCache = new Map<string, RegExp>();
+// Track which scope(s) (guild/global) each trigger belongs to for granular invalidation
+const triggerScopesCache = new Map<string, Set<string>>();
+const AUTOMATIC_RESPONSES_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+function getScopeKey(guildId: string | null): string {
+  return guildId == null ? 'global' : `guild:${guildId}`;
+}
+
+function registerTriggerScope(trigger: string, guildId: string | null): void {
+  const scopeKey = getScopeKey(guildId);
+  const scopes = triggerScopesCache.get(trigger);
+
+  if (!scopes) {
+    triggerScopesCache.set(trigger, new Set([scopeKey]));
+    return;
+  }
+
+  scopes.add(scopeKey);
+}
+
+function invalidateRegexCacheForScope(guildId: string | null): void {
+  const scopeKey = getScopeKey(guildId);
+
+  for (const [trigger, scopes] of triggerScopesCache) {
+    scopes.delete(scopeKey);
+
+    if (scopes.size === 0) {
+      triggerScopesCache.delete(trigger);
+      triggerRegexCache.delete(trigger);
+    }
+  }
+}
 
 /**
  * Fetches automatic response definitions scoped to a specific guild or global (guild-agnostic) responses.
@@ -35,10 +67,14 @@ async function queryAutomaticResponses(
  */
 async function getCachedResponses(guildId: string | null) {
   const globalCacheKey = `automatic-responses-global`;
-  // Cache global responses for 60 seconds
+  // Cache global responses for 24 hours
   const globalCacheEntry = cacheStore.useCache<
     (typeof automaticResponses.$inferSelect)[]
-  >(globalCacheKey, () => queryAutomaticResponses(null), 60_000);
+  >(
+    globalCacheKey,
+    () => queryAutomaticResponses(null),
+    AUTOMATIC_RESPONSES_CACHE_TTL_MS,
+  );
 
   if (guildId == null) {
     const globalResponses = await globalCacheEntry.get();
@@ -47,10 +83,14 @@ async function getCachedResponses(guildId: string | null) {
 
   // Per-guild cache (only contains guild-specific responses)
   const guildCacheKey = `automatic-responses-guild-${guildId}`;
-  // Cache guild responses for 60 seconds
+  // Cache guild responses for 24 hours
   const guildCacheEntry = cacheStore.useCache<
     (typeof automaticResponses.$inferSelect)[]
-  >(guildCacheKey, () => queryAutomaticResponses(guildId), 60_000);
+  >(
+    guildCacheKey,
+    () => queryAutomaticResponses(guildId),
+    AUTOMATIC_RESPONSES_CACHE_TTL_MS,
+  );
 
   const [guildResponses, globalResponses] = await Promise.all([
     guildCacheEntry.get(),
@@ -70,8 +110,8 @@ async function getCachedResponses(guildId: string | null) {
  * @param guildId The guild ID to invalidate the cache for, or null for global responses
  */
 export async function invalidateResponseCache(guildId: string | null) {
-  // Clear the regex cache to prevent stale entries/memory leaks
-  triggerRegexCache.clear();
+  // Invalidate only regexes associated with the updated scope (guild/global)
+  invalidateRegexCacheForScope(guildId);
 
   if (guildId == null) {
     const globalEntry = cacheStore.useCache('automatic-responses-global');
@@ -84,12 +124,35 @@ export async function invalidateResponseCache(guildId: string | null) {
   await guildEntry.revalidate();
 }
 
+/**
+ * Invalidate cache for the scope owning a specific automatic response row.
+ * Useful for update/delete flows where only the row ID is known.
+ * @param responseId Automatic response row ID
+ */
+export async function invalidateResponseCacheByResponseId(
+  responseId: number,
+  fallbackGuildId: string | null = null,
+): Promise<void> {
+  const rows = await db
+    .select({ guildId: automaticResponses.guildId })
+    .from(automaticResponses)
+    .where(eq(automaticResponses.id, responseId))
+    .limit(1);
+
+  if (rows.length === 0) {
+    await invalidateResponseCache(fallbackGuildId);
+    return;
+  }
+
+  await invalidateResponseCache(rows[0].guildId);
+}
+
 export async function automaticResponseMessageListener(
   message: Message,
 ): Promise<void> {
   if (message.author.bot) return;
 
-  const content = ` ${message.content.toLowerCase()} `; // pad with spaces for word boundary matching
+  const content = message.content.toLowerCase();
 
   // Fetch both global (guildId is NULL) and guild-specific responses, using cache
   const applicableResponses = await getCachedResponses(message.guildId ?? null);
@@ -120,7 +183,7 @@ export async function automaticResponseMessageListener(
 /**
  * Checks if a message matches triggers and sends a response if it does
  * @param message The Discord message to potentially respond to
- * @param content The lowercase content of the message (padded with spaces)
+ * @param content The lowercase content of the message
  * @param responseConfig The automatic response configuration from the database
  * @returns True if a response was sent, false otherwise
  */
@@ -136,13 +199,15 @@ async function checkAndSendResponse(
     return false;
   }
 
-  // Improved trigger matching: match only whole words (with word boundaries)
+  // Improved trigger matching: use explicit whitespace/start/end boundaries
   const hasTrigger = triggers.some((t) => {
+    registerTriggerScope(t, responseConfig.guildId);
+
     // Check cache first
     let pattern = triggerRegexCache.get(t);
     if (!pattern) {
-      // Pad trigger with spaces for strict word boundary
-      pattern = new RegExp(`\\b${escapeRegex(t)}\\b`, 'i');
+      // Match trigger only when surrounded by whitespace or message boundaries
+      pattern = new RegExp(`(?:^|\\s)${escapeRegex(t)}(?:\\s|$)`, 'i');
       triggerRegexCache.set(t, pattern);
     }
     return pattern.test(content);
