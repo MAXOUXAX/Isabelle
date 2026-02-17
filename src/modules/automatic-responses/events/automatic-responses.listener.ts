@@ -204,16 +204,16 @@ async function checkAndSendResponse(
     return false;
   }
 
+  let hasTrigger = false;
+
   for (const trigger of triggers) {
     registerTriggerScope(trigger, responseConfig.guildId);
-    getOrCreateTriggerPattern(trigger);
-  }
 
-  // Improved trigger matching: use explicit whitespace/start/end boundaries
-  const hasTrigger = triggers.some((t) => {
-    const pattern = getOrCreateTriggerPattern(t);
-    return pattern.test(content);
-  });
+    if (!hasTrigger) {
+      const pattern = getOrCreateTriggerPattern(trigger);
+      hasTrigger = pattern.test(content);
+    }
+  }
 
   if (!hasTrigger) {
     return false;
