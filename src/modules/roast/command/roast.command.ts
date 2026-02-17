@@ -88,6 +88,9 @@ export class RoastCommand implements IsabelleCommand {
         return;
       }
 
+      await interaction.deferReply();
+      hasDeferred = true;
+
       const lastUserMessagesPromise = fetchLastUserMessages(
         guild,
         user.id,
@@ -95,10 +98,6 @@ export class RoastCommand implements IsabelleCommand {
         100,
         interaction.user.id,
       );
-
-      await interaction.deferReply();
-      hasDeferred = true;
-
       const lastUserMessages = await lastUserMessagesPromise;
 
       logger.debug(

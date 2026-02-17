@@ -65,7 +65,13 @@ const isChannelAccessible = (
 
   if (invokerId) {
     const invokerPermissions = channel.permissionsFor(invokerId);
-    if (!invokerPermissions?.has(PermissionFlagsBits.ViewChannel)) {
+    if (!invokerPermissions) {
+      return false;
+    }
+    if (
+      !invokerPermissions.has(PermissionFlagsBits.ViewChannel) ||
+      !invokerPermissions.has(PermissionFlagsBits.ReadMessageHistory)
+    ) {
       return false;
     }
   }
