@@ -10,7 +10,7 @@ import {
 } from '@/modules/russian-roulette/images/leaderboard-renderer.js';
 import { createLogger } from '@/utils/logger.js';
 import { ChatInputCommandInteraction, MessageFlags } from 'discord.js';
-import { desc, eq } from 'drizzle-orm';
+import { asc, desc, eq } from 'drizzle-orm';
 
 const logger = createLogger('roulette-leaderboard');
 
@@ -44,6 +44,7 @@ export const executeLeaderboardCommand = async (
         desc(russianRouletteStats.timeoutMinutes),
         desc(russianRouletteStats.deaths),
         desc(russianRouletteStats.shots),
+        asc(russianRouletteStats.id),
       )
       .limit(LEADERBOARD_ROWS_COUNT);
 
