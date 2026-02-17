@@ -19,13 +19,26 @@ export async function handleInteractionError(
     {
       error,
       interactionType: interaction.type,
-      commandName: interaction.isCommand() ? interaction.commandName : undefined,
+      commandName: interaction.isCommand()
+        ? interaction.commandName
+        : undefined,
       customId: 'customId' in interaction ? interaction.customId : undefined,
       userId: interaction.user.id,
       guildId: interaction.guildId,
     },
     'Interaction handling failed',
   );
+
+  // Autocomplete interactions are not repliable, but should still receive an empty response on failure.
+  if (interaction.isAutocomplete()) {
+    await interaction.respond([]).catch((err: unknown) => {
+      logger.error(
+        { error: err },
+        'Failed to respond to autocomplete interaction after error',
+      );
+    });
+    return;
+  }
 
   // We only handle interactions that can be replied to (e.g. commands, context menus, buttons, select menus, modals)
   if (!interaction.isRepliable()) return;

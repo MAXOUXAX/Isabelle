@@ -181,23 +181,10 @@ client.on(Events.InteractionCreate, (interaction) => {
       await command.autocomplete(interaction);
     };
 
-    handler().catch(async (error: unknown) => {
-      interactionLogger.error(
-        {
-          error,
-          interactionType: interaction.type,
-          commandName: interaction.commandName,
-          userId: interaction.user.id,
-          guildId: interaction.guildId,
-        },
-        'Autocomplete handling failed',
+    handler().catch((error: unknown) => {
+      voidAndTrackError(
+        handleInteractionError(error, interaction, interactionLogger),
       );
-
-      try {
-        await interaction.respond([]);
-      } catch {
-        // Ignore already-responded errors
-      }
     });
     return;
   }
