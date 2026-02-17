@@ -37,19 +37,7 @@ export function prepareLeaderboardEntries(
   stats: LeaderboardStat[],
   members: Collection<string, GuildMember>,
 ): LeaderboardEntry[] {
-  const sorted = [...stats].sort((a, b) => {
-    if (b.timeoutMinutes !== a.timeoutMinutes) {
-      return b.timeoutMinutes - a.timeoutMinutes;
-    }
-
-    if (b.deaths !== a.deaths) {
-      return b.deaths - a.deaths;
-    }
-
-    return b.shots - a.shots;
-  });
-
-  return sorted.map((stat, index) => {
+  return stats.map((stat, index) => {
     const member = members.get(stat.userId);
 
     return {
