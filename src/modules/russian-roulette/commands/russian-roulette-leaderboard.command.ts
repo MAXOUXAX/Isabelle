@@ -62,11 +62,7 @@ export const executeLeaderboardCommand = async (
     const members = await guild.members.fetch({ user: memberIds });
 
     // Prepare entries for rendering
-    const entries = prepareLeaderboardEntries(
-      stats,
-      members,
-      LEADERBOARD_ROWS_COUNT,
-    );
+    const entries = prepareLeaderboardEntries(stats, members);
 
     // Render the leaderboard image
     const image = await renderLeaderboard(entries);

@@ -36,7 +36,6 @@ export interface LeaderboardColumn {
 export function prepareLeaderboardEntries(
   stats: LeaderboardStat[],
   members: Collection<string, GuildMember>,
-  maxEntries: number = LEADERBOARD_ROWS_COUNT,
 ): LeaderboardEntry[] {
   const sorted = [...stats].sort((a, b) => {
     if (b.timeoutMinutes !== a.timeoutMinutes) {
@@ -50,7 +49,7 @@ export function prepareLeaderboardEntries(
     return b.shots - a.shots;
   });
 
-  return sorted.slice(0, maxEntries).map((stat, index) => {
+  return sorted.map((stat, index) => {
     const member = members.get(stat.userId);
 
     return {
