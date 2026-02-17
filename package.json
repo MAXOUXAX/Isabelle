@@ -55,13 +55,13 @@
     ]
   },
   "dependencies": {
-    "@ai-sdk/google": "^3.0.24",
+    "@ai-sdk/google": "^3.0.29",
     "@libsql/client": "^0.17.0",
-    "@napi-rs/canvas": "^0.1.91",
+    "@napi-rs/canvas": "^0.1.92",
     "@resvg/resvg-js": "^2.6.2",
-    "ai": "^6.0.79",
+    "ai": "^6.0.86",
     "discord.js": "^14.25.1",
-    "dotenv": "^17.2.4",
+    "dotenv": "^17.3.1",
     "drizzle-orm": "^0.45.1",
     "node-ical": "^0.25.1",
     "pino": "^10.3.1",
