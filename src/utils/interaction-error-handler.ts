@@ -27,7 +27,7 @@ export async function handleInteractionError(
     'Interaction handling failed',
   );
 
-  // We only handle RepliableInteractions here (Commands, ContextMenu)
+  // We only handle interactions that can be replied to (e.g. commands, context menus, buttons, select menus, modals)
   if (!interaction.isRepliable()) return;
 
   // SECURITY: Do NOT expose internal error details to the user.
