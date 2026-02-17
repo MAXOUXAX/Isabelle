@@ -39,6 +39,17 @@ function invalidateRegexCacheForScope(guildId: string | null): void {
   }
 }
 
+function getOrCreateTriggerPattern(trigger: string): RegExp {
+  const cachedPattern = triggerRegexCache.get(trigger);
+  if (cachedPattern) {
+    return cachedPattern;
+  }
+
+  const pattern = new RegExp(`(?:^|\\s)${escapeRegex(trigger)}(?:\\s|$)`, 'i');
+  triggerRegexCache.set(trigger, pattern);
+  return pattern;
+}
+
 /**
  * Fetches automatic response definitions scoped to a specific guild or global (guild-agnostic) responses.
  *
@@ -161,13 +172,7 @@ export async function automaticResponseMessageListener(
     return;
   }
 
-  // Prioritized list: guild-specific responses first, then global ones
-  const prioritizedResponses = [
-    ...applicableResponses.filter((r) => r.guildId === message.guildId),
-    ...applicableResponses.filter((r) => r.guildId === null),
-  ];
-
-  for (const responseConfig of prioritizedResponses) {
+  for (const responseConfig of applicableResponses) {
     const responded = await checkAndSendResponse(
       message,
       content,
@@ -199,19 +204,16 @@ async function checkAndSendResponse(
     return false;
   }
 
-  // Improved trigger matching: use explicit whitespace/start/end boundaries
-  const hasTrigger = triggers.some((t) => {
-    registerTriggerScope(t, responseConfig.guildId);
+  let hasTrigger = false;
 
-    // Check cache first
-    let pattern = triggerRegexCache.get(t);
-    if (!pattern) {
-      // Match trigger only when surrounded by whitespace or message boundaries
-      pattern = new RegExp(`(?:^|\\s)${escapeRegex(t)}(?:\\s|$)`, 'i');
-      triggerRegexCache.set(t, pattern);
+  for (const trigger of triggers) {
+    registerTriggerScope(trigger, responseConfig.guildId);
+
+    if (!hasTrigger) {
+      const pattern = getOrCreateTriggerPattern(trigger);
+      hasTrigger = pattern.test(content);
     }
-    return pattern.test(content);
-  });
+  }
 
   if (!hasTrigger) {
     return false;
