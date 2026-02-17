@@ -1,4 +1,4 @@
-import { Interaction } from 'discord.js';
+import { Interaction, MessageFlags } from 'discord.js';
 import { Logger } from 'pino';
 
 /**
@@ -53,7 +53,7 @@ export async function handleInteractionError(
     await interaction
       .followUp({
         content: genericMessage,
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       })
       .catch((err: unknown) => {
         logger.error(
@@ -65,7 +65,7 @@ export async function handleInteractionError(
     await interaction
       .reply({
         content: genericMessage,
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       })
       .catch((err: unknown) => {
         logger.error(

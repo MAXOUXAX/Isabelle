@@ -12,7 +12,7 @@ import { Schedule } from '@/modules/schedule/schedule.module.js';
 import { SutomModule } from '@/modules/sutom/sutom.module.js';
 import { environment } from '@/utils/environment.js';
 import { voidAndTrackError } from '@/utils/promises.js';
-import { Client, Events, GatewayIntentBits } from 'discord.js';
+import { Client, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
 import { config } from './config.js';
 import { isAutocompleteCommand } from './manager/commands/command.interface.js';
 import { configManager } from './manager/config.manager.js';
@@ -203,7 +203,7 @@ client.on(Events.InteractionCreate, (interaction) => {
         if (interaction.isRepliable()) {
           await interaction.reply({
             content: `La commande ${commandName} n'existe pas.`,
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
         return;
