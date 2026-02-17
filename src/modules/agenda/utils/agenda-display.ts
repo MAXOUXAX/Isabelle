@@ -11,7 +11,11 @@ export function buildAgendaEventHeader(params: {
   title: string;
   description?: string | null;
 }): string {
-  let header = `## ${params.emoji} ${params.title}\n\n`;
+  const normalizedTitle = params.title.trim();
+  const titleWithEmoji = normalizedTitle.startsWith(params.emoji)
+    ? normalizedTitle
+    : `${params.emoji} ${normalizedTitle}`;
+  let header = `## ${titleWithEmoji}\n\n`;
 
   if (params.description) {
     header += `${params.description}\n\n`;

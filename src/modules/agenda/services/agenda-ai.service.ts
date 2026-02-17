@@ -30,6 +30,19 @@ interface AiEnhancementResult {
   footer?: string;
 }
 
+function ensureTitleStartsWithEmoji(title: string, emoji: string): string {
+  const normalizedTitle = title.trim();
+  if (!normalizedTitle) {
+    return emoji;
+  }
+
+  if (normalizedTitle.startsWith(emoji)) {
+    return normalizedTitle;
+  }
+
+  return `${emoji} ${normalizedTitle}`;
+}
+
 function isAgendaAssistantOutput(
   value: unknown,
 ): value is AgendaAssistantResult {
@@ -92,11 +105,16 @@ export async function applyAiEnhancements({
     ? await tryEnhanceWithAi(title, description)
     : null;
 
+  const finalEmoji =
+    options.enhanceEmoji && aiResult ? aiResult.emoji : baseEmoji;
+  const titleWithoutEmoji =
+    options.enhanceText && aiResult ? aiResult.title : title;
+
   return {
-    title: options.enhanceText && aiResult ? aiResult.title : title,
+    title: ensureTitleStartsWithEmoji(titleWithoutEmoji, finalEmoji),
     description:
       options.enhanceText && aiResult ? aiResult.description : description,
-    emoji: options.enhanceEmoji && aiResult ? aiResult.emoji : baseEmoji,
+    emoji: finalEmoji,
     footer: aiResult?.footer,
   };
 }

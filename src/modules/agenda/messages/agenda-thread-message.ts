@@ -79,7 +79,12 @@ export function buildAgendaThreadMessage({
     );
   }
 
-  const threadName = `${emoji} ${eventLabel}`.slice(0, 100);
+  const normalizedLabel = eventLabel.trim();
+  const threadName = (
+    normalizedLabel.startsWith(emoji)
+      ? normalizedLabel
+      : `${emoji} ${normalizedLabel}`
+  ).slice(0, 100);
 
   return { messageContent, components, threadName };
 }
