@@ -12,13 +12,14 @@ import { Schedule } from '@/modules/schedule/schedule.module.js';
 import { SutomModule } from '@/modules/sutom/sutom.module.js';
 import { environment } from '@/utils/environment.js';
 import { voidAndTrackError } from '@/utils/promises.js';
-import { Client, Events, GatewayIntentBits } from 'discord.js';
+import { Client, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
 import { config } from './config.js';
 import { isAutocompleteCommand } from './manager/commands/command.interface.js';
 import { configManager } from './manager/config.manager.js';
 import { interactionManager } from './manager/interaction.manager.js';
 import { IsabelleModule } from './modules/bot-module.js';
 import { HotPotato } from './modules/hot-potato/hot-potato.module.js';
+import { handleInteractionError } from './utils/interaction-error-handler.js';
 import { createLogger } from './utils/logger.js';
 
 const logger = createLogger('core');
@@ -180,23 +181,10 @@ client.on(Events.InteractionCreate, (interaction) => {
       await command.autocomplete(interaction);
     };
 
-    handler().catch(async (error: unknown) => {
-      interactionLogger.error(
-        {
-          error,
-          interactionType: interaction.type,
-          commandName: interaction.commandName,
-          userId: interaction.user.id,
-          guildId: interaction.guildId,
-        },
-        'Autocomplete handling failed',
+    handler().catch((error: unknown) => {
+      voidAndTrackError(
+        handleInteractionError(error, interaction, interactionLogger),
       );
-
-      try {
-        await interaction.respond([]);
-      } catch {
-        // Ignore already-responded errors
-      }
     });
     return;
   }
@@ -212,7 +200,13 @@ client.on(Events.InteractionCreate, (interaction) => {
       const command = commandManager.findByName(commandName);
 
       if (!command) {
-        throw new Error(`La commande ${commandName} n'existe pas.`);
+        if (interaction.isRepliable()) {
+          await interaction.reply({
+            content: `La commande ${commandName} n'existe pas.`,
+            flags: MessageFlags.Ephemeral,
+          });
+        }
+        return;
       }
 
       await command.executeCommand(interaction);
@@ -222,48 +216,9 @@ client.on(Events.InteractionCreate, (interaction) => {
   };
 
   handler().catch((error: unknown) => {
-    interactionLogger.error(
-      {
-        error,
-        interactionType: interaction.type,
-        commandName: interaction.isCommand()
-          ? interaction.commandName
-          : undefined,
-        customId: 'customId' in interaction ? interaction.customId : undefined,
-        userId: interaction.user.id,
-        guildId: interaction.guildId,
-      },
-      'Interaction handling failed',
+    voidAndTrackError(
+      handleInteractionError(error, interaction, interactionLogger),
     );
-
-    const errorMessage = error instanceof Error ? error.message : String(error);
-
-    // Only reply if the interaction hasn't been replied to already
-    if (interaction.replied || interaction.deferred) {
-      interaction
-        .followUp({
-          content: `Une erreur est survenue lors du traitement de l'interaction.\n${errorMessage}`,
-          ephemeral: true,
-        })
-        .catch((err: unknown) => {
-          interactionLogger.error(
-            { error: err },
-            'Failed to send followup message after interaction error',
-          );
-        });
-    } else {
-      interaction
-        .reply({
-          content: `Une erreur est survenue lors du traitement de l'interaction.\n${errorMessage}`,
-          ephemeral: true,
-        })
-        .catch((err: unknown) => {
-          interactionLogger.error(
-            { error: err },
-            'Failed to reply to interaction after error',
-          );
-        });
-    }
   });
 });
 
