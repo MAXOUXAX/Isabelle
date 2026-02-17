@@ -79,6 +79,9 @@ export const russianRouletteStats = sqliteTable(
     index('russian_roulette_stats_guild_timeout_idx').on(
       t.guildId,
       t.timeoutMinutes,
+      t.deaths,
+      t.shots,
+      t.id,
     ),
   ],
 );

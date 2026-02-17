@@ -10,7 +10,7 @@ import {
 } from '@/modules/russian-roulette/images/leaderboard-renderer.js';
 import { createLogger } from '@/utils/logger.js';
 import { ChatInputCommandInteraction, MessageFlags } from 'discord.js';
-import { desc, eq } from 'drizzle-orm';
+import { asc, desc, eq } from 'drizzle-orm';
 
 const logger = createLogger('roulette-leaderboard');
 
@@ -40,7 +40,13 @@ export const executeLeaderboardCommand = async (
       })
       .from(russianRouletteStats)
       .where(eq(russianRouletteStats.guildId, guild.id))
-      .orderBy(desc(russianRouletteStats.timeoutMinutes));
+      .orderBy(
+        desc(russianRouletteStats.timeoutMinutes),
+        desc(russianRouletteStats.deaths),
+        desc(russianRouletteStats.shots),
+        asc(russianRouletteStats.id),
+      )
+      .limit(LEADERBOARD_ROWS_COUNT);
 
     // No one played yet
     if (stats.length === 0) {
@@ -56,11 +62,7 @@ export const executeLeaderboardCommand = async (
     const members = await guild.members.fetch({ user: memberIds });
 
     // Prepare entries for rendering
-    const entries = prepareLeaderboardEntries(
-      stats,
-      members,
-      LEADERBOARD_ROWS_COUNT,
-    );
+    const entries = prepareLeaderboardEntries(stats, members);
 
     // Render the leaderboard image
     const image = await renderLeaderboard(entries);
