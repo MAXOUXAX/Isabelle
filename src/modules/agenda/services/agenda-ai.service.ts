@@ -2,6 +2,7 @@ import {
   DEFAULT_AGENDA_EMOJI,
   agendaAssistant,
 } from '@/modules/agenda/services/ai/agenda-assistant.js';
+import { ensureTitleStartsWithEmoji } from '@/modules/agenda/utils/emoji-title.js';
 import { buildAiFooter } from '@/utils/ai-footer.js';
 import { createLogger } from '@/utils/logger.js';
 
@@ -28,19 +29,6 @@ interface AiEnhancementResult {
   description: string;
   emoji: string;
   footer?: string;
-}
-
-function ensureTitleStartsWithEmoji(title: string, emoji: string): string {
-  const normalizedTitle = title.trim();
-  if (!normalizedTitle) {
-    return emoji;
-  }
-
-  if (normalizedTitle.startsWith(emoji)) {
-    return normalizedTitle;
-  }
-
-  return `${emoji} ${normalizedTitle}`;
 }
 
 function isAgendaAssistantOutput(

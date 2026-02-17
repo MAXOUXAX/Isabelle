@@ -1,3 +1,4 @@
+import { ensureTitleStartsWithEmoji } from '@/modules/agenda/utils/emoji-title.js';
 import { getAgendaLocationPresentation } from '@/modules/agenda/utils/location-presentation.js';
 
 export interface AgendaScheduleLabels {
@@ -11,10 +12,7 @@ export function buildAgendaEventHeader(params: {
   title: string;
   description?: string | null;
 }): string {
-  const normalizedTitle = params.title.trim();
-  const titleWithEmoji = normalizedTitle.startsWith(params.emoji)
-    ? normalizedTitle
-    : `${params.emoji} ${normalizedTitle}`;
+  const titleWithEmoji = ensureTitleStartsWithEmoji(params.title, params.emoji);
   let header = `## ${titleWithEmoji}\n\n`;
 
   if (params.description) {
