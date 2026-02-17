@@ -2,6 +2,7 @@ import {
   DEFAULT_AGENDA_EMOJI,
   agendaAssistant,
 } from '@/modules/agenda/services/ai/agenda-assistant.js';
+import { ensureTitleStartsWithEmoji } from '@/modules/agenda/utils/emoji-title.js';
 import { buildAiFooter } from '@/utils/ai-footer.js';
 import { createLogger } from '@/utils/logger.js';
 
@@ -92,11 +93,16 @@ export async function applyAiEnhancements({
     ? await tryEnhanceWithAi(title, description)
     : null;
 
+  const finalEmoji =
+    options.enhanceEmoji && aiResult ? aiResult.emoji : baseEmoji;
+  const titleWithoutEmoji =
+    options.enhanceText && aiResult ? aiResult.title : title;
+
   return {
-    title: options.enhanceText && aiResult ? aiResult.title : title,
+    title: ensureTitleStartsWithEmoji(titleWithoutEmoji, finalEmoji),
     description:
       options.enhanceText && aiResult ? aiResult.description : description,
-    emoji: options.enhanceEmoji && aiResult ? aiResult.emoji : baseEmoji,
+    emoji: finalEmoji,
     footer: aiResult?.footer,
   };
 }

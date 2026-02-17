@@ -6,6 +6,7 @@ import {
   formatFrenchDate,
   isDeadlineMode,
 } from '@/modules/agenda/utils/date-parser.js';
+import { ensureTitleStartsWithEmoji } from '@/modules/agenda/utils/emoji-title.js';
 import { getAgendaLocationPresentation } from '@/modules/agenda/utils/location-presentation.js';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 
@@ -79,7 +80,10 @@ export function buildAgendaThreadMessage({
     );
   }
 
-  const threadName = `${emoji} ${eventLabel}`.slice(0, 100);
+  const threadName = ensureTitleStartsWithEmoji(eventLabel, emoji).slice(
+    0,
+    100,
+  );
 
   return { messageContent, components, threadName };
 }
