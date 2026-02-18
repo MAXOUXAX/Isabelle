@@ -151,8 +151,8 @@ npm install
 npm run check  # Format, lint and TypeScript check. MUST be run EVERY TIME before finishing your answer
 ```
 
-You can use the `npm run prettier` command as the finishing touches to your changes, to ensure consistent formatting.
-Do not follow any particular code style while writing code, just focus on writing good code. Run the command at the end to format everything with the project's preferred style.
+You can use the `npm run check` command as the finishing touches to your changes, to ensure consistent formatting, verify linting and TypeScript checks.
+Do not follow any particular code style while writing code, just focus on writing good code. Run the command at the end to format everything with the project's preferred style and verify your changes.
 
 ### Commit & PR titles (Conventional Commits)
 
