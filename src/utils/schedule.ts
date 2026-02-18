@@ -2,7 +2,7 @@ import { config } from '@/config.js';
 import { cacheStore } from '@/utils/cache.js';
 import { createLogger } from '@/utils/logger.js';
 import { ColorResolvable, EmbedBuilder } from 'discord.js';
-import { ParameterValue, VEvent, fromURL } from 'node-ical';
+import { CalendarComponent, ParameterValue, VEvent, fromURL } from 'node-ical';
 import * as dateUtils from './date.js';
 import { humanDate, humanTime } from './date.js';
 
@@ -17,6 +17,8 @@ export interface Lesson {
   teacher: string;
   color: string;
 }
+
+type ScheduledVEvent = VEvent & { start: Date; end: Date };
 
 export const SCHEDULE_CACHE_KEY = 'calendarData';
 
@@ -213,7 +215,7 @@ function extractTeacherName(
 /*
  * Crée un tableau de cours à partir des données du fichier ICS
  */
-function createLessonsFromData(data: VEvent[]): Lesson[] {
+function createLessonsFromData(data: ScheduledVEvent[]): Lesson[] {
   return data.map((lesson) => {
     const startDate = new Date(lesson.start);
     const endDate = new Date(lesson.end);
@@ -236,6 +238,19 @@ function createLessonsFromData(data: VEvent[]): Lesson[] {
 }
 
 /*
+ * Vérifie qu'un évènement ICS est un cours avec une date de début/fin valide
+ */
+function isScheduledVEvent(
+  lesson: CalendarComponent | undefined,
+): lesson is ScheduledVEvent {
+  return (
+    lesson?.type === 'VEVENT' &&
+    lesson.start instanceof Date &&
+    lesson.end instanceof Date
+  );
+}
+
+/*
  * Récupère les cours du jour
  */
 export async function getTodaysLessons(): Promise<Lesson[]> {
@@ -248,18 +263,13 @@ export async function getTodaysLessons(): Promise<Lesson[]> {
     return [];
   }
 
-  const todayData: VEvent[] = Object.values(calendarData).filter(
-    (lesson): lesson is VEvent => {
-      if (lesson.type === 'VEVENT') {
-        // Le seul type qui nous intéresse est VEVENT
-
-        // On récupère les seulement les cours d'aujourd'hui dans le ICS
-        const eventStart = dateUtils.startOfDay(new Date(lesson.start));
-        return eventStart.getTime() === today.getTime();
-      }
-      return false;
-    },
-  );
+  const todayData: ScheduledVEvent[] = Object.values(calendarData)
+    .filter(isScheduledVEvent)
+    .filter((lesson) => {
+      // On récupère les seulement les cours d'aujourd'hui dans le ICS
+      const eventStart = dateUtils.startOfDay(lesson.start);
+      return eventStart.getTime() === today.getTime();
+    });
 
   // On crée le tableau de cours
   const todaysClasses = createLessonsFromData(todayData);
@@ -281,15 +291,12 @@ export async function getLessonsFromDate(date: Date): Promise<Lesson[]> {
     return [];
   }
 
-  const dateData: VEvent[] = Object.values(calendarData).filter(
-    (lesson): lesson is VEvent => {
-      if (lesson.type === 'VEVENT') {
-        const eventStart = dateUtils.startOfDay(new Date(lesson.start));
-        return eventStart.getTime() === targetDate.getTime();
-      }
-      return false;
-    },
-  );
+  const dateData: ScheduledVEvent[] = Object.values(calendarData)
+    .filter(isScheduledVEvent)
+    .filter((lesson) => {
+      const eventStart = dateUtils.startOfDay(lesson.start);
+      return eventStart.getTime() === targetDate.getTime();
+    });
 
   const classes = createLessonsFromData(dateData);
 
@@ -318,15 +325,12 @@ export async function getWeekLessons(): Promise<Record<string, Lesson[]>> {
     return {};
   }
 
-  const weekData: VEvent[] = Object.values(calendarData).filter(
-    (lesson): lesson is VEvent => {
-      if (lesson.type === 'VEVENT') {
-        const eventStart = new Date(lesson.start);
-        return eventStart >= startOfWeek && eventStart <= endOfWeek;
-      }
-      return false;
-    },
-  );
+  const weekData: ScheduledVEvent[] = Object.values(calendarData)
+    .filter(isScheduledVEvent)
+    .filter((lesson) => {
+      const eventStart = lesson.start;
+      return eventStart >= startOfWeek && eventStart <= endOfWeek;
+    });
 
   const weekClasses = createLessonsFromData(weekData);
 
@@ -408,8 +412,10 @@ function getLessonColor(title: string): string {
   }
 }
 
-/*
- * Récupère le cours actuel
+/**
+ * Récupère le cours actuel.
+ *
+ * @returns {Promise<Lesson | null>} Le cours en cours, ou `null` s'il n'y en a pas.
  */
 export async function getCurrentLesson(): Promise<Lesson | null> {
   const now = new Date();
@@ -420,21 +426,37 @@ export async function getCurrentLesson(): Promise<Lesson | null> {
   );
 }
 
-/*
- * Récupère le dernier cours de la semaine
+/**
+ * Récupère le dernier cours de la semaine.
+ *
+ * @returns {Promise<Lesson | null>} Le dernier cours de la semaine, ou `null` s'il n'y en a pas.
  */
 export async function getLastLessonOfWeek(): Promise<Lesson | null> {
   const weekLessons = await getWeekLessons();
-  const days = ['vendredi', 'jeudi', 'mercredi', 'mardi', 'lundi'];
+  const allLessons: Lesson[] = [];
 
-  for (const day of days) {
-    const lessons = weekLessons[day] as Lesson[] | undefined;
-    if (lessons && lessons.length > 0) {
-      return lessons[lessons.length - 1];
+  for (const lessons of Object.values(weekLessons)) {
+    if (Array.isArray(lessons)) {
+      for (const lesson of lessons) {
+        if (lesson.end instanceof Date) {
+          allLessons.push(lesson);
+        }
+      }
     }
   }
 
-  return null;
+  if (allLessons.length === 0) {
+    return null;
+  }
+
+  let lastLesson = allLessons[0];
+  for (const lesson of allLessons) {
+    if (lesson.end > lastLesson.end) {
+      lastLesson = lesson;
+    }
+  }
+
+  return lastLesson;
 }
 
 async function getSchedule() {
