@@ -182,17 +182,10 @@ export class CountdownCommand implements IsabelleCommand {
         'Impossible de calculer le compte à rebours repas',
       );
 
-      try {
-        await interaction.editReply({
-          content:
-            'Impossible de calculer le compte à rebours repas pour le moment. Réessaie dans quelques instants.',
-        });
-      } catch (replyError) {
-        logger.error(
-          { error: replyError },
-          'Impossible de répondre après erreur du compte à rebours repas',
-        );
-      }
+      await interaction.editReply({
+        content:
+          'Impossible de calculer le compte à rebours repas pour le moment. Réessaie dans quelques instants.',
+      });
     }
   }
 }
