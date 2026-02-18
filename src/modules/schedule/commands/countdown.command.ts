@@ -100,13 +100,6 @@ export class CountdownCommand implements IsabelleCommand {
         return;
       }
 
-      if (lesson.end.getTime() <= Date.now()) {
-        await interaction.editReply({
-          content: 'Le week-end a déjà commencé.',
-        });
-        return;
-      }
-
       const timestamp = time(lesson.end, TimestampStyles.RelativeTime);
       await interaction.editReply({
         content: `Le week-end commence ${timestamp}.`,
@@ -176,7 +169,7 @@ export class CountdownCommand implements IsabelleCommand {
 
     const timestamp = time(noon, TimestampStyles.RelativeTime);
     await interaction.editReply({
-      content: `Manger, c'est dans ${timestamp}.`,
+      content: `Manger ${timestamp}.`,
     });
   }
 }
