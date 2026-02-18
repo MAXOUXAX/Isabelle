@@ -433,27 +433,23 @@ export async function getCurrentLesson(): Promise<Lesson | null> {
  */
 export async function getLastLessonOfWeek(): Promise<Lesson | null> {
   const weekLessons = await getWeekLessons();
-  const allLessons: Lesson[] = [];
-
-  for (const lessons of Object.values(weekLessons)) {
-    if (Array.isArray(lessons)) {
-      for (const lesson of lessons) {
-        if (lesson.end instanceof Date) {
-          allLessons.push(lesson);
-        }
-      }
-    }
-  }
+  const allLessons = Object.values(weekLessons).flat();
 
   if (allLessons.length === 0) {
     return null;
   }
 
-  let lastLesson = allLessons[0];
-  for (const lesson of allLessons) {
-    if (lesson.end > lastLesson.end) {
-      lastLesson = lesson;
+  const lastLesson = allLessons.reduce((latestLesson, lesson) => {
+    if (lesson.end > latestLesson.end) {
+      return lesson;
     }
+
+    return latestLesson;
+  }, allLessons[0]);
+
+  const now = new Date();
+  if (lastLesson.end <= now) {
+    return null;
   }
 
   return lastLesson;

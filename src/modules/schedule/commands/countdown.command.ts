@@ -100,6 +100,13 @@ export class CountdownCommand implements IsabelleCommand {
         return;
       }
 
+      if (lesson.end.getTime() <= Date.now()) {
+        await interaction.editReply({
+          content: 'Le week-end a déjà commencé.',
+        });
+        return;
+      }
+
       const timestamp = time(lesson.end, TimestampStyles.RelativeTime);
       await interaction.editReply({
         content: `Le week-end commence ${timestamp}.`,
@@ -121,10 +128,18 @@ export class CountdownCommand implements IsabelleCommand {
   ): Promise<void> {
     try {
       const lessonEnd = await getEndOfTodayLessons();
+      const now = new Date();
 
       if (!lessonEnd) {
         await interaction.editReply({
           content: "Aucun cours prévu aujourd'hui.",
+        });
+        return;
+      }
+
+      if (lessonEnd <= now) {
+        await interaction.editReply({
+          content: "Les cours sont terminés pour aujourd'hui.",
         });
         return;
       }
@@ -154,7 +169,7 @@ export class CountdownCommand implements IsabelleCommand {
 
     if (now >= noon) {
       await interaction.editReply({
-        content: 'Il est déjà 12h passées. Bon appétit 😋',
+        content: 'Il est déjà midi passé. Bon appétit 😋',
       });
       return;
     }
