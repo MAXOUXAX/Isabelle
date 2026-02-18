@@ -42,23 +42,27 @@ export class CountdownCommand implements IsabelleCommand {
   public async executeCommand(
     interaction: ChatInputCommandInteraction,
   ): Promise<void> {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: false });
 
     const subcommand = interaction.options.getSubcommand();
 
-    if (subcommand === 'fin-cours') {
-      await this.handleEndClassCommand(interaction);
-    } else if (subcommand === 'weekend') {
-      await this.handleWeekendCommand(interaction);
-    } else if (subcommand === 'fin-journee') {
-      await this.handleEndOfDayCommand(interaction);
-    } else if (subcommand === 'manger') {
-      await this.handleLunchCommand(interaction);
-    } else {
+    const handlers = {
+      'fin-cours': () => this.handleEndClassCommand(interaction),
+      weekend: () => this.handleWeekendCommand(interaction),
+      'fin-journee': () => this.handleEndOfDayCommand(interaction),
+      manger: () => this.handleLunchCommand(interaction),
+    } as const;
+
+    if (!(subcommand in handlers)) {
       await interaction.editReply({
         content: 'Cette sous-commande est introuvable.',
       });
+      return;
     }
+
+    const handler = handlers[subcommand as keyof typeof handlers];
+
+    await handler();
   }
 
   private async handleEndClassCommand(
@@ -156,20 +160,39 @@ export class CountdownCommand implements IsabelleCommand {
   private async handleLunchCommand(
     interaction: ChatInputCommandInteraction,
   ): Promise<void> {
-    const now = new Date();
-    const noon = new Date(now);
-    noon.setHours(12, 0, 0, 0);
+    try {
+      const now = new Date();
+      const noon = new Date(now);
+      noon.setHours(12, 0, 0, 0);
 
-    if (now >= noon) {
+      if (now >= noon) {
+        await interaction.editReply({
+          content: 'Il est déjà midi passé. Bon appétit 😋',
+        });
+        return;
+      }
+
+      const timestamp = time(noon, TimestampStyles.RelativeTime);
       await interaction.editReply({
-        content: 'Il est déjà midi passé. Bon appétit 😋',
+        content: `On mange ${timestamp}.`,
       });
-      return;
-    }
+    } catch (error) {
+      logger.error(
+        { error },
+        'Impossible de calculer le compte à rebours repas',
+      );
 
-    const timestamp = time(noon, TimestampStyles.RelativeTime);
-    await interaction.editReply({
-      content: `Manger ${timestamp}.`,
-    });
+      try {
+        await interaction.editReply({
+          content:
+            'Impossible de calculer le compte à rebours repas pour le moment. Réessaie dans quelques instants.',
+        });
+      } catch (replyError) {
+        logger.error(
+          { error: replyError },
+          'Impossible de répondre après erreur du compte à rebours repas',
+        );
+      }
+    }
   }
 }

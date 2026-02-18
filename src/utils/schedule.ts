@@ -422,7 +422,7 @@ export async function getCurrentLesson(): Promise<Lesson | null> {
   const lessons = await getTodaysLessons();
 
   return (
-    lessons.find((lesson) => lesson.start <= now && lesson.end >= now) ?? null
+    lessons.find((lesson) => lesson.start <= now && lesson.end > now) ?? null
   );
 }
 
