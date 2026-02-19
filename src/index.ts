@@ -6,6 +6,7 @@ import { legalManager } from '@/modules/legal/legal.manager.js';
 import { LegalModule } from '@/modules/legal/legal.module.js';
 import { generativeAi } from '@/modules/legal/prompts/generative-ai.prompt.js';
 import { moduleManager } from '@/modules/module-manager.js';
+import { RemindersModule } from '@/modules/reminders/reminders.module.js';
 import { RoastModule } from '@/modules/roast/roast.module.js';
 import { RussianRoulette } from '@/modules/russian-roulette/russian-roulette.module.js';
 import { Schedule } from '@/modules/schedule/schedule.module.js';
@@ -46,6 +47,7 @@ const MODULES: IsabelleModule[] = [
   new SutomModule(),
   new Schedule(),
   new RoastModule(),
+  new RemindersModule(),
 ];
 
 moduleManager.registerModules(MODULES);
