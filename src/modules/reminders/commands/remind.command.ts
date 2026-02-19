@@ -1,33 +1,94 @@
-import { db } from '@/db/index.js';
-import { reminders } from '@/db/schema.js';
-import { IsabelleCommand } from '@/manager/commands/command.interface.js';
-import { createLogger } from '@/utils/logger.js';
-import {
-  ChatInputCommandInteraction,
-  SlashCommandBuilder,
-} from 'discord.js';
+import { IsabelleAutocompleteCommandBase } from '@/manager/commands/command.interface.js';
+import type { AutocompleteOptionHandler } from '@/utils/autocomplete.js';
+import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
+import { handleReminderAutocomplete } from './remind.shared.js';
+import { handleCreateReminderSubcommand } from './subcommands/create.subcommand.js';
+import { handleDeleteReminderSubcommand } from './subcommands/delete.subcommand.js';
+import { handleEditReminderSubcommand } from './subcommands/edit.subcommand.js';
+import { handleListReminderSubcommand } from './subcommands/list.subcommand.js';
 
-const logger = createLogger('command:remind');
+type ReminderSubcommand = 'create' | 'list' | 'edit' | 'delete';
 
-export class RemindCommand implements IsabelleCommand {
+export class RemindCommand extends IsabelleAutocompleteCommandBase {
   commandData = new SlashCommandBuilder()
     .setName('rappel')
-    .setDescription('Programmer un rappel')
-    .addStringOption((option) =>
-      option
-        .setName('duree')
-        .setDescription('Dans combien de temps ? (ex: 10m, 1h, 2j)')
-        .setRequired(true),
+    .setDescription('Gérer vos rappels personnels')
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName('create')
+        .setDescription('Programmer un nouveau rappel')
+        .addStringOption((option) =>
+          option
+            .setName('duree')
+            .setDescription(
+              'Durée ou date (ex: 1h30, 1minute30s, 30 janvier 2026 10:49)',
+            )
+            .setRequired(true),
+        )
+        .addStringOption((option) =>
+          option
+            .setName('message')
+            .setDescription('Le message de rappel')
+            .setRequired(true),
+        ),
     )
-    .addStringOption((option) =>
-      option
-        .setName('message')
-        .setDescription('Le message de rappel')
-        .setRequired(true),
+    .addSubcommand((subcommand) =>
+      subcommand.setName('list').setDescription('Afficher vos rappels actifs'),
+    )
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName('edit')
+        .setDescription('Modifier un rappel existant')
+        .addStringOption((option) =>
+          option
+            .setName('rappel')
+            .setDescription('Le rappel à modifier')
+            .setRequired(true)
+            .setAutocomplete(true),
+        )
+        .addStringOption((option) =>
+          option
+            .setName('duree')
+            .setDescription(
+              'Nouvelle durée/date (ex: 1h30, 30 janvier 2026 10:49)',
+            )
+            .setRequired(false),
+        )
+        .addStringOption((option) =>
+          option
+            .setName('message')
+            .setDescription('Nouveau message (optionnel)')
+            .setRequired(false),
+        ),
+    )
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName('delete')
+        .setDescription('Supprimer un rappel')
+        .addStringOption((option) =>
+          option
+            .setName('rappel')
+            .setDescription('Le rappel à supprimer')
+            .setRequired(true)
+            .setAutocomplete(true),
+        ),
     );
 
-  async executeCommand(interaction: ChatInputCommandInteraction): Promise<void> {
-    if (!interaction.guildId) {
+  protected getAutocompleteHandlers(): Record<
+    string,
+    AutocompleteOptionHandler
+  > {
+    return {
+      rappel: handleReminderAutocomplete,
+    };
+  }
+
+  async executeCommand(
+    interaction: ChatInputCommandInteraction,
+  ): Promise<void> {
+    const guildId = interaction.guildId;
+
+    if (!guildId) {
       await interaction.reply({
         content: "Cette commande n'est disponible que sur les serveurs.",
         ephemeral: true,
@@ -35,66 +96,28 @@ export class RemindCommand implements IsabelleCommand {
       return;
     }
 
-    const durationInput = interaction.options.getString('duree', true);
-    const message = interaction.options.getString('message', true);
+    const subcommand =
+      interaction.options.getSubcommand() as ReminderSubcommand;
 
-    const duration = this.parseDuration(durationInput);
-
-    if (!duration) {
-      await interaction.reply({
-        content:
-          "Je n'ai pas compris la durée. Utilisez le format : nombre + lettre (m pour minutes, h pour heures, j pour jours). Exemple : 10m, 1h, 2j.",
-        ephemeral: true,
-      });
-      return;
+    switch (subcommand) {
+      case 'create':
+        await handleCreateReminderSubcommand(interaction, guildId);
+        break;
+      case 'list':
+        await handleListReminderSubcommand(interaction, guildId);
+        break;
+      case 'edit':
+        await handleEditReminderSubcommand(interaction, guildId);
+        break;
+      case 'delete':
+        await handleDeleteReminderSubcommand(interaction, guildId);
+        break;
+      default:
+        await interaction.reply({
+          content:
+            'Sous-commande inconnue. Utilisez `/rappel create`, `/rappel list`, `/rappel edit` ou `/rappel delete`.',
+          ephemeral: true,
+        });
     }
-
-    const dueAt = new Date(Date.now() + duration);
-
-    try {
-      await db.insert(reminders).values({
-        userId: interaction.user.id,
-        guildId: interaction.guildId,
-        channelId: interaction.channelId,
-        message,
-        dueAt,
-      });
-
-      const timestamp = Math.floor(dueAt.getTime() / 1000);
-      await interaction.reply({
-        content: `Rappel programmé pour le <t:${String(timestamp)}:F> (<t:${String(timestamp)}:R>) : "${message}"`,
-      });
-    } catch (error) {
-      logger.error({ error }, 'Failed to create reminder');
-      await interaction.reply({
-        content: 'Une erreur est survenue lors de la création du rappel.',
-        ephemeral: true,
-      });
-    }
-  }
-
-  private parseDuration(input: string): number | null {
-    const regex =
-      /^(\d+)\s*(m|min|minutes?|h|heures?|hours?|j|jours?|d|days?)$/i;
-    const match = regex.exec(input);
-
-    if (!match) {
-      return null;
-    }
-
-    const value = parseInt(match[1], 10);
-    const unit = match[2].toLowerCase();
-
-    if (unit.startsWith('m')) {
-      return value * 60 * 1000;
-    }
-    if (unit.startsWith('h')) {
-      return value * 60 * 60 * 1000;
-    }
-    if (unit.startsWith('j') || unit.startsWith('d')) {
-      return value * 24 * 60 * 60 * 1000;
-    }
-
-    return null;
   }
 }
