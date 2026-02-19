@@ -15,8 +15,8 @@ export class RemindersModule extends IsabelleModule {
   get contributors(): ModuleContributor[] {
     return [
       {
-        displayName: 'Jules',
-        githubUsername: 'Jules',
+        displayName: 'Maxence',
+        githubUsername: 'MAXOUXAX',
       },
     ];
   }
