@@ -3,6 +3,7 @@ import { ChatInputCommandInteraction } from 'discord.js';
 import { formatReminderPreview, getUserReminders } from '../remind.shared.js';
 
 const logger = createLogger('reminders:list');
+const MAX_LISTED_REMINDERS = 10;
 
 export const handleListReminderSubcommand = async (
   interaction: ChatInputCommandInteraction,
@@ -20,10 +21,20 @@ export const handleListReminderSubcommand = async (
       return;
     }
 
-    const lines = userReminders.map((reminder) => {
+    const displayedReminders = userReminders.slice(0, MAX_LISTED_REMINDERS);
+    const hiddenReminderCount =
+      userReminders.length - displayedReminders.length;
+
+    const lines = displayedReminders.map((reminder) => {
       const timestamp = Math.floor(reminder.dueAt.getTime() / 1000);
-      return `• **#${String(reminder.id)}** — <t:${String(timestamp)}:F> (<t:${String(timestamp)}:R>)\n> ${formatReminderPreview(reminder.message, 120)}`;
+      return `• **#${String(reminder.id)}** — <t:${String(timestamp)}:F> (<t:${String(timestamp)}:R>)\n> ${formatReminderPreview(reminder.message, 40)}`;
     });
+
+    if (hiddenReminderCount > 0) {
+      lines.push(
+        `…et ${String(hiddenReminderCount)} autre(s) rappel(s) non affiché(s).`,
+      );
+    }
 
     await interaction.editReply({
       content: `🗂️ Vos rappels actifs :\n\n${lines.join('\n\n')}`,

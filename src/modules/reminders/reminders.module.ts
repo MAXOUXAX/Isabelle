@@ -2,10 +2,13 @@ import { db } from '@/db/index.js';
 import { reminders } from '@/db/schema.js';
 import { IsabelleModule, ModuleContributor } from '@/modules/bot-module.js';
 import { createLogger } from '@/utils/logger.js';
-import { eq, lte } from 'drizzle-orm';
+import { and, asc, eq, gt, lte, or } from 'drizzle-orm';
 import { RemindCommand } from './commands/remind.command.js';
 
 const logger = createLogger('module:reminders');
+const REMINDER_CHECK_INTERVAL_MS = 30 * 1000;
+const REMINDER_BATCH_SIZE = 50;
+type ReminderRow = typeof reminders.$inferSelect;
 
 export class RemindersModule extends IsabelleModule {
   readonly name = 'Reminders';
@@ -26,7 +29,7 @@ export class RemindersModule extends IsabelleModule {
 
     setInterval(() => {
       void this.checkReminders();
-    }, 30 * 1000); // Check every 30 seconds
+    }, REMINDER_CHECK_INTERVAL_MS);
   }
 
   private async getClient(): Promise<(typeof import('@/index.js'))['client']> {
@@ -48,41 +51,82 @@ export class RemindersModule extends IsabelleModule {
       if (!client.isReady()) return;
 
       const now = new Date();
-      const dueReminders = await db
-        .select()
-        .from(reminders)
-        .where(lte(reminders.dueAt, now));
+      let lastSeenDueAt: Date | null = null;
+      let lastSeenId: number | null = null;
 
-      for (const reminder of dueReminders) {
-        try {
-          const channel = await client.channels.fetch(reminder.channelId);
-          if (channel?.isSendable()) {
-            await channel.send({
-              content: `🔔 **Rappel** pour <@${reminder.userId}> :\n> ${reminder.message}`,
-              allowedMentions: {
-                users: [reminder.userId],
-                roles: [],
-                repliedUser: false,
-                parse: [],
-              },
-            });
+      for (;;) {
+        let dueReminders: ReminderRow[];
 
-            await db.delete(reminders).where(eq(reminders.id, reminder.id));
-          } else {
-            logger.warn(
-              { reminderId: reminder.id },
-              'Channel not found or not sendable for reminder',
-            );
-
-            // Permanent non-sendable state: remove reminder to avoid infinite retries.
-            await db.delete(reminders).where(eq(reminders.id, reminder.id));
-          }
-        } catch (error) {
-          logger.error(
-            { error, reminderId: reminder.id },
-            'Failed to send reminder',
-          );
+        if (lastSeenDueAt === null || lastSeenId === null) {
+          dueReminders = await db
+            .select()
+            .from(reminders)
+            .where(lte(reminders.dueAt, now))
+            .orderBy(asc(reminders.dueAt), asc(reminders.id))
+            .limit(REMINDER_BATCH_SIZE);
+        } else {
+          dueReminders = await db
+            .select()
+            .from(reminders)
+            .where(
+              and(
+                lte(reminders.dueAt, now),
+                or(
+                  gt(reminders.dueAt, lastSeenDueAt),
+                  and(
+                    eq(reminders.dueAt, lastSeenDueAt),
+                    gt(reminders.id, lastSeenId),
+                  ),
+                ),
+              ),
+            )
+            .orderBy(asc(reminders.dueAt), asc(reminders.id))
+            .limit(REMINDER_BATCH_SIZE);
         }
+
+        if (dueReminders.length === 0) {
+          break;
+        }
+
+        for (const reminder of dueReminders) {
+          try {
+            const channel = await client.channels.fetch(reminder.channelId);
+            if (channel?.isSendable()) {
+              await channel.send({
+                content: `🔔 **Rappel** pour <@${reminder.userId}> :\n> ${reminder.message}`,
+                allowedMentions: {
+                  users: [reminder.userId],
+                  roles: [],
+                  repliedUser: false,
+                  parse: [],
+                },
+              });
+
+              await db.delete(reminders).where(eq(reminders.id, reminder.id));
+            } else {
+              logger.warn(
+                { reminderId: reminder.id },
+                'Channel not found or not sendable for reminder',
+              );
+
+              // Permanent non-sendable state: remove reminder to avoid infinite retries.
+              await db.delete(reminders).where(eq(reminders.id, reminder.id));
+            }
+          } catch (error) {
+            logger.error(
+              { error, reminderId: reminder.id },
+              'Failed to send reminder',
+            );
+          }
+        }
+
+        const lastReminderInBatch = dueReminders.at(-1);
+        if (!lastReminderInBatch) {
+          break;
+        }
+
+        lastSeenDueAt = lastReminderInBatch.dueAt;
+        lastSeenId = lastReminderInBatch.id;
       }
     } catch (error) {
       logger.error({ error }, 'Error in checkReminders loop');

@@ -4,10 +4,14 @@ import {
   AutocompleteOptionHandler,
   filterAutocompleteChoices,
 } from '@/utils/autocomplete.js';
+import { createLogger } from '@/utils/logger.js';
+import { fromZonedTime } from 'date-fns-tz';
 import { and, asc, eq } from 'drizzle-orm';
 
 export const MIN_DURATION_MS = 60 * 1000;
 export const MAX_DURATION_MS = 365 * 24 * 60 * 60 * 1000;
+const PARIS_TIME_ZONE = 'Europe/Paris';
+const logger = createLogger('reminders:shared');
 
 const SUPPORTED_DURATION_UNITS = {
   // Seconds
@@ -74,7 +78,7 @@ export const DURATION_ERROR_MESSAGE =
   "Je n'ai pas compris la durée. Exemples valides : 1h30, 1minute30s, 3 jours et 2 heures, 30 janvier 2026 10:49.";
 
 export const DURATION_BOUNDS_ERROR_MESSAGE =
-  'La date/ durée du rappel doit être comprise entre 1 minute et 365 jours à partir de maintenant. Exemple : 1h30, 1minute30s, 30 janvier 2026 10:49.';
+  'La date/durée du rappel doit être comprise entre 1 minute et 365 jours à partir de maintenant. Exemple : 1h30, 1minute30s, 30 janvier 2026 10:49.';
 
 const MONTH_BY_NAME = {
   janvier: 1,
@@ -133,7 +137,10 @@ const parseAbsoluteFrenchDateTime = (input: string): number | null => {
   }
 
   const month = MONTH_BY_NAME[monthName];
-  const targetDate = new Date(year, month - 1, day, hours, minutes, 0, 0);
+  const targetDate = fromZonedTime(
+    new Date(Date.UTC(year, month - 1, day, hours, minutes, 0, 0)),
+    PARIS_TIME_ZONE,
+  );
 
   if (
     targetDate.getFullYear() !== year ||
@@ -286,12 +293,20 @@ export const handleReminderAutocomplete: AutocompleteOptionHandler = async ({
     return [];
   }
 
-  const userReminders = await getUserReminders(interaction.user.id, guildId);
+  try {
+    const userReminders = await getUserReminders(interaction.user.id, guildId);
 
-  const choices = userReminders.map((reminder) => ({
-    name: `#${String(reminder.id)} • ${formatReminderPreview(reminder.message)} • ${formatReminderRelativeTime(reminder.dueAt)}`,
-    value: String(reminder.id),
-  }));
+    const choices = userReminders.map((reminder) => ({
+      name: `#${String(reminder.id)} • ${formatReminderPreview(reminder.message)} • ${formatReminderRelativeTime(reminder.dueAt)}`,
+      value: String(reminder.id),
+    }));
 
-  return filterAutocompleteChoices(choices, focusedValue);
+    return filterAutocompleteChoices(choices, focusedValue);
+  } catch (error) {
+    logger.error(
+      { error, userId: interaction.user.id, guildId, subcommand },
+      'Failed to build reminder autocomplete choices',
+    );
+    return [];
+  }
 };

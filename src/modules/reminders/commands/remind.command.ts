@@ -1,6 +1,10 @@
 import { IsabelleAutocompleteCommandBase } from '@/manager/commands/command.interface.js';
 import type { AutocompleteOptionHandler } from '@/utils/autocomplete.js';
-import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
+import {
+  ChatInputCommandInteraction,
+  InteractionContextType,
+  SlashCommandBuilder,
+} from 'discord.js';
 import { handleReminderAutocomplete } from './remind.shared.js';
 import { handleCreateReminderSubcommand } from './subcommands/create.subcommand.js';
 import { handleDeleteReminderSubcommand } from './subcommands/delete.subcommand.js';
@@ -13,6 +17,7 @@ export class RemindCommand extends IsabelleAutocompleteCommandBase {
   commandData = new SlashCommandBuilder()
     .setName('rappel')
     .setDescription('Gérer vos rappels personnels')
+    .setContexts([InteractionContextType.Guild])
     .addSubcommand((subcommand) =>
       subcommand
         .setName('create')
@@ -29,7 +34,8 @@ export class RemindCommand extends IsabelleAutocompleteCommandBase {
           option
             .setName('message')
             .setDescription('Le message de rappel')
-            .setRequired(true),
+            .setRequired(true)
+            .setMaxLength(1800),
         ),
     )
     .addSubcommand((subcommand) =>
@@ -58,7 +64,8 @@ export class RemindCommand extends IsabelleAutocompleteCommandBase {
           option
             .setName('message')
             .setDescription('Nouveau message (optionnel)')
-            .setRequired(false),
+            .setRequired(false)
+            .setMaxLength(1800),
         ),
     )
     .addSubcommand((subcommand) =>
