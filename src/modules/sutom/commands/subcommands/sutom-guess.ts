@@ -39,7 +39,11 @@ export default async function guessWordSubcommand(
   }
 
   const sendEphemeral = (content: string) =>
-    interaction.reply({ content, flags: MessageFlags.Ephemeral });
+    interaction.reply({
+      content,
+      flags: MessageFlags.Ephemeral,
+      allowedMentions: { parse: [] },
+    });
 
   const userThreadId = sutomGameManager.getGameThreadId(user.id);
 
@@ -78,10 +82,18 @@ export default async function guessWordSubcommand(
 
   const responder: GuessResponder = {
     sendError: async (content: string) => {
-      await interaction.reply({ content, flags: MessageFlags.Ephemeral });
+      await interaction.reply({
+        content,
+        flags: MessageFlags.Ephemeral,
+        allowedMentions: { parse: [] },
+      });
     },
     sendBoard: async (embed: EmbedBuilder, attachment: AttachmentBuilder) => {
-      await interaction.reply({ embeds: [embed], files: [attachment] });
+      await interaction.reply({
+        embeds: [embed],
+        files: [attachment],
+        allowedMentions: { parse: [] },
+      });
     },
   };
 
