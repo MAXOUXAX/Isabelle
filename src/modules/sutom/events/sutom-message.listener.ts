@@ -34,10 +34,14 @@ export async function sutomMessageListener(message: Message): Promise<void> {
 
   const responder: GuessResponder = {
     sendError: async (content: string) => {
-      await message.reply(content);
+      await message.reply({ content, allowedMentions: { parse: [] } });
     },
     sendBoard: async (embed: EmbedBuilder, attachment: AttachmentBuilder) => {
-      await message.reply({ embeds: [embed], files: [attachment] });
+      await message.reply({
+        embeds: [embed],
+        files: [attachment],
+        allowedMentions: { parse: [] },
+      });
     },
   };
 
