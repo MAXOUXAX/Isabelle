@@ -103,7 +103,7 @@ export class CommandManager {
 
   onCommandsRegistered(
     listener: (event: {
-      name: string;
+      name: 'commandsRegistered';
       data: CommandManagerEvents['commandsRegistered'];
     }) => void | Promise<void>,
   ) {
