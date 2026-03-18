@@ -7,7 +7,7 @@
   "engines": {
     "node": ">=22"
   },
-  "packageManager": "npm@11.10.0",
+  "packageManager": "npm@11.11.1",
   "license": "AGPL-3.0-or-later",
   "homepage": "https://github.com/MAXOUXAX/Isabelle",
   "contributors": [
@@ -59,13 +59,13 @@
   "dependencies": {
     "@ai-sdk/google": "^3.0.43",
     "@libsql/client": "^0.17.0",
-    "@napi-rs/canvas": "^0.1.96",
+    "@napi-rs/canvas": "^0.1.97",
     "@resvg/resvg-js": "^2.6.2",
     "ai": "^6.0.116",
     "discord.js": "^14.25.1",
     "dotenv": "^17.3.1",
     "drizzle-orm": "^0.45.1",
-    "node-ical": "^0.25.5",
+    "node-ical": "^0.25.6",
     "pino": "^10.3.1",
     "pino-pretty": "^13.1.3",
     "react": "^19.2.4",
@@ -77,15 +77,15 @@
     "@semantic-release/exec": "^7.1.0",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^12.0.6",
-    "@types/node": "^25.3.3",
+    "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
-    "conventional-changelog-conventionalcommits": "^9.2.0",
+    "conventional-changelog-conventionalcommits": "^9.3.0",
     "cross-env": "^10.1.0",
-    "drizzle-kit": "^0.31.9",
-    "emittery": "^1.2.1",
-    "eslint": "^10.0.2",
+    "drizzle-kit": "^0.31.10",
+    "emittery": "^2.0.0",
+    "eslint": "^10.0.3",
     "husky": "^9.1.7",
-    "lint-staged": "^16.3.1",
+    "lint-staged": "^16.4.0",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.8.1",
     "semantic-release": "^25.0.3",
@@ -93,6 +93,6 @@
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.56.1"
+    "typescript-eslint": "^8.57.1"
   }
 }
