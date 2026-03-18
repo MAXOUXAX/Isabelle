@@ -77,15 +77,15 @@
     "@semantic-release/exec": "^7.1.0",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^12.0.6",
-    "@types/node": "^25.2.3",
+    "@types/node": "^25.3.3",
     "@types/react": "^19.2.14",
-    "conventional-changelog-conventionalcommits": "^9.1.0",
+    "conventional-changelog-conventionalcommits": "^9.2.0",
     "cross-env": "^10.1.0",
     "drizzle-kit": "^0.31.9",
-    "emittery": "^1.2.0",
-    "eslint": "^10.0.0",
+    "emittery": "^1.2.1",
+    "eslint": "^10.0.2",
     "husky": "^9.1.7",
-    "lint-staged": "^16.2.7",
+    "lint-staged": "^16.3.1",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.8.1",
     "semantic-release": "^25.0.3",
@@ -93,6 +93,6 @@
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.56.0"
+    "typescript-eslint": "^8.56.1"
   }
 }
