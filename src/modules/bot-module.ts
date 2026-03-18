@@ -11,6 +11,7 @@ export abstract class IsabelleModule {
   interactionHandlers: InteractionHandler[] = [];
 
   abstract init(): void;
+  destroy?(): void | Promise<void>;
 
   /**
    * List of contributors to this module.
