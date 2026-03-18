@@ -8,7 +8,7 @@ export default defineConfig({
   outExtensions: () => ({ js: '.mjs' }),
   tsconfig: 'tsconfig.json',
   copy: 'public',
-  clean: false,
+  clean: true,
   dts: false,
   target: false,
   deps: {
