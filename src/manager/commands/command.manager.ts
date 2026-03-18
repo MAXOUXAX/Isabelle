@@ -102,9 +102,10 @@ export class CommandManager {
   }
 
   onCommandsRegistered(
-    listener: (
-      payload: CommandManagerEvents['commandsRegistered'],
-    ) => void | Promise<void>,
+    listener: (event: {
+      name: 'commandsRegistered';
+      data: CommandManagerEvents['commandsRegistered'];
+    }) => void | Promise<void>,
   ) {
     return this.events.on('commandsRegistered', listener);
   }
