@@ -52,6 +52,40 @@ const MODULES: IsabelleModule[] = [
 
 moduleManager.registerModules(MODULES);
 
+let isShuttingDown = false;
+
+const shutdown = (signal: NodeJS.Signals): void => {
+  if (isShuttingDown) {
+    return;
+  }
+
+  isShuttingDown = true;
+  logger.info({ signal }, 'Graceful shutdown requested');
+
+  const shutdownHandler = async () => {
+    await moduleManager.destroyModules();
+    await client.destroy();
+  };
+
+  void shutdownHandler().then(
+    () => {
+      logger.info('Shutdown complete');
+      process.exit(0);
+    },
+    (error: unknown) => {
+      logger.error({ error, signal }, 'Graceful shutdown failed');
+      process.exit(1);
+    },
+  );
+};
+
+process.once('SIGINT', () => {
+  shutdown('SIGINT');
+});
+process.once('SIGTERM', () => {
+  shutdown('SIGTERM');
+});
+
 client.once(Events.ClientReady, () => {
   async function handler() {
     logger.info(
