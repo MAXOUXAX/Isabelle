@@ -3,6 +3,7 @@ import { getAgendaLocationPresentation } from '@/modules/agenda/utils/location-p
 
 export interface AgendaScheduleLabels {
   deadlineLabel?: string;
+  datesLabel?: string;
   startLabel?: string;
   endLabel?: string;
 }
@@ -40,6 +41,10 @@ export function buildAgendaEventDetailsText(params: {
     lines.push(`**🕐 Échéance :** ${schedule.deadlineLabel}`);
     const body = lines.join('\n\n');
     return includeHeading ? `### Détails\n\n${body}` : body;
+  }
+
+  if (schedule.datesLabel) {
+    lines.push(`**🕐 Dates :** ${schedule.datesLabel}`);
   }
 
   if (schedule.startLabel) {

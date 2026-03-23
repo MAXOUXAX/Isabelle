@@ -1,8 +1,5 @@
 import { buildAgendaEventDetailsText } from '@/modules/agenda/utils/agenda-display.js';
-import {
-  formatFrenchDate,
-  isDeadlineMode,
-} from '@/modules/agenda/utils/date-parser.js';
+import { isDeadlineMode } from '@/modules/agenda/utils/date-parser.js';
 import { ensureTitleStartsWithEmoji } from '@/modules/agenda/utils/emoji-title.js';
 import { getAgendaLocationPresentation } from '@/modules/agenda/utils/location-presentation.js';
 import {
@@ -41,9 +38,11 @@ export function buildAgendaThreadMessage({
   aiFooter,
 }: ThreadMessagePayload): ThreadMessageResult {
   const deadlineMode = isDeadlineMode(startDate, endDate);
-  const formattedStartDate = formatFrenchDate(startDate);
-  const formattedEndDate = deadlineMode ? undefined : formatFrenchDate(endDate);
   const eventDateLine = `🗓️ ${time(startDate, TimestampStyles.FullDateShortTime)} (${time(startDate, TimestampStyles.RelativeTime)})`;
+  const startsAndEndsSameDay =
+    startDate.getFullYear() === endDate.getFullYear() &&
+    startDate.getMonth() === endDate.getMonth() &&
+    startDate.getDate() === endDate.getDate();
 
   let messageContent = '';
 
@@ -56,9 +55,21 @@ export function buildAgendaThreadMessage({
   messageContent += buildAgendaEventDetailsText({
     location: eventLocation,
     schedule: {
-      deadlineLabel: deadlineMode ? formattedStartDate : undefined,
-      startLabel: deadlineMode ? undefined : formattedStartDate,
-      endLabel: formattedEndDate,
+      deadlineLabel: deadlineMode
+        ? time(startDate, TimestampStyles.FullDateShortTime)
+        : undefined,
+      datesLabel:
+        deadlineMode || !startsAndEndsSameDay
+          ? undefined
+          : `${time(startDate, TimestampStyles.FullDateShortTime)} - ${time(endDate, TimestampStyles.ShortTime)}`,
+      startLabel:
+        deadlineMode || startsAndEndsSameDay
+          ? undefined
+          : time(startDate, TimestampStyles.FullDateShortTime),
+      endLabel:
+        deadlineMode || startsAndEndsSameDay
+          ? undefined
+          : time(endDate, TimestampStyles.FullDateShortTime),
     },
   });
 
