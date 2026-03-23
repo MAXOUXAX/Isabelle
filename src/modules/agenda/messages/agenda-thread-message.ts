@@ -47,10 +47,6 @@ export function buildAgendaThreadMessage({
 
   let messageContent = '';
 
-  if (roleId) {
-    messageContent += `<@&${roleId}>\n`;
-  }
-
   messageContent += `${eventDateLine}\n\n`;
 
   if (eventDescription) {
@@ -68,6 +64,10 @@ export function buildAgendaThreadMessage({
 
   if (aiFooter) {
     messageContent += aiFooter;
+  }
+
+  if (roleId) {
+    messageContent += `\n\n<@&${roleId}>`;
   }
 
   const components: ActionRowBuilder<ButtonBuilder>[] = [];
