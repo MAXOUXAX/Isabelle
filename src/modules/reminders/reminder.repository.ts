@@ -28,19 +28,19 @@ export const getUserReminderById = async (
   userId: string,
   guildId: string,
 ) => {
-  const reminders: ReminderRow[] = await db
+  const rows = await db
     .select()
-    .from(reminder)
+    .from(reminders)
     .where(
       and(
-        eq(reminder.id, reminderId),
-        eq(reminder.userId, userId),
-        eq(reminder.guildId, guildId),
+        eq(reminders.id, reminderId),
+        eq(reminders.userId, userId),
+        eq(reminders.guildId, guildId),
       ),
     )
     .limit(1);
 
-  const reminder = reminders.at(0);
+  const reminder = rows.at(0) as ReminderRow | undefined;
 
   return reminder ?? null;
 };
@@ -81,7 +81,7 @@ export const claimReminder = async (reminderId: number) => {
 };
 
 export const requeueReminder = (reminder: ReminderRow, dueAt: Date) => {
-  return db.insert(reminder).values({
+  return db.insert(reminders).values({
     userId: reminder.userId,
     guildId: reminder.guildId,
     channelId: reminder.channelId,
@@ -96,7 +96,7 @@ export const createReminder = (
     'userId' | 'guildId' | 'channelId' | 'message' | 'dueAt'
   >,
 ) => {
-  return db.insert(reminder).values(reminder);
+  return db.insert(reminders).values(reminder);
 };
 
 export const updateReminder = (
