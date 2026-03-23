@@ -1,14 +1,17 @@
-import {
-  buildAgendaEventDetailsText,
-  buildAgendaEventHeader,
-} from '@/modules/agenda/utils/agenda-display.js';
+import { buildAgendaEventDetailsText } from '@/modules/agenda/utils/agenda-display.js';
 import {
   formatFrenchDate,
   isDeadlineMode,
 } from '@/modules/agenda/utils/date-parser.js';
 import { ensureTitleStartsWithEmoji } from '@/modules/agenda/utils/emoji-title.js';
 import { getAgendaLocationPresentation } from '@/modules/agenda/utils/location-presentation.js';
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  time,
+  TimestampStyles,
+} from 'discord.js';
 
 export interface ThreadMessagePayload {
   eventLabel: string;
@@ -40,6 +43,7 @@ export function buildAgendaThreadMessage({
   const deadlineMode = isDeadlineMode(startDate, endDate);
   const formattedStartDate = formatFrenchDate(startDate);
   const formattedEndDate = deadlineMode ? undefined : formatFrenchDate(endDate);
+  const eventDateLine = `🗓️ ${time(startDate, TimestampStyles.FullDateShortTime)} (${time(startDate, TimestampStyles.RelativeTime)})`;
 
   let messageContent = '';
 
@@ -47,11 +51,11 @@ export function buildAgendaThreadMessage({
     messageContent += `<@&${roleId}>\n`;
   }
 
-  messageContent += buildAgendaEventHeader({
-    emoji,
-    title: eventLabel,
-    description: eventDescription,
-  });
+  messageContent += `${eventDateLine}\n\n`;
+
+  if (eventDescription) {
+    messageContent += `${eventDescription}\n\n`;
+  }
 
   messageContent += buildAgendaEventDetailsText({
     location: eventLocation,
