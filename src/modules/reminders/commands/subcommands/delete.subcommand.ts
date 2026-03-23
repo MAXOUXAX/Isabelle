@@ -1,9 +1,7 @@
-import { db } from '@/db/index.js';
-import { reminders } from '@/db/schema.js';
 import { createLogger } from '@/utils/logger.js';
 import { ChatInputCommandInteraction } from 'discord.js';
-import { eq } from 'drizzle-orm';
-import { getUserReminderById, parseReminderId } from '../remind.shared.js';
+import { deleteReminder, getUserReminderById } from '../remind.shared.js';
+import { parseReminderId } from '../remind.utils.js';
 
 const logger = createLogger('reminders:delete');
 
@@ -40,7 +38,7 @@ export const handleDeleteReminderSubcommand = async (
       return;
     }
 
-    await db.delete(reminders).where(eq(reminders.id, currentReminder.id));
+    await deleteReminder(currentReminder.id);
 
     await interaction.editReply({
       content: `🗑️ Rappel **#${String(currentReminder.id)}** supprimé.`,

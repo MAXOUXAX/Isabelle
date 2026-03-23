@@ -1,17 +1,17 @@
-import { db } from '@/db/index.js';
-import { reminders } from '@/db/schema.js';
+import {
+  getUserReminderById,
+  updateReminder,
+} from '@/modules/reminders/commands/remind.shared.js';
 import { createLogger } from '@/utils/logger.js';
 import { ChatInputCommandInteraction } from 'discord.js';
-import { eq } from 'drizzle-orm';
 import {
   DURATION_BOUNDS_ERROR_MESSAGE,
   DURATION_ERROR_MESSAGE,
   formatReminderPreview,
-  getUserReminderById,
   isDurationInBounds,
   parseDuration,
   parseReminderId,
-} from '../remind.shared.js';
+} from '../remind.utils.js';
 
 const logger = createLogger('reminders:edit');
 
@@ -80,13 +80,10 @@ export const handleEditReminderSubcommand = async (
     const updatedDueAt =
       duration !== null ? new Date(Date.now() + duration) : undefined;
 
-    await db
-      .update(reminders)
-      .set({
-        dueAt: updatedDueAt,
-        message: newMessage ?? undefined,
-      })
-      .where(eq(reminders.id, currentReminder.id));
+    await updateReminder(currentReminder.id, {
+      dueAt: updatedDueAt,
+      message: newMessage ?? undefined,
+    });
 
     const finalDueAt = updatedDueAt ?? currentReminder.dueAt;
     const finalMessage = newMessage ?? currentReminder.message;

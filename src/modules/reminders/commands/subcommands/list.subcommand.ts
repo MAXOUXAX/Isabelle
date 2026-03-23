@@ -1,6 +1,7 @@
 import { createLogger } from '@/utils/logger.js';
 import { ChatInputCommandInteraction } from 'discord.js';
-import { formatReminderPreview, getUserReminders } from '../remind.shared.js';
+import { getUserReminders } from '../remind.shared.js';
+import { formatReminderPreview } from '../remind.utils.js';
 
 const logger = createLogger('reminders:list');
 const MAX_LISTED_REMINDERS = 10;

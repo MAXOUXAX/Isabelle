@@ -1,5 +1,4 @@
-import { db } from '@/db/index.js';
-import { reminders } from '@/db/schema.js';
+import { createReminder } from '@/modules/reminders/commands/remind.shared.js';
 import { createLogger } from '@/utils/logger.js';
 import { ChatInputCommandInteraction } from 'discord.js';
 import {
@@ -7,7 +6,7 @@ import {
   DURATION_ERROR_MESSAGE,
   isDurationInBounds,
   parseDuration,
-} from '../remind.shared.js';
+} from '../remind.utils.js';
 
 const logger = createLogger('reminders:create');
 
@@ -41,7 +40,7 @@ export const handleCreateReminderSubcommand = async (
   await interaction.deferReply({ ephemeral: true });
 
   try {
-    await db.insert(reminders).values({
+    await createReminder({
       userId: interaction.user.id,
       guildId,
       channelId: interaction.channelId,
