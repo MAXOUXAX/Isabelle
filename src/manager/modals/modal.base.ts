@@ -17,8 +17,8 @@ export abstract class BaseModal {
 
   protected abstract buildModal(): void;
 
-  public open(interaction: CommandInteraction): Promise<void> {
-    return interaction.showModal(this.modal);
+  public async open(interaction: CommandInteraction): Promise<void> {
+    await interaction.showModal(this.modal);
   }
 
   public abstract handleSubmit(

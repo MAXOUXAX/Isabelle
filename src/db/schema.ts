@@ -113,3 +113,31 @@ export const agendaEvents = sqliteTable(
     index('agenda_events_thread_close_idx').on(t.threadClosed, t.eventEndTime),
   ],
 );
+
+export const reminders = sqliteTable(
+  'reminders',
+  {
+    id: int('id').primaryKey({ autoIncrement: true }),
+    userId: text('user_id').notNull(),
+    guildId: text('guild_id').notNull(),
+    channelId: text('channel_id').notNull(),
+    message: text('message').notNull(),
+    dueAt: int('due_at', { mode: 'timestamp' }).notNull(),
+    status: text('status', { enum: ['queued', 'processing'] })
+      .default('queued')
+      .notNull(),
+    attempts: int('attempts').default(0).notNull(),
+    claimedAt: int('claimed_at', { mode: 'timestamp' }),
+    claimedBy: text('claimed_by'),
+    ...base(),
+  },
+  (t) => [
+    index('reminders_due_at_id_idx').on(t.dueAt, t.id),
+    index('reminders_guild_user_due_at_id_idx').on(
+      t.guildId,
+      t.userId,
+      t.dueAt,
+      t.id,
+    ),
+  ],
+);

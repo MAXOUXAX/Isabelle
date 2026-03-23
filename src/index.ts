@@ -6,6 +6,7 @@ import { legalManager } from '@/modules/legal/legal.manager.js';
 import { LegalModule } from '@/modules/legal/legal.module.js';
 import { generativeAi } from '@/modules/legal/prompts/generative-ai.prompt.js';
 import { moduleManager } from '@/modules/module-manager.js';
+import { RemindersModule } from '@/modules/reminders/reminders.module.js';
 import { RoastModule } from '@/modules/roast/roast.module.js';
 import { RussianRoulette } from '@/modules/russian-roulette/russian-roulette.module.js';
 import { Schedule } from '@/modules/schedule/schedule.module.js';
@@ -46,9 +47,44 @@ const MODULES: IsabelleModule[] = [
   new SutomModule(),
   new Schedule(),
   new RoastModule(),
+  new RemindersModule(),
 ];
 
 moduleManager.registerModules(MODULES);
+
+let isShuttingDown = false;
+
+const shutdown = (signal: NodeJS.Signals): void => {
+  if (isShuttingDown) {
+    return;
+  }
+
+  isShuttingDown = true;
+  logger.info({ signal }, 'Graceful shutdown requested');
+
+  const shutdownHandler = async () => {
+    await moduleManager.destroyModules();
+    await client.destroy();
+  };
+
+  void shutdownHandler().then(
+    () => {
+      logger.info('Shutdown complete');
+      process.exit(0);
+    },
+    (error: unknown) => {
+      logger.error({ error, signal }, 'Graceful shutdown failed');
+      process.exit(1);
+    },
+  );
+};
+
+process.once('SIGINT', () => {
+  shutdown('SIGINT');
+});
+process.once('SIGTERM', () => {
+  shutdown('SIGTERM');
+});
 
 client.once(Events.ClientReady, () => {
   async function handler() {
