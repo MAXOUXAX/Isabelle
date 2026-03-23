@@ -1,14 +1,3 @@
-export interface ReminderRow {
-  id: number;
-  userId: string;
-  guildId: string;
-  channelId: string;
-  message: string;
-  dueAt: Date;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 export interface UserReminder {
   id: number;
   message: string;

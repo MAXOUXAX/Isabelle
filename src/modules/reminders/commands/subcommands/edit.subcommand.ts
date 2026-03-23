@@ -80,13 +80,21 @@ export const handleEditReminderSubcommand = async (
     const updatedDueAt =
       duration !== null ? new Date(Date.now() + duration) : undefined;
 
-    await updateReminder(currentReminder.id, {
+    const updatedReminder = await updateReminder(currentReminder.id, {
       dueAt: updatedDueAt,
       message: newMessage ?? undefined,
     });
 
-    const finalDueAt = updatedDueAt ?? currentReminder.dueAt;
-    const finalMessage = newMessage ?? currentReminder.message;
+    if (!updatedReminder) {
+      await interaction.editReply({
+        content:
+          "Ce rappel n'est plus modifiable car il a déjà été envoyé ou supprimé.",
+      });
+      return;
+    }
+
+    const finalDueAt = updatedReminder.dueAt;
+    const finalMessage = updatedReminder.message;
     const timestamp = Math.floor(finalDueAt.getTime() / 1000);
 
     await interaction.editReply({

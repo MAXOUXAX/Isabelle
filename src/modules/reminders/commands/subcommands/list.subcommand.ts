@@ -42,7 +42,16 @@ export const handleListReminderSubcommand = async (
       allowedMentions: { parse: [] },
     });
   } catch (error) {
-    logger.error({ error }, 'Failed to list reminders');
+    logger.error(
+      {
+        error,
+        functionName: 'handleListReminderSubcommand',
+        guildId,
+        maxListedReminders: MAX_LISTED_REMINDERS,
+        userId: interaction.user.id,
+      },
+      'Failed to list reminders',
+    );
     await interaction.editReply({
       content: "Impossible de récupérer vos rappels pour l'instant.",
     });

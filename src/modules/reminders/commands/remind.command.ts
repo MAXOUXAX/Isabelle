@@ -5,6 +5,7 @@ import {
   InteractionContextType,
   SlashCommandBuilder,
 } from 'discord.js';
+import { ABSOLUTE_DATE_EXAMPLE } from '../reminder.constants.js';
 import { handleReminderAutocomplete } from './remind.shared.js';
 import { handleCreateReminderSubcommand } from './subcommands/create.subcommand.js';
 import { handleDeleteReminderSubcommand } from './subcommands/delete.subcommand.js';
@@ -26,9 +27,10 @@ export class RemindCommand extends IsabelleAutocompleteCommandBase {
           option
             .setName('duree')
             .setDescription(
-              'Durée ou date (ex: 1h30, 1minute30s, 30 janvier 2026 10:49)',
+              `Durée ou date (ex: 1h30, 1minute30s, ${ABSOLUTE_DATE_EXAMPLE})`,
             )
-            .setRequired(true),
+            .setRequired(true)
+            .setMaxLength(100),
         )
         .addStringOption((option) =>
           option
@@ -56,9 +58,10 @@ export class RemindCommand extends IsabelleAutocompleteCommandBase {
           option
             .setName('duree')
             .setDescription(
-              'Nouvelle durée/date (ex: 1h30, 30 janvier 2026 10:49)',
+              `Nouvelle durée/date (ex: 1h30, ${ABSOLUTE_DATE_EXAMPLE})`,
             )
-            .setRequired(false),
+            .setRequired(false)
+            .setMaxLength(100),
         )
         .addStringOption((option) =>
           option

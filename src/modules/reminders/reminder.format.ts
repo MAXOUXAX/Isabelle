@@ -4,6 +4,10 @@ export const formatReminderPreview = (
 ): string => {
   const normalizedMessage = message.replaceAll(/\s+/g, ' ').trim();
 
+  if (maxLength <= 0) {
+    return '';
+  }
+
   if (normalizedMessage.length <= maxLength) {
     return normalizedMessage;
   }

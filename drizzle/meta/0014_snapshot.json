@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "5e900b37-3eb3-49e3-99d2-a5cb3b75452a",
+  "id": "d51a4109-7fbf-4078-bc43-0e7a3ddd7d58",
   "prevId": "8b3ada66-02ff-448d-86b4-fca575262ffe",
   "tables": {
     "agenda_events": {
@@ -354,6 +354,36 @@
           "notNull": true,
           "autoincrement": false
         },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'queued'"
+        },
+        "attempts": {
+          "name": "attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "claimed_at": {
+          "name": "claimed_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "claimed_by": {
+          "name": "claimed_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "integer",
@@ -372,10 +402,21 @@
         }
       },
       "indexes": {
-        "reminders_due_at_idx": {
-          "name": "reminders_due_at_idx",
+        "reminders_due_at_id_idx": {
+          "name": "reminders_due_at_id_idx",
           "columns": [
-            "due_at"
+            "due_at",
+            "id"
+          ],
+          "isUnique": false
+        },
+        "reminders_guild_user_due_at_id_idx": {
+          "name": "reminders_guild_user_due_at_id_idx",
+          "columns": [
+            "guild_id",
+            "user_id",
+            "due_at",
+            "id"
           ],
           "isUnique": false
         }

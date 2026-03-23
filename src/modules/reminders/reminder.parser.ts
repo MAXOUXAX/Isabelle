@@ -7,7 +7,7 @@ import {
   PARIS_TIME_ZONE,
 } from './reminder.constants.js';
 
-const baseDurationUnits = parseDurationValue.unit;
+const baseDurationUnits = { ...parseDurationValue.unit };
 const reminderDurationUnits = {
   ...baseDurationUnits,
   an: baseDurationUnits.y,
@@ -39,8 +39,6 @@ const reminderDurationUnits = {
   decimal: '.',
 } as unknown as typeof parseDurationValue.unit;
 
-parseDurationValue.unit = reminderDurationUnits;
-
 const REQUIRED_ABSOLUTE_DATE_COMPONENTS: readonly Component[] = [
   'day',
   'month',
@@ -65,10 +63,23 @@ const normalizeDurationInput = (value: string): string => {
   return stripDiacritics(value)
     .toLowerCase()
     .trim()
+    .replaceAll(/(\d),(\d)/g, '$1.$2')
     .replaceAll(/\b(?:et|and)\b|[+,]/g, ' ')
     .replaceAll(/(\d+)\s*h\s*(\d+)(?!\s*[a-z])/g, '$1h $2m')
     .replaceAll(/\s+/g, ' ')
     .trim();
+};
+
+const parseReminderDurationValue = (value: string): number | null => {
+  const previousDurationUnits = parseDurationValue.unit;
+
+  parseDurationValue.unit = reminderDurationUnits;
+
+  try {
+    return parseDurationValue(value, 'ms');
+  } finally {
+    parseDurationValue.unit = previousDurationUnits;
+  }
 };
 
 const matchesEntireInput = (result: ParsedResult, input: string): boolean => {
@@ -154,7 +165,7 @@ export const parseDuration = (input: string): number | null => {
     return null;
   }
 
-  const duration = parseDurationValue(normalizedInput, 'ms');
+  const duration = parseReminderDurationValue(normalizedInput);
   return duration !== null && Number.isFinite(duration) ? duration : null;
 };
 
