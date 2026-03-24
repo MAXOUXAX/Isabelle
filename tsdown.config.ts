@@ -1,13 +1,5 @@
 import { defineConfig } from 'tsdown';
 
-const aiSdk = [
-  /^ai$/,
-  /^@ai-sdk\//,
-  /^@vercel\/oidc$/,
-  /^@opentelemetry\/api$/,
-  /^eventsource-parser$/,
-];
-
 export default defineConfig({
   entry: ['src/index.ts'],
   minify: true,
@@ -20,7 +12,6 @@ export default defineConfig({
   dts: false,
   target: false,
   deps: {
-    alwaysBundle: aiSdk,
-    onlyBundle: aiSdk,
+    skipNodeModulesBundle: true,
   },
 });
