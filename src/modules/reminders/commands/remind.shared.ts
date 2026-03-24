@@ -9,8 +9,4 @@ export {
   requeueReminder,
   updateReminder,
 } from '../reminder.repository.js';
-export type {
-  ReminderCursor,
-  ReminderRow,
-  UserReminder,
-} from '../reminder.types.js';
+export type { ReminderCursor, UserReminder } from '../reminder.types.js';
