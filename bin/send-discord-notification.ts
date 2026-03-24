@@ -6,6 +6,8 @@ const GITHUB_REPOSITORY_PATTERN = /^[^/\s]+\/[^/\s]+$/u;
 const MAX_WEBHOOK_ATTEMPTS = 5;
 const INITIAL_RETRY_DELAY_MS = 1_000;
 const MAX_RETRY_DELAY_MS = 30_000;
+const RELEASE_NOTES_INTRO =
+  'Voici les changements inclus dans cette nouvelle mise à jour :';
 const TRANSIENT_HTTP_STATUS_CODES = new Set([
   408, 425, 429, 500, 502, 503, 504,
 ]);
@@ -114,8 +116,9 @@ function findChunkBoundary(text: string, maxLength: number): number {
 
 function splitReleaseNotes(notes: string, maxLength: number): string[] {
   const normalizedNotes = notes.trim();
+  const firstChunkMaxLength = maxLength - `${RELEASE_NOTES_INTRO}\n`.length;
 
-  if (normalizedNotes.length <= maxLength) {
+  if (normalizedNotes.length <= firstChunkMaxLength) {
     return [normalizedNotes];
   }
 
@@ -123,17 +126,20 @@ function splitReleaseNotes(notes: string, maxLength: number): string[] {
   let remainingNotes = normalizedNotes;
 
   while (remainingNotes.length > 0) {
-    if (remainingNotes.length <= maxLength) {
+    const currentMaxLength =
+      chunks.length === 0 ? firstChunkMaxLength : maxLength;
+
+    if (remainingNotes.length <= currentMaxLength) {
       chunks.push(remainingNotes);
       break;
     }
 
-    const splitIndex = findChunkBoundary(remainingNotes, maxLength);
+    const splitIndex = findChunkBoundary(remainingNotes, currentMaxLength);
     const chunk = remainingNotes.slice(0, splitIndex).trimEnd();
 
     if (chunk.length === 0) {
-      chunks.push(remainingNotes.slice(0, maxLength));
-      remainingNotes = remainingNotes.slice(maxLength).trimStart();
+      chunks.push(remainingNotes.slice(0, currentMaxLength));
+      remainingNotes = remainingNotes.slice(currentMaxLength).trimStart();
       continue;
     }
 
@@ -142,6 +148,10 @@ function splitReleaseNotes(notes: string, maxLength: number): string[] {
   }
 
   return chunks;
+}
+
+function formatReleaseNotesChunk(chunk: string, index: number): string {
+  return index === 0 ? `${RELEASE_NOTES_INTRO}\n${chunk}` : chunk;
 }
 
 async function sendWebhookPayload(
@@ -300,7 +310,7 @@ async function sendDiscordNotification() {
               ? `🎉 Version ${normalizedVersion}`
               : `🎉 Version ${normalizedVersion} (${partLabel})`,
           url: releaseUrl,
-          description: chunk,
+          description: formatReleaseNotesChunk(chunk, index),
           color: 5814783,
           footer: {
             text:
