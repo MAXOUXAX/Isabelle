@@ -1,7 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Collection, GuildMember } from 'discord.js';
 
 const MINUTES_PER_HOUR = 60;
@@ -32,6 +28,29 @@ export interface LeaderboardColumn {
   color: string;
   format: (entry: LeaderboardEntry) => string;
 }
+
+interface DurationFormatOptions {
+  style?: 'long' | 'short' | 'narrow' | 'digital';
+}
+
+interface DurationFormatInput {
+  days?: number;
+  hours?: number;
+  minutes?: number;
+}
+
+interface DurationFormatInstance {
+  format(duration: DurationFormatInput): string;
+}
+
+type IntlWithDurationFormat = typeof Intl & {
+  DurationFormat: new (
+    locales?: string | string[],
+    options?: DurationFormatOptions,
+  ) => DurationFormatInstance;
+};
+
+const intlWithDurationFormat = Intl as IntlWithDurationFormat;
 
 export function prepareLeaderboardEntries(
   stats: LeaderboardStat[],
@@ -68,9 +87,9 @@ export function formatTimeout(totalMinutes: number): string {
     ...(minutes > 0 && { minutes }),
   };
 
-  /* We can safely ignore the missing lib typing error: DurationFormat is an
-   * experimental API that is not part of TypeScript's DOM lib yet. */
-  const formatter = new Intl.DurationFormat('fr-FR', { style: 'narrow' });
+  const formatter = new intlWithDurationFormat.DurationFormat('fr-FR', {
+    style: 'narrow',
+  });
 
   return formatter.format(duration);
 }
