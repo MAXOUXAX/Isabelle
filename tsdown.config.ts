@@ -1,5 +1,7 @@
 import { defineConfig } from 'tsdown';
 
+const aiSdk = [/^ai$/, /^@ai-sdk\//];
+
 export default defineConfig({
   entry: ['src/index.ts'],
   minify: true,
@@ -12,6 +14,7 @@ export default defineConfig({
   dts: false,
   target: false,
   deps: {
-    onlyBundle: [],
+    alwaysBundle: aiSdk,
+    onlyBundle: aiSdk,
   },
 });
