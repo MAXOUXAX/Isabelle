@@ -124,9 +124,15 @@ export const executePlayCommand = async (
     increaseGamesSinceLastKill();
     const errorMessage = `Le pistolet s'enraye... Personne n'est sanctionné cette fois-ci (erreur : ${(e as Error).name}).`;
     if (interaction.replied) {
-      await interaction.followUp(errorMessage);
+      await interaction.followUp({
+        content: errorMessage,
+        allowedMentions: { parse: [] },
+      });
     } else {
-      await interaction.reply(errorMessage);
+      await interaction.reply({
+        content: errorMessage,
+        allowedMentions: { parse: [] },
+      });
     }
   }
 };
