@@ -67,7 +67,7 @@
     "date-fns-tz": "^3.2.0",
     "discord.js": "^14.25.1",
     "dotenv": "^17.3.1",
-    "drizzle-orm": "^0.45.1",
+    "drizzle-orm": "^0.45.2",
     "emittery": "^2.0.0",
     "node-ical": "^0.25.6",
     "parse-duration": "^2.1.5",
