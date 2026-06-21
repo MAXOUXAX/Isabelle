@@ -16,9 +16,19 @@ import {
 import { createLogger } from '@/utils/logger.js';
 import { mentionId } from '@/utils/mention.js';
 import { voidAndTrackError } from '@/utils/promises.js';
-import { ChatInputCommandInteraction, MessageFlags } from 'discord.js';
+import {
+  ChatInputCommandInteraction,
+  MessageFlags,
+  MessageMentionOptions,
+} from 'discord.js';
 
 const logger = createLogger('russian-roulette-play-command');
+
+// Restrict mentions to an explicit allow-list of user IDs, never roles/@everyone.
+const mentionOnly = (...userIds: string[]): MessageMentionOptions => ({
+  parse: [],
+  users: userIds,
+});
 
 export const executePlayCommand = async (
   interaction: ChatInputCommandInteraction,
@@ -28,6 +38,7 @@ export const executePlayCommand = async (
   if (!guild) {
     await interaction.reply({
       content: 'Vous ne pouvez pas jouer en DM.',
+      allowedMentions: mentionOnly(),
       flags: MessageFlags.Ephemeral,
     });
     return;
@@ -46,7 +57,7 @@ export const executePlayCommand = async (
     increaseGamesSinceLastKill();
     await interaction.reply({
       content: randomSafeMessage,
-      allowedMentions: { parse: [], users: [interaction.user.id] },
+      allowedMentions: mentionOnly(interaction.user.id),
     });
     return;
   }
@@ -64,7 +75,7 @@ export const executePlayCommand = async (
       increaseGamesSinceLastKill();
       await interaction.reply({
         content: randomSafeMessage,
-        allowedMentions: { parse: [], users: [interaction.user.id] },
+        allowedMentions: mentionOnly(interaction.user.id),
       });
       return;
     }
@@ -73,7 +84,7 @@ export const executePlayCommand = async (
       increaseGamesSinceLastKill();
       await interaction.reply({
         content: `Bang...? ${mentionId(targetId)} était trop puissant(e) pour être affecté(e). Le canon a fondu et tout le monde s'en sort vivant cette fois-ci !`,
-        allowedMentions: { parse: [], users: [targetId, interaction.user.id] },
+        allowedMentions: mentionOnly(targetId, interaction.user.id),
       });
       logger.debug(
         `Target ${targetId} (${member.displayName}) is not moderatable - cannot timeout`,
@@ -91,8 +102,12 @@ export const executePlayCommand = async (
 
       await interaction.reply({
         content: preTargetMessage,
-        allowedMentions: { parse: [], users: [targetId, interaction.user.id] },
+        allowedMentions: mentionOnly(targetId, interaction.user.id),
       });
+    } else {
+      // Self-target: acknowledge the interaction before the timeout (a network
+      // call) so we stay within Discord's 3s window, then edit with the result.
+      await interaction.deferReply();
     }
 
     // Get random timeout duration and message
@@ -120,12 +135,12 @@ export const executePlayCommand = async (
     if (targetId !== interaction.user.id) {
       await interaction.followUp({
         content: finalMessage,
-        allowedMentions: { parse: [], users: [targetId, interaction.user.id] },
+        allowedMentions: mentionOnly(targetId, interaction.user.id),
       });
     } else {
-      await interaction.reply({
+      await interaction.editReply({
         content: finalMessage,
-        allowedMentions: { parse: [], users: [targetId, interaction.user.id] },
+        allowedMentions: mentionOnly(targetId, interaction.user.id),
       });
     }
     logger.debug(
@@ -139,15 +154,22 @@ export const executePlayCommand = async (
     );
     increaseGamesSinceLastKill();
     const errorMessage = `Le pistolet s'enraye... Personne n'est sanctionné cette fois-ci.`;
-    if (interaction.replied) {
+    if (interaction.deferred) {
+      await interaction.editReply({
+        content: errorMessage,
+        allowedMentions: mentionOnly(targetId, interaction.user.id),
+      });
+    } else if (interaction.replied) {
       await interaction.followUp({
         content: errorMessage,
-        allowedMentions: { parse: [], users: [targetId, interaction.user.id] },
+        allowedMentions: mentionOnly(targetId, interaction.user.id),
+        flags: MessageFlags.Ephemeral,
       });
     } else {
       await interaction.reply({
         content: errorMessage,
-        allowedMentions: { parse: [], users: [targetId, interaction.user.id] },
+        allowedMentions: mentionOnly(targetId, interaction.user.id),
+        flags: MessageFlags.Ephemeral,
       });
     }
   }
