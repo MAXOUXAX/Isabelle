@@ -20,9 +20,13 @@ export class BirthdayModule extends IsabelleModule {
   init(): void {
     this.registerCommand(new BirthdayCommand());
 
-    // Catch up on startup in case the bot was offline at the scheduled time.
-    // The check is idempotent, so this won't double-announce.
-    void this.runDailyCheck();
+    // Catch up only if today's scheduled time has already passed (e.g. the bot
+    // was offline at 07:45). Before that time, the scheduled timer fires today,
+    // so an immediate run would only announce prematurely. The check is
+    // idempotent, so this never double-announces.
+    if (new Date() >= this.scheduledTimeFor(new Date())) {
+      void this.runDailyCheck();
+    }
     this.scheduleNextCheck();
   }
 
@@ -33,10 +37,16 @@ export class BirthdayModule extends IsabelleModule {
     }
   }
 
+  /** Today's announcement time (local) for the calendar day of `reference`. */
+  private scheduledTimeFor(reference: Date): Date {
+    const scheduled = new Date(reference);
+    scheduled.setHours(ANNOUNCEMENT_HOUR, ANNOUNCEMENT_MINUTE, 0, 0);
+    return scheduled;
+  }
+
   private scheduleNextCheck(): void {
     const now = new Date();
-    const next = new Date(now);
-    next.setHours(ANNOUNCEMENT_HOUR, ANNOUNCEMENT_MINUTE, 0, 0);
+    const next = this.scheduledTimeFor(now);
 
     if (next <= now) {
       next.setDate(next.getDate() + 1);
