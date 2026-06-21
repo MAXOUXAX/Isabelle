@@ -16,8 +16,11 @@ export class BirthdayModule extends IsabelleModule {
   ];
 
   private dailyTimeout: ReturnType<typeof setTimeout> | null = null;
+  private isDestroyed = false;
+  private isCheckRunning = false;
 
   init(): void {
+    this.isDestroyed = false;
     this.registerCommand(new BirthdayCommand());
 
     // Catch up only if today's scheduled time has already passed (e.g. the bot
@@ -31,6 +34,7 @@ export class BirthdayModule extends IsabelleModule {
   }
 
   destroy(): void {
+    this.isDestroyed = true;
     if (this.dailyTimeout) {
       clearTimeout(this.dailyTimeout);
       this.dailyTimeout = null;
@@ -45,6 +49,10 @@ export class BirthdayModule extends IsabelleModule {
   }
 
   private scheduleNextCheck(): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
     const now = new Date();
     const next = this.scheduledTimeFor(now);
 
@@ -53,16 +61,27 @@ export class BirthdayModule extends IsabelleModule {
     }
 
     this.dailyTimeout = setTimeout(() => {
-      void this.runDailyCheck();
-      this.scheduleNextCheck();
+      void (async () => {
+        await this.runDailyCheck();
+        this.scheduleNextCheck();
+      })();
     }, next.getTime() - now.getTime());
   }
 
   private async runDailyCheck(): Promise<void> {
+    // Guard against overlapping runs (startup catch-up + timer) so a birthday is
+    // never announced twice before `lastNotified` is persisted.
+    if (this.isDestroyed || this.isCheckRunning) {
+      return;
+    }
+
+    this.isCheckRunning = true;
     try {
       await announceBirthdays();
     } catch (error) {
       logger.error({ error }, 'Birthday announcement check failed');
+    } finally {
+      this.isCheckRunning = false;
     }
   }
 }
