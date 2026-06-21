@@ -1,6 +1,13 @@
 import { GuildConfig } from '@/manager/config.manager.js';
 import { sql } from 'drizzle-orm';
-import { index, int, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
+import {
+  check,
+  index,
+  int,
+  sqliteTable,
+  text,
+  unique,
+} from 'drizzle-orm/sqlite-core';
 
 const base = () => {
   return {
@@ -156,5 +163,7 @@ export const birthdays = sqliteTable(
   (t) => [
     unique().on(t.guildId, t.userId),
     index('birthdays_month_day_idx').on(t.month, t.day),
+    check('birthdays_month_check', sql`${t.month} between 1 and 12`),
+    check('birthdays_day_check', sql`${t.day} between 1 and 31`),
   ],
 );
