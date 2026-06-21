@@ -104,6 +104,10 @@ export const executePlayCommand = async (
         content: preTargetMessage,
         allowedMentions: mentionOnly(targetId, interaction.user.id),
       });
+    } else {
+      // Self-target: acknowledge the interaction before the timeout (a network
+      // call) so we stay within Discord's 3s window, then edit with the result.
+      await interaction.deferReply();
     }
 
     // Get random timeout duration and message
@@ -134,7 +138,7 @@ export const executePlayCommand = async (
         allowedMentions: mentionOnly(targetId, interaction.user.id),
       });
     } else {
-      await interaction.reply({
+      await interaction.editReply({
         content: finalMessage,
         allowedMentions: mentionOnly(targetId, interaction.user.id),
       });
@@ -150,7 +154,12 @@ export const executePlayCommand = async (
     );
     increaseGamesSinceLastKill();
     const errorMessage = `Le pistolet s'enraye... Personne n'est sanctionné cette fois-ci.`;
-    if (interaction.replied) {
+    if (interaction.deferred) {
+      await interaction.editReply({
+        content: errorMessage,
+        allowedMentions: mentionOnly(targetId, interaction.user.id),
+      });
+    } else if (interaction.replied) {
       await interaction.followUp({
         content: errorMessage,
         allowedMentions: mentionOnly(targetId, interaction.user.id),
