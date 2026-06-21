@@ -26,6 +26,13 @@ export async function handleRemoveBirthdayCommand(
 
   const user = interaction.options.getUser('utilisateur', true);
 
+  if (user.id === interaction.user.id) {
+    await interaction.editReply(
+      'Tu ne peux pas supprimer ton propre anniversaire. Tu peux le modifier avec `/anniversaires set`.',
+    );
+    return;
+  }
+
   try {
     await birthdayRepository.removeBirthday(interaction.guildId, user.id);
 

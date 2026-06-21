@@ -48,7 +48,7 @@ export function nextBirthdayDate(month: number, day: number, from: Date): Date {
 }
 
 /** Whether `year` is a leap year in the proleptic Gregorian calendar. */
-function isLeapYear(year: number): boolean {
+export function isLeapYear(year: number): boolean {
   return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
 }
 

@@ -1,7 +1,10 @@
 import { client } from '@/index.js';
 import { configManager } from '@/manager/config.manager.js';
 import { birthdayRepository } from '@/modules/birthdays/birthday.repository.js';
-import { isSameLocalDay } from '@/modules/birthdays/birthday.utils.js';
+import {
+  isLeapYear,
+  isSameLocalDay,
+} from '@/modules/birthdays/birthday.utils.js';
 import { createLogger } from '@/utils/logger.js';
 import { ContainerBuilder, TextDisplayBuilder } from '@discordjs/builders';
 import { MessageFlags } from 'discord.js';
@@ -85,6 +88,29 @@ export function sendBirthdayPreview(
 }
 
 /**
+ * Fetches the birthdays to announce on `now`'s calendar day.
+ *
+ * On 28 February of a non-leap year it also includes 29 February birthdays, so
+ * leap-day people are still celebrated every year — consistent with the
+ * countdown, which observes 29/02 on 28/02 in non-leap years.
+ */
+async function getBirthdaysToAnnounce(now: Date) {
+  const month = now.getMonth() + 1;
+  const day = now.getDate();
+
+  const includeLeapDay =
+    month === 2 && day === 28 && !isLeapYear(now.getFullYear());
+
+  const queries = [birthdayRepository.getBirthdaysForDay(month, day)];
+  if (includeLeapDay) {
+    queries.push(birthdayRepository.getBirthdaysForDay(2, 29));
+  }
+
+  const results = await Promise.all(queries);
+  return results.flat();
+}
+
+/**
  * Announces today's birthdays in each guild's configured channel.
  *
  * Idempotent: a birthday is only announced once per day thanks to the
@@ -94,13 +120,7 @@ export function sendBirthdayPreview(
  * back-announced.
  */
 export async function announceBirthdays(now: Date = new Date()): Promise<void> {
-  const month = now.getMonth() + 1;
-  const day = now.getDate();
-
-  const todaysBirthdays = await birthdayRepository.getBirthdaysForDay(
-    month,
-    day,
-  );
+  const todaysBirthdays = await getBirthdaysToAnnounce(now);
 
   const pending = todaysBirthdays.filter(
     (birthday) => !isSameLocalDay(birthday.lastNotified, now),
