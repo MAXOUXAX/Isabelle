@@ -30,7 +30,7 @@ export async function handleRemoveBirthdayCommand(
     await birthdayRepository.removeBirthday(interaction.guildId, user.id);
 
     await interaction.editReply(
-      `L'anniversaire de ${user.tag} a été supprimé.`,
+      `L'anniversaire de ${user.toString()} a été supprimé.`,
     );
   } catch (error) {
     logger.error(
