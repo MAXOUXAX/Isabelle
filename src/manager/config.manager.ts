@@ -63,6 +63,7 @@ export interface GuildConfig {
   HOT_POTATO_TIMEOUT_DURATION?: number;
   AGENDA_FORUM_CHANNEL_ID?: string;
   AGENDA_ROLE_TO_MENTION?: string;
+  BIRTHDAY_CHANNEL_ID?: string;
 }
 
 export const configManager = new ConfigManager();
