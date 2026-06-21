@@ -98,14 +98,16 @@ async function getBirthdaysToAnnounce(now: Date) {
   const month = now.getMonth() + 1;
   const day = now.getDate();
 
-  const birthdays = await birthdayRepository.getBirthdaysForDay(month, day);
+  const includeLeapDay =
+    month === 2 && day === 28 && !isLeapYear(now.getFullYear());
 
-  if (month === 2 && day === 28 && !isLeapYear(now.getFullYear())) {
-    const leapDayBirthdays = await birthdayRepository.getBirthdaysForDay(2, 29);
-    birthdays.push(...leapDayBirthdays);
+  const queries = [birthdayRepository.getBirthdaysForDay(month, day)];
+  if (includeLeapDay) {
+    queries.push(birthdayRepository.getBirthdaysForDay(2, 29));
   }
 
-  return birthdays;
+  const results = await Promise.all(queries);
+  return results.flat();
 }
 
 /**
