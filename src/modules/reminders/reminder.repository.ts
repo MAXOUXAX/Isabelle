@@ -26,7 +26,7 @@ export const getUserReminders = (
       ),
     )
     .orderBy(asc(reminders.dueAt), asc(reminders.id))
-    .limit(25) as Promise<UserReminder[]>;
+    .limit(25);
 };
 
 export const getUserReminderById = async (

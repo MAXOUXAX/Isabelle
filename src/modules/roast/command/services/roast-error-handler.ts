@@ -25,11 +25,7 @@ function extractErrorDetails(error: unknown): string | null {
     if ('data' in error.cause && error.cause.data) {
       const data = error.cause.data as Record<string, unknown>;
       if ('error' in data && data.error && typeof data.error === 'object') {
-        apiError = data.error as {
-          code?: number;
-          message?: string;
-          status?: string;
-        };
+        apiError = data.error;
       }
     }
   }
@@ -42,11 +38,7 @@ function extractErrorDetails(error: unknown): string | null {
   ) {
     const data = error.data as Record<string, unknown>;
     if ('error' in data && data.error && typeof data.error === 'object') {
-      apiError = data.error as {
-        code?: number;
-        message?: string;
-        status?: string;
-      };
+      apiError = data.error;
     }
   }
 

@@ -5,7 +5,6 @@ import {
 } from '@/modules/sutom/core/guess-handler.js';
 import { createLogger } from '@/utils/logger.js';
 import {
-  AnyThreadChannel,
   AttachmentBuilder,
   ChatInputCommandInteraction,
   EmbedBuilder,
@@ -60,7 +59,7 @@ export default async function guessWordSubcommand(
     return;
   }
 
-  const gameChannel = channel as AnyThreadChannel;
+  const gameChannel = channel;
 
   // Additional validation: check if there's a game associated with this thread
   const threadGame = sutomGameManager.getGameByThreadId(gameChannel.id);

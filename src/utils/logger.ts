@@ -56,7 +56,7 @@ function initializeLogging() {
       destination: currentLogPath,
       mkdir: true,
     },
-  }) as pino.DestinationStream;
+  });
 
   // Create console logger with pretty printing
   const consoleTransport: pino.DestinationStream = pino.transport({
@@ -67,7 +67,7 @@ function initializeLogging() {
       ignore: 'pid,hostname,prefix',
       messageFormat: '{if prefix}[{prefix}]{end} {msg}',
     },
-  }) as pino.DestinationStream;
+  });
 
   // Create multistream for both file and console
   // Set level on each stream to control which messages go where
