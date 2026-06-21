@@ -1,7 +1,11 @@
 import { configManager } from '@/manager/config.manager.js';
 import { isBirthdayAdmin } from '@/modules/birthdays/birthday.permissions.js';
 import { createLogger } from '@/utils/logger.js';
-import { ChannelType, ChatInputCommandInteraction } from 'discord.js';
+import {
+  ChannelType,
+  ChatInputCommandInteraction,
+  PermissionFlagsBits,
+} from 'discord.js';
 
 const logger = createLogger('birthday-config-command');
 
@@ -39,6 +43,24 @@ export async function handleConfigBirthdayCommand(
   }
 
   await interaction.deferReply({ ephemeral: true });
+
+  // Make sure Isabelle can actually post in the chosen channel, otherwise the
+  // daily announcement would silently fail later on.
+  const me = interaction.guild?.members.me;
+  const targetChannel = interaction.guild?.channels.cache.get(channel.id);
+
+  if (me && targetChannel) {
+    const permissions = targetChannel.permissionsFor(me);
+    if (
+      !permissions.has(PermissionFlagsBits.ViewChannel) ||
+      !permissions.has(PermissionFlagsBits.SendMessages)
+    ) {
+      await interaction.editReply(
+        `Je n'ai pas la permission de voir et d'envoyer des messages dans <#${channel.id}>. Donne-moi ces accès puis relance la commande.`,
+      );
+      return;
+    }
+  }
 
   try {
     const currentConfig = configManager.getGuild(interaction.guildId);
