@@ -44,7 +44,10 @@ export const executePlayCommand = async (
   // No one got hit this round.
   if (targetId == null) {
     increaseGamesSinceLastKill();
-    await interaction.reply(randomSafeMessage);
+    await interaction.reply({
+      content: randomSafeMessage,
+      allowedMentions: { parse: [], users: [interaction.user.id] },
+    });
     return;
   }
 
@@ -59,15 +62,19 @@ export const executePlayCommand = async (
       );
 
       increaseGamesSinceLastKill();
-      await interaction.reply(randomSafeMessage);
+      await interaction.reply({
+        content: randomSafeMessage,
+        allowedMentions: { parse: [], users: [interaction.user.id] },
+      });
       return;
     }
 
     if (!(member.moderatable || member.kickable)) {
       increaseGamesSinceLastKill();
-      await interaction.reply(
-        `Bang...? ${mentionId(targetId)} était trop puissant(e) pour être affecté(e). Le canon a fondu et tout le monde s'en sort vivant cette fois-ci !`,
-      );
+      await interaction.reply({
+        content: `Bang...? ${mentionId(targetId)} était trop puissant(e) pour être affecté(e). Le canon a fondu et tout le monde s'en sort vivant cette fois-ci !`,
+        allowedMentions: { parse: [], users: [targetId, interaction.user.id] },
+      });
       logger.debug(
         `Target ${targetId} (${member.displayName}) is not moderatable - cannot timeout`,
       );
@@ -82,7 +89,10 @@ export const executePlayCommand = async (
         .replace('{shooter}', mentionId(interaction.user.id))
         .replace('{target}', mentionId(targetId));
 
-      await interaction.reply(preTargetMessage);
+      await interaction.reply({
+        content: preTargetMessage,
+        allowedMentions: { parse: [], users: [targetId, interaction.user.id] },
+      });
     }
 
     // Get random timeout duration and message
@@ -108,9 +118,15 @@ export const executePlayCommand = async (
     const finalMessage = message.replace('{user}', mentionId(targetId));
     // If we already replied with the pre-target message (when target != shooter), followUp with the final timeout message
     if (targetId !== interaction.user.id) {
-      await interaction.followUp(finalMessage);
+      await interaction.followUp({
+        content: finalMessage,
+        allowedMentions: { parse: [], users: [targetId, interaction.user.id] },
+      });
     } else {
-      await interaction.reply(finalMessage);
+      await interaction.reply({
+        content: finalMessage,
+        allowedMentions: { parse: [], users: [targetId, interaction.user.id] },
+      });
     }
     logger.debug(
       { reason: 'Russian Roulette', duration: label },
@@ -122,11 +138,17 @@ export const executePlayCommand = async (
       `Failed to timeout user ${targetId} in Russian Roulette:`,
     );
     increaseGamesSinceLastKill();
-    const errorMessage = `Le pistolet s'enraye... Personne n'est sanctionné cette fois-ci (erreur : ${(e as Error).name}).`;
+    const errorMessage = `Le pistolet s'enraye... Personne n'est sanctionné cette fois-ci.`;
     if (interaction.replied) {
-      await interaction.followUp(errorMessage);
+      await interaction.followUp({
+        content: errorMessage,
+        allowedMentions: { parse: [], users: [targetId, interaction.user.id] },
+      });
     } else {
-      await interaction.reply(errorMessage);
+      await interaction.reply({
+        content: errorMessage,
+        allowedMentions: { parse: [], users: [targetId, interaction.user.id] },
+      });
     }
   }
 };
