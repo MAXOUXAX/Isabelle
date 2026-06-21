@@ -46,7 +46,7 @@ export const executePlayCommand = async (
     increaseGamesSinceLastKill();
     await interaction.reply({
       content: randomSafeMessage,
-      allowedMentions: { users: [interaction.user.id] },
+      allowedMentions: { parse: [], users: [interaction.user.id] },
     });
     return;
   }
@@ -64,7 +64,7 @@ export const executePlayCommand = async (
       increaseGamesSinceLastKill();
       await interaction.reply({
         content: randomSafeMessage,
-        allowedMentions: { users: [interaction.user.id] },
+        allowedMentions: { parse: [], users: [interaction.user.id] },
       });
       return;
     }
@@ -73,7 +73,7 @@ export const executePlayCommand = async (
       increaseGamesSinceLastKill();
       await interaction.reply({
         content: `Bang...? ${mentionId(targetId)} était trop puissant(e) pour être affecté(e). Le canon a fondu et tout le monde s'en sort vivant cette fois-ci !`,
-        allowedMentions: { users: [targetId, interaction.user.id] },
+        allowedMentions: { parse: [], users: [targetId, interaction.user.id] },
       });
       logger.debug(
         `Target ${targetId} (${member.displayName}) is not moderatable - cannot timeout`,
@@ -91,7 +91,7 @@ export const executePlayCommand = async (
 
       await interaction.reply({
         content: preTargetMessage,
-        allowedMentions: { users: [targetId, interaction.user.id] },
+        allowedMentions: { parse: [], users: [targetId, interaction.user.id] },
       });
     }
 
@@ -120,12 +120,12 @@ export const executePlayCommand = async (
     if (targetId !== interaction.user.id) {
       await interaction.followUp({
         content: finalMessage,
-        allowedMentions: { users: [targetId, interaction.user.id] },
+        allowedMentions: { parse: [], users: [targetId, interaction.user.id] },
       });
     } else {
       await interaction.reply({
         content: finalMessage,
-        allowedMentions: { users: [targetId, interaction.user.id] },
+        allowedMentions: { parse: [], users: [targetId, interaction.user.id] },
       });
     }
     logger.debug(
@@ -138,16 +138,16 @@ export const executePlayCommand = async (
       `Failed to timeout user ${targetId} in Russian Roulette:`,
     );
     increaseGamesSinceLastKill();
-    const errorMessage = `Le pistolet s'enraye... Personne n'est sanctionné cette fois-ci (erreur : ${(e as Error).name}).`;
+    const errorMessage = `Le pistolet s'enraye... Personne n'est sanctionné cette fois-ci.`;
     if (interaction.replied) {
       await interaction.followUp({
         content: errorMessage,
-        allowedMentions: { users: [targetId, interaction.user.id] },
+        allowedMentions: { parse: [], users: [targetId, interaction.user.id] },
       });
     } else {
       await interaction.reply({
         content: errorMessage,
-        allowedMentions: { users: [targetId, interaction.user.id] },
+        allowedMentions: { parse: [], users: [targetId, interaction.user.id] },
       });
     }
   }
