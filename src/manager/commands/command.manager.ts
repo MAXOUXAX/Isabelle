@@ -31,10 +31,7 @@ const collectAutocompleteOptions = (
       option.type === ApplicationCommandOptionType.SubcommandGroup
     ) {
       if ('options' in option) {
-        collectAutocompleteOptions(
-          option.options as RESTPostAPIChatInputApplicationCommandsJSONBody['options'],
-          names,
-        );
+        collectAutocompleteOptions(option.options, names);
       }
       continue;
     }
@@ -67,8 +64,7 @@ export class CommandManager {
    */
   async registerCommandsFromModule(module: IsabelleModule) {
     for (const command of module.commands) {
-      const commandJson =
-        command.commandData.toJSON() as unknown as RESTPostAPIChatInputApplicationCommandsJSONBody;
+      const commandJson = command.commandData.toJSON();
       const autocompleteOptions = getAutocompleteOptionNames(commandJson);
 
       if (autocompleteOptions.length > 0 && !isAutocompleteCommand(command)) {

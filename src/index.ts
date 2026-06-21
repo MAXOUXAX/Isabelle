@@ -1,6 +1,7 @@
 import { commandManager } from '@/manager/commands/command.manager.js';
 import { AgendaModule } from '@/modules/agenda/agenda.module.js';
 import { AutomaticResponsesModule } from '@/modules/automatic-responses/automatic-responses.module.js';
+import { BirthdayModule } from '@/modules/birthdays/birthday.module.js';
 import { CoreModule } from '@/modules/core/core.module.js';
 import { legalManager } from '@/modules/legal/legal.manager.js';
 import { LegalModule } from '@/modules/legal/legal.module.js';
@@ -48,6 +49,7 @@ const MODULES: IsabelleModule[] = [
   new Schedule(),
   new RoastModule(),
   new RemindersModule(),
+  new BirthdayModule(),
 ];
 
 moduleManager.registerModules(MODULES);

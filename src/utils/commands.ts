@@ -24,7 +24,7 @@ export function countSubcommands(options: CommandOptions): number {
       option.type === ApplicationCommandOptionType.SubcommandGroup &&
       'options' in option
     ) {
-      count += countSubcommands(option.options as CommandOptions);
+      count += countSubcommands(option.options);
     }
   }
   return count;

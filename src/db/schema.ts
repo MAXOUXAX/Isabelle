@@ -1,6 +1,13 @@
 import { GuildConfig } from '@/manager/config.manager.js';
 import { sql } from 'drizzle-orm';
-import { index, int, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
+import {
+  check,
+  index,
+  int,
+  sqliteTable,
+  text,
+  unique,
+} from 'drizzle-orm/sqlite-core';
 
 const base = () => {
   return {
@@ -139,5 +146,24 @@ export const reminders = sqliteTable(
       t.dueAt,
       t.id,
     ),
+  ],
+);
+
+export const birthdays = sqliteTable(
+  'birthdays',
+  {
+    id: int('id').primaryKey({ autoIncrement: true }),
+    guildId: text('guild_id').notNull(),
+    userId: text('user_id').notNull(),
+    month: int('month').notNull(),
+    day: int('day').notNull(),
+    lastNotified: int('last_notified', { mode: 'timestamp' }),
+    ...base(),
+  },
+  (t) => [
+    unique().on(t.guildId, t.userId),
+    index('birthdays_month_day_idx').on(t.month, t.day),
+    check('birthdays_month_check', sql`${t.month} between 1 and 12`),
+    check('birthdays_day_check', sql`${t.day} between 1 and 31`),
   ],
 );
