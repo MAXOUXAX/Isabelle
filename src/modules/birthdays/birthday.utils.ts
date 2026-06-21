@@ -28,6 +28,9 @@ export function formatLongDayMonth(day: number, month: number): string {
 /**
  * Returns the next calendar date (local midnight) on which the given day/month
  * occurs, relative to `from`. When the birthday is today, returns today.
+ *
+ * A 29 February birthday is observed on 28 February in non-leap years so the
+ * countdown never silently rolls over into March.
  */
 export function nextBirthdayDate(month: number, day: number, from: Date): Date {
   const reference = new Date(
@@ -36,12 +39,26 @@ export function nextBirthdayDate(month: number, day: number, from: Date): Date {
     from.getDate(),
   );
 
-  let next = new Date(from.getFullYear(), month - 1, day);
+  let next = buildBirthdayDate(from.getFullYear(), month, day);
   if (next < reference) {
-    next = new Date(from.getFullYear() + 1, month - 1, day);
+    next = buildBirthdayDate(from.getFullYear() + 1, month, day);
   }
 
   return next;
+}
+
+/** Whether `year` is a leap year in the proleptic Gregorian calendar. */
+function isLeapYear(year: number): boolean {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+}
+
+/**
+ * Builds a local-midnight date for a birthday in a given year, clamping
+ * 29 February to 28 February in non-leap years to avoid rolling into March.
+ */
+function buildBirthdayDate(year: number, month: number, day: number): Date {
+  const safeDay = month === 2 && day === 29 && !isLeapYear(year) ? 28 : day;
+  return new Date(year, month - 1, safeDay);
 }
 
 /**
@@ -59,10 +76,7 @@ export function daysUntilBirthday(
     from.getDate(),
   );
 
-  let next = new Date(from.getFullYear(), month - 1, day);
-  if (next < reference) {
-    next = new Date(from.getFullYear() + 1, month - 1, day);
-  }
+  const next = nextBirthdayDate(month, day, from);
 
   const MS_PER_DAY = 24 * 60 * 60 * 1000;
   return Math.round((next.getTime() - reference.getTime()) / MS_PER_DAY);
