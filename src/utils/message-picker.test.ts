@@ -91,6 +91,19 @@ const createGuild = (pages: Message[][]): { guild: Guild; calls: number } => {
 const userMessage = (id: string, createdTimestamp: number): Message =>
   ({ id, author: { id: 'user-1' }, createdTimestamp }) as Message;
 
+const fullPage = (...userMessages: Message[]): Message[] => [
+  ...userMessages,
+  ...Array.from(
+    { length: 100 - userMessages.length },
+    (_, index) =>
+      ({
+        id: `other-${String(index)}-${userMessages.map((message) => message.id).join('-')}`,
+        author: { id: 'other-user' },
+        createdTimestamp: Date.now(),
+      }) as Message,
+  ),
+];
+
 describe('fetchLastUserMessages', () => {
   it('fetches one batch when the requested minimum is zero', async () => {
     const fixture = createGuild([[]]);
@@ -103,11 +116,11 @@ describe('fetchLastUserMessages', () => {
 
   it('continues after a stale first batch until the freshness threshold is met', async () => {
     const fixture = createGuild([
-      [userMessage('1', Date.now() - 120 * 24 * 60 * 60 * 1000)],
-      [userMessage('2', Date.now())],
-      [userMessage('3', Date.now())],
-      [userMessage('4', Date.now())],
-      [userMessage('5', Date.now())],
+      fullPage(userMessage('1', Date.now() - 120 * 24 * 60 * 60 * 1000)),
+      fullPage(userMessage('2', Date.now())),
+      fullPage(userMessage('3', Date.now())),
+      fullPage(userMessage('4', Date.now())),
+      fullPage(userMessage('5', Date.now())),
     ]);
 
     const messages = await fetchLastUserMessages(fixture.guild, 'user-1');
@@ -116,4 +129,25 @@ describe('fetchLastUserMessages', () => {
     expect(calculateFreshPercentage(messages)).toBe(0.8);
     expect(fixture.calls).toBe(5);
   });
+
+  it.each([1, 0])(
+    'continues to the next page when a batch has no target-user messages (minMessages=%i)',
+    async (minMessages) => {
+      const fixture = createGuild([
+        fullPage(),
+        [userMessage('target-on-page-two', Date.now())],
+      ]);
+
+      const messages = await fetchLastUserMessages(
+        fixture.guild,
+        'user-1',
+        minMessages,
+      );
+
+      expect(messages.map((message) => message.id)).toContain(
+        'target-on-page-two',
+      );
+      expect(fixture.calls).toBe(2);
+    },
+  );
 });
