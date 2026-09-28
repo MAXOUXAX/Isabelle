@@ -56,4 +56,22 @@ describe('SutomGameManager idle cleanup', () => {
       expirationThreadArchived: false,
     });
   });
+
+  it('does not apply stale cleanup results to a replacement game', () => {
+    sutomGameManager.createGame(guildId, userId, 'old-thread');
+    const oldGame = sutomGameManager.getGame(guildId, userId);
+    expect(oldGame).toBeDefined();
+    if (!oldGame) throw new Error('Expected the original game to exist');
+    sutomGameManager.deleteGame(guildId, userId, oldGame);
+    sutomGameManager.createGame(guildId, userId, 'new-thread');
+
+    sutomGameManager.markExpirationStep(guildId, userId, 'noticeSent', oldGame);
+    sutomGameManager.deleteGame(guildId, userId, oldGame);
+
+    const [replacement] = sutomGameManager.sweepIdleGames(0, Date.now() + 1);
+    expect(replacement).toMatchObject({
+      threadId: 'new-thread',
+      expirationNoticeSent: false,
+    });
+  });
 });

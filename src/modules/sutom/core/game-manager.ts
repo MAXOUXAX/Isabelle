@@ -141,8 +141,11 @@ class GameManager {
     return undefined;
   }
 
-  deleteGame(guildId: string, userId: string): void {
-    this.gameInstances.delete(buildGameKey(guildId, userId));
+  deleteGame(guildId: string, userId: string, expectedGame?: SutomGame): void {
+    const key = buildGameKey(guildId, userId);
+    const instance = this.gameInstances.get(key);
+    if (expectedGame && instance?.game !== expectedGame) return;
+    this.gameInstances.delete(key);
   }
 
   touch(guildId: string, userId: string): void {
@@ -173,9 +176,10 @@ class GameManager {
     guildId: string,
     userId: string,
     step: 'noticeSent' | 'boardUpdated' | 'threadArchived',
+    expectedGame?: SutomGame,
   ): void {
     const instance = this.gameInstances.get(buildGameKey(guildId, userId));
-    if (!instance) return;
+    if (!instance || (expectedGame && instance.game !== expectedGame)) return;
 
     if (step === 'noticeSent') instance.expirationNoticeSent = true;
     if (step === 'boardUpdated') instance.expirationBoardUpdated = true;
