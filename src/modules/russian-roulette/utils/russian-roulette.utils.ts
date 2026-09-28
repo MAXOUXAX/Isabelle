@@ -7,18 +7,21 @@ import { Guild } from 'discord.js';
 
 const logger = createLogger('russian-roulette-utils');
 
-let numberOfGamesSinceLastKill = 0;
+const gamesSinceLastKillByGuild = new Map<string, number>();
 
-export function getNumberOfGamesSinceLastKill(): number {
-  return numberOfGamesSinceLastKill;
+export function getNumberOfGamesSinceLastKill(guildId: string): number {
+  return gamesSinceLastKillByGuild.get(guildId) ?? 0;
 }
 
-export function increaseGamesSinceLastKill(): void {
-  numberOfGamesSinceLastKill++;
+export function increaseGamesSinceLastKill(guildId: string): void {
+  gamesSinceLastKillByGuild.set(
+    guildId,
+    getNumberOfGamesSinceLastKill(guildId) + 1,
+  );
 }
 
-export function resetNumberOfGamesSinceLastKill(): void {
-  numberOfGamesSinceLastKill = 0;
+export function resetNumberOfGamesSinceLastKill(guildId: string): void {
+  gamesSinceLastKillByGuild.delete(guildId);
 }
 
 /**
@@ -65,13 +68,15 @@ export function getRandomTimeoutDuration(): {
  */
 export function getGunTarget(userID: string, guild: Guild) {
   const targetSelf = Math.random() > PERCENTAGES.kill_other;
+  const gamesSinceLastKill = getNumberOfGamesSinceLastKill(guild.id);
   const dynamicFireChance = calculateDynamicFireChance(
     0.7, // maxPercentage - maximum chance we can reach
     PERCENTAGES.is_killing, // base - starting chance
+    gamesSinceLastKill,
   );
 
   logger.debug(
-    `Calculated dynamic fire chance: ${dynamicFireChance.toFixed(3)} (${numberOfGamesSinceLastKill.toString()} games since last kill)`,
+    `Calculated dynamic fire chance: ${dynamicFireChance.toFixed(3)} (${gamesSinceLastKill.toString()} games since last kill in guild ${guild.id})`,
   );
 
   // Gun does not fire
@@ -97,17 +102,18 @@ export function getGunTarget(userID: string, guild: Guild) {
  * @returns The calculated fire chance, capped at `maxPercentage`.
  *
  * @remarks
- * This function assumes the existence of a `numberOfGamesSinceLastKill` variable and a `mapNumber` utility function.
+ * The caller supplies the game count; this function also uses the `mapNumber` utility function.
  */
 export function calculateDynamicFireChance(
   maxPercentage: number,
   base: number,
+  gamesSinceLastKill: number,
 ): number {
   return Math.min(
     maxPercentage,
     base +
       mapNumber({
-        value: Math.log(numberOfGamesSinceLastKill + 1),
+        value: Math.log(gamesSinceLastKill + 1),
         inMin: 0,
         inMax: 4,
         outMin: 0,
