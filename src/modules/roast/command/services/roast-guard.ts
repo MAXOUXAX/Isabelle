@@ -110,6 +110,7 @@ export interface RoastGuardResult {
 const normalize = (value: string): string =>
   value
     .toLowerCase()
+    .replaceAll('œ', 'oe')
     .normalize('NFD')
     .replaceAll(/\p{Diacritic}/gu, '');
 

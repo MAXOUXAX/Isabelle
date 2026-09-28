@@ -54,6 +54,13 @@ describe('checkRoast', () => {
     },
   );
 
+  it('blocks the œ ligature in prohibited family wording', () => {
+    expect(checkRoast('Ta sœur est toujours en retard.')).toEqual({
+      allowed: false,
+      matched: ['family'],
+    });
+  });
+
   it.each([
     'Cette pauvre syntaxe mérite une meilleure indentation.',
     'Son budget de mots est aussi serré que son emploi du temps.',
