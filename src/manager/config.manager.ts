@@ -8,6 +8,17 @@ const logger = createLogger('config');
 class ConfigManager {
   private guilds: Record<string, GuildConfig> = {};
   private guildSaveQueues = new Map<string, Promise<void>>();
+  private guildConfigVersions = new Map<string, number>();
+
+  private getGuildConfigVersion(guildId: string): number {
+    return this.guildConfigVersions.get(guildId) ?? 0;
+  }
+
+  private bumpGuildConfigVersion(guildId: string): number {
+    const version = this.getGuildConfigVersion(guildId) + 1;
+    this.guildConfigVersions.set(guildId, version);
+    return version;
+  }
 
   async init() {
     logger.info('Loading guild configs from database...');
@@ -34,6 +45,7 @@ class ConfigManager {
    * no row yet.
    */
   async loadGuild(guildId: string): Promise<GuildConfig> {
+    const version = this.getGuildConfigVersion(guildId);
     try {
       const rows = await db
         .select()
@@ -42,7 +54,11 @@ class ConfigManager {
         .limit(1);
 
       const config = rows.at(0)?.config ?? {};
-      this.guilds[guildId] = config;
+      if (version === this.getGuildConfigVersion(guildId)) {
+        this.guilds[guildId] = config;
+      } else {
+        return this.getGuild(guildId);
+      }
 
       logger.debug({ guildId }, 'Guild config loaded from database');
 
@@ -58,10 +74,12 @@ class ConfigManager {
   }
 
   setGuild(guildId: string, config: GuildConfig): void {
+    this.bumpGuildConfigVersion(guildId);
     this.guilds[guildId] = config;
   }
 
   async saveGuild(guildId: string, config: GuildConfig): Promise<void> {
+    this.bumpGuildConfigVersion(guildId);
     const previousSave = this.guildSaveQueues.get(guildId);
     const save = (previousSave ?? Promise.resolve())
       .catch(() => undefined)
@@ -83,6 +101,7 @@ class ConfigManager {
               },
             });
 
+          this.bumpGuildConfigVersion(guildId);
           this.guilds[guildId] = merged;
           logger.info({ guildId }, 'Guild config saved to database');
         } catch (error) {
