@@ -14,6 +14,21 @@ interface GameInstance {
   parentChannelId?: string;
   /** Message ID in the parent channel showing the hidden board (for editing) */
   parentMessageId?: string;
+  expirationNoticeSent?: boolean;
+  expirationBoardUpdated?: boolean;
+  expirationThreadArchived?: boolean;
+}
+
+export interface IdleGame {
+  guildId: string;
+  userId: string;
+  game: SutomGame;
+  threadId: string;
+  parentChannelId?: string;
+  parentMessageId?: string;
+  expirationNoticeSent: boolean;
+  expirationBoardUpdated: boolean;
+  expirationThreadArchived: boolean;
 }
 
 function buildGameKey(guildId: string, userId: string): string {
@@ -126,8 +141,11 @@ class GameManager {
     return undefined;
   }
 
-  deleteGame(guildId: string, userId: string): void {
-    this.gameInstances.delete(buildGameKey(guildId, userId));
+  deleteGame(guildId: string, userId: string, expectedGame?: SutomGame): void {
+    const key = buildGameKey(guildId, userId);
+    const instance = this.gameInstances.get(key);
+    if (expectedGame && instance?.game !== expectedGame) return;
+    this.gameInstances.delete(key);
   }
 
   touch(guildId: string, userId: string): void {
@@ -137,18 +155,35 @@ class GameManager {
     }
   }
 
-  /** Removes games idle longer than maxIdleMs and returns the number removed. */
-  sweepIdleGames(maxIdleMs: number, now: number = Date.now()): number {
-    let removed = 0;
+  /** Returns idle games for asynchronous cleanup without dropping their tracking. */
+  sweepIdleGames(maxIdleMs: number, now: number = Date.now()): IdleGame[] {
+    return [...this.gameInstances.values()]
+      .filter((instance) => now - instance.lastActivityAt > maxIdleMs)
+      .map((instance) => ({
+        guildId: instance.guildId,
+        userId: instance.userId,
+        game: instance.game,
+        threadId: instance.threadId,
+        parentChannelId: instance.parentChannelId,
+        parentMessageId: instance.parentMessageId,
+        expirationNoticeSent: instance.expirationNoticeSent ?? false,
+        expirationBoardUpdated: instance.expirationBoardUpdated ?? false,
+        expirationThreadArchived: instance.expirationThreadArchived ?? false,
+      }));
+  }
 
-    for (const [key, instance] of this.gameInstances.entries()) {
-      if (now - instance.lastActivityAt > maxIdleMs) {
-        this.gameInstances.delete(key);
-        removed++;
-      }
-    }
+  markExpirationStep(
+    guildId: string,
+    userId: string,
+    step: 'noticeSent' | 'boardUpdated' | 'threadArchived',
+    expectedGame?: SutomGame,
+  ): void {
+    const instance = this.gameInstances.get(buildGameKey(guildId, userId));
+    if (!instance || (expectedGame && instance.game !== expectedGame)) return;
 
-    return removed;
+    if (step === 'noticeSent') instance.expirationNoticeSent = true;
+    if (step === 'boardUpdated') instance.expirationBoardUpdated = true;
+    if (step === 'threadArchived') instance.expirationThreadArchived = true;
   }
 }
 

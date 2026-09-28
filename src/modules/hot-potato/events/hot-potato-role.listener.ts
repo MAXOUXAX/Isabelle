@@ -1,7 +1,12 @@
 import { configManager } from '@/manager/config.manager.js';
 import { mention } from '@/utils/mention.js';
 import { createLogger } from '@/utils/logger.js';
-import { AuditLogEvent, Guild, GuildAuditLogsEntry } from 'discord.js';
+import {
+  AuditLogEvent,
+  DiscordAPIError,
+  Guild,
+  GuildAuditLogsEntry,
+} from 'discord.js';
 
 const logger = createLogger('hot-potato');
 
@@ -31,10 +36,13 @@ export async function hotPotatoRoleListener(
     return;
   }
 
-  const [executor, target] = await Promise.all([
-    guild.members.fetch(executorId).catch(() => null),
-    guild.members.fetch(targetId).catch(() => null),
+  const [executorResult, targetResult] = await Promise.allSettled([
+    guild.members.fetch(executorId),
+    guild.members.fetch(targetId),
   ]);
+
+  const executor = getMemberResult(executorResult, guild, executorId);
+  const target = getMemberResult(targetResult, guild, targetId);
 
   if (!executor || !target) {
     logger.info(
@@ -94,4 +102,25 @@ export async function hotPotatoRoleListener(
       'No hot potato timeout duration configured; transferring the role only',
     );
   }
+}
+
+function getMemberResult<T>(
+  result: PromiseSettledResult<T>,
+  guild: Guild,
+  userId: string,
+): T | null {
+  if (result.status === 'fulfilled') return result.value;
+
+  if (
+    result.reason instanceof DiscordAPIError &&
+    result.reason.code === 10007
+  ) {
+    return null;
+  }
+
+  logger.error(
+    { error: result.reason, guildId: guild.id, userId },
+    'Failed to fetch guild member for hot potato transfer',
+  );
+  throw result.reason;
 }
