@@ -13,8 +13,7 @@ on:
   push:
     branches: ["main"]
   pull_request:
-    # The branches below must be a subset of the branches above
-    branches: ["main"]
+    branches: ["main", "release/v1.15.0"]
   schedule:
     - cron: "54 05 * * 3"
 
@@ -53,9 +52,9 @@ jobs:
           --config eslint.config.js
           --format @microsoft/eslint-formatter-sarif
           --output-file eslint-results.sarif
-        continue-on-error: true
 
       - name: Upload analysis results to GitHub
+        if: always()
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: eslint-results.sarif

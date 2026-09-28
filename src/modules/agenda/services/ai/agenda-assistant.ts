@@ -68,7 +68,9 @@ class AgendaAssistant implements AiAssistant<
         parsed.description.trim().length > 0 &&
         parsed.emoji.length > 0
       ) {
-        const modelVersion = extractModelVersion(result.finalStep.response.body);
+        const modelVersion = extractModelVersion(
+          result.finalStep.response.body,
+        );
 
         logger.debug({ original: input, enhanced: parsed }, 'Enhanced event');
         return {
