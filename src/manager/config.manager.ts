@@ -7,6 +7,7 @@ const logger = createLogger('config');
 
 class ConfigManager {
   private guilds: Record<string, GuildConfig> = {};
+  private guildSaveQueues = new Map<string, Promise<void>>();
 
   async init() {
     logger.info('Loading guild configs from database...');
@@ -61,28 +62,43 @@ class ConfigManager {
   }
 
   async saveGuild(guildId: string, config: GuildConfig): Promise<void> {
-    const merged: GuildConfig = { ...this.getGuild(guildId), ...config };
+    const previousSave = this.guildSaveQueues.get(guildId);
+    const save = (previousSave ?? Promise.resolve())
+      .catch(() => undefined)
+      .then(async () => {
+        const merged: GuildConfig = { ...this.getGuild(guildId), ...config };
+
+        try {
+          await db
+            .insert(guildConfigs)
+            .values({
+              id: guildId,
+              config: merged,
+            })
+            .onConflictDoUpdate({
+              target: guildConfigs.id,
+              set: {
+                config: merged,
+                updatedAt: new Date(),
+              },
+            });
+
+          this.guilds[guildId] = merged;
+          logger.info({ guildId }, 'Guild config saved to database');
+        } catch (error) {
+          logger.error({ error, guildId }, 'Failed to save guild config');
+          throw error;
+        }
+      });
+
+    this.guildSaveQueues.set(guildId, save);
 
     try {
-      await db
-        .insert(guildConfigs)
-        .values({
-          id: guildId,
-          config: merged,
-        })
-        .onConflictDoUpdate({
-          target: guildConfigs.id,
-          set: {
-            config: merged,
-            updatedAt: new Date(),
-          },
-        });
-
-      this.guilds[guildId] = merged;
-      logger.info({ guildId }, 'Guild config saved to database');
-    } catch (error) {
-      logger.error({ error, guildId }, 'Failed to save guild config');
-      throw error;
+      await save;
+    } finally {
+      if (this.guildSaveQueues.get(guildId) === save) {
+        this.guildSaveQueues.delete(guildId);
+      }
     }
   }
 }
