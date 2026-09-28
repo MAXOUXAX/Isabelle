@@ -4,7 +4,7 @@ import { SutomCommand } from '@/modules/sutom/commands/sutom.command.js';
 import { sutomGameManager } from '@/modules/sutom/core/game-manager.js';
 import { sutomMessageListener } from '@/modules/sutom/events/sutom-message.listener.js';
 import { createLogger } from '@/utils/logger.js';
-import { Events, Message, TextChannel } from 'discord.js';
+import { DiscordAPIError, Events, Message, TextChannel } from 'discord.js';
 
 const logger = createLogger('sutom-module');
 
@@ -98,11 +98,25 @@ export class SutomModule extends IsabelleModule {
                 );
               }
             } catch (error) {
-              cleanupComplete = false;
-              logger.error(
-                { error, userId },
-                'Failed to update expired daily SUTOM board',
-              );
+              const missingResource = isMissingDiscordResource(error);
+              if (missingResource) {
+                sutomGameManager.markExpirationStep(
+                  guildId,
+                  userId,
+                  'boardUpdated',
+                  expired.game,
+                );
+                logger.info(
+                  { error, userId },
+                  'Expired daily SUTOM board no longer exists; skipping update',
+                );
+              } else {
+                cleanupComplete = false;
+                logger.error(
+                  { error, userId },
+                  'Failed to update expired daily SUTOM board',
+                );
+              }
             }
           } else {
             logger.warn(
@@ -161,11 +175,31 @@ export class SutomModule extends IsabelleModule {
               );
             }
           } catch (error) {
-            cleanupComplete = false;
-            logger.error(
-              { error, threadId: expired.threadId },
-              'Failed to close expired SUTOM thread',
-            );
+            const missingResource = isMissingDiscordResource(error);
+            if (missingResource) {
+              sutomGameManager.markExpirationStep(
+                guildId,
+                userId,
+                'noticeSent',
+                expired.game,
+              );
+              sutomGameManager.markExpirationStep(
+                guildId,
+                userId,
+                'threadArchived',
+                expired.game,
+              );
+              logger.info(
+                { error, threadId: expired.threadId },
+                'Expired SUTOM thread no longer exists; skipping closure',
+              );
+            } else {
+              cleanupComplete = false;
+              logger.error(
+                { error, threadId: expired.threadId },
+                'Failed to close expired SUTOM thread',
+              );
+            }
           }
         }
 
@@ -186,4 +220,11 @@ export class SutomModule extends IsabelleModule {
       this.cleanupInProgress = false;
     }
   }
+}
+
+function isMissingDiscordResource(error: unknown): boolean {
+  return (
+    error instanceof DiscordAPIError &&
+    (error.code === 10003 || error.code === 10008)
+  );
 }

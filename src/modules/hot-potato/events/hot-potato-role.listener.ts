@@ -91,8 +91,8 @@ export async function hotPotatoRoleListener(
 
   const configuredDuration = guildConfig.HOT_POTATO_TIMEOUT_DURATION;
 
-  await executor.roles.remove(hotPotatoRoleId);
   await target.roles.add(hotPotatoRoleId);
+  await executor.roles.remove(hotPotatoRoleId);
 
   if (configuredDuration && configuredDuration > 0) {
     await target.timeout(configuredDuration, "Hot Potato'd");
