@@ -6,6 +6,7 @@ import {
 } from '@/modules/roast/command/config/roast-config.js';
 import { handleRoastError } from '@/modules/roast/command/services/roast-error-handler.js';
 import { generateRoast } from '@/modules/roast/command/services/roast-generator.js';
+import { checkRoast } from '@/modules/roast/command/services/roast-guard.js';
 import {
   checkRoastQuota,
   recordRoastUsage,
@@ -124,6 +125,25 @@ export class RoastCommand implements IsabelleCommand {
         logger.error(
           { roastResult },
           'Roast generation returned no text and no error - unexpected',
+        );
+        return;
+      }
+
+      const guardResult = checkRoast(roastResult.text);
+
+      if (!guardResult.allowed) {
+        logger.warn(
+          {
+            matched: guardResult.matched,
+            targetId: user.id,
+            invokerId: interaction.user.id,
+            guildId,
+          },
+          'Roast blocked by output guard',
+        );
+
+        await interaction.editReply(
+          "Non. J'avais quelque chose, mais ça dépassait les bornes. Retente ta chance.",
         );
         return;
       }
