@@ -284,6 +284,15 @@ function registerLegalScopes() {
 }
 
 client.on(Events.GuildCreate, (guild) => {
+  voidAndTrackError(
+    configManager.loadGuild(guild.id).then(() => {
+      logger.info(
+        { guildId: guild.id },
+        'Loaded config for newly joined guild',
+      );
+    }),
+  );
+
   if (environment === 'development') {
     if (client.guilds.cache.size > 1) {
       logger.error(
