@@ -74,7 +74,7 @@ export async function generateRoast({
     'Generated roast result',
   );
 
-  const modelVersion = extractModelVersion(result.response.body);
+  const modelVersion = extractModelVersion(result.finalStep.response.body);
 
   return {
     text: result.text.trim(),
