@@ -136,14 +136,12 @@ const processChannelMessages = (
   messages: Message[],
   userId: Snowflake,
   uniqueMessages: Map<Snowflake, Message>,
-): { foundNew: boolean; lastMessageId: Snowflake | undefined } => {
-  let foundNew = false;
+): { lastMessageId: Snowflake | undefined } => {
   let lastMessageId: Snowflake | undefined;
 
   for (const message of messages) {
     if (message.author.id === userId && !uniqueMessages.has(message.id)) {
       uniqueMessages.set(message.id, message);
-      foundNew = true;
     }
   }
 
@@ -151,7 +149,7 @@ const processChannelMessages = (
     lastMessageId = messages[messages.length - 1]?.id;
   }
 
-  return { foundNew, lastMessageId };
+  return { lastMessageId };
 };
 
 /**
@@ -165,9 +163,7 @@ const searchChannelsAtDepth = async (
   budget: { remaining: number },
   depth: number,
   guildId: Snowflake,
-): Promise<boolean> => {
-  let foundNewMessages = false;
-
+): Promise<void> => {
   for (const channel of channels) {
     if (budget.remaining <= 0) {
       break;
@@ -190,17 +186,16 @@ const searchChannelsAtDepth = async (
         continue;
       }
 
-      const { foundNew, lastMessageId } = processChannelMessages(
+      const { lastMessageId } = processChannelMessages(
         messages,
         userId,
         uniqueMessages,
       );
 
-      if (foundNew) {
-        foundNewMessages = true;
-      }
-
-      if (lastMessageId) {
+      if (messages.length < BATCH_SIZE) {
+        // A short page means the channel has no older messages to fetch.
+        channelLastIds.set(channel.id, null);
+      } else if (lastMessageId) {
         channelLastIds.set(channel.id, lastMessageId);
       }
     } catch (error) {
@@ -211,8 +206,6 @@ const searchChannelsAtDepth = async (
       channelLastIds.set(channel.id, null);
     }
   }
-
-  return foundNewMessages;
 };
 
 /**
@@ -273,7 +266,7 @@ export const fetchLastUserMessages = async (
 
   // Keep searching with increasing depth until we have enough messages
   while (depth < MAX_DEPTH && budget.remaining > 0) {
-    const foundNewMessages = await searchChannelsAtDepth(
+    await searchChannelsAtDepth(
       accessibleChannels,
       userId,
       uniqueMessages,
@@ -285,24 +278,24 @@ export const fetchLastUserMessages = async (
 
     depth++;
 
-    if (!foundNewMessages && uniqueMessages.size < minMessages) {
-      logger.warn(
-        {
-          userId,
-          guildId: guild.id,
-          foundMessages: uniqueMessages.size,
-          minMessages,
-          depth,
-        },
-        'No more messages available - could not reach minimum message count',
-      );
-      break;
-    }
-
-    // Even when the minimum is zero, inspect one batch so an empty result is
-    // distinguishable from an unsearched guild. A stale first batch can then
-    // continue through the same bounded freshness recovery below.
-    if (!foundNewMessages && uniqueMessages.size === 0) {
+    // A page without target-user messages can still have older pages that do.
+    // Stop only when every channel is exhausted; depth and request limits bound
+    // searches through long or inactive histories.
+    if (
+      Array.from(channelLastIds.values()).every((lastId) => lastId === null)
+    ) {
+      if (uniqueMessages.size < minMessages) {
+        logger.warn(
+          {
+            userId,
+            guildId: guild.id,
+            foundMessages: uniqueMessages.size,
+            minMessages,
+            depth,
+          },
+          'No more messages available - could not reach minimum message count',
+        );
+      }
       break;
     }
 
