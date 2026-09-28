@@ -19,7 +19,7 @@ export default defineConfig(
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['*.js', 'tsdown.config.ts'],
+          allowDefaultProject: ['*.js', 'tsdown.config.ts', 'vitest.config.ts'],
           defaultProject: './tsconfig.json',
         },
         tsconfigRootDir: import.meta.dirname,
