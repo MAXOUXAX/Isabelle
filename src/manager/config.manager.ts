@@ -1,6 +1,7 @@
 import { db } from '@/db/index.js';
 import { guildConfigs } from '@/db/schema.js';
 import { createLogger } from '@/utils/logger.js';
+import { eq } from 'drizzle-orm';
 
 const logger = createLogger('config');
 
@@ -26,6 +27,31 @@ class ConfigManager {
     }
   }
 
+  /**
+   * Loads (or reloads) a single guild's config from the database into the
+   * cache. Returns the loaded config, or an empty object when the guild has
+   * no row yet.
+   */
+  async loadGuild(guildId: string): Promise<GuildConfig> {
+    try {
+      const rows = await db
+        .select()
+        .from(guildConfigs)
+        .where(eq(guildConfigs.id, guildId))
+        .limit(1);
+
+      const config = rows.at(0)?.config ?? {};
+      this.guilds[guildId] = config;
+
+      logger.debug({ guildId }, 'Guild config loaded from database');
+
+      return config;
+    } catch (error) {
+      logger.error({ error, guildId }, 'Failed to load guild config');
+      throw error;
+    }
+  }
+
   getGuild(guildId: string): GuildConfig {
     return this.guilds[guildId] ?? {};
   }
@@ -35,21 +61,24 @@ class ConfigManager {
   }
 
   async saveGuild(guildId: string, config: GuildConfig): Promise<void> {
+    const merged: GuildConfig = { ...this.getGuild(guildId), ...config };
+
     try {
       await db
         .insert(guildConfigs)
         .values({
           id: guildId,
-          config,
+          config: merged,
         })
         .onConflictDoUpdate({
           target: guildConfigs.id,
           set: {
-            config,
+            config: merged,
+            updatedAt: new Date(),
           },
         });
 
-      this.guilds[guildId] = config;
+      this.guilds[guildId] = merged;
       logger.info({ guildId }, 'Guild config saved to database');
     } catch (error) {
       logger.error({ error, guildId }, 'Failed to save guild config');
