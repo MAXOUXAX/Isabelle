@@ -5,12 +5,19 @@ import {
 import { wordRepository } from '@/modules/sutom/core/word-repository.js';
 
 interface GameInstance {
+  guildId: string;
+  userId: string;
+  lastActivityAt: number;
   game: SutomGame;
   threadId: string;
   /** For daily games, the channel where the hidden board messages should be sent */
   parentChannelId?: string;
   /** Message ID in the parent channel showing the hidden board (for editing) */
   parentMessageId?: string;
+}
+
+function buildGameKey(guildId: string, userId: string): string {
+  return `${guildId}:${userId}`;
 }
 
 class GameManager {
@@ -20,11 +27,15 @@ class GameManager {
     this.gameInstances = new Map<string, GameInstance>();
   }
 
-  createGame(userId: string, threadId: string): boolean {
-    if (this.gameInstances.has(userId)) {
+  createGame(guildId: string, userId: string, threadId: string): boolean {
+    const key = buildGameKey(guildId, userId);
+    if (this.gameInstances.has(key)) {
       return false;
     }
-    this.gameInstances.set(userId, {
+    this.gameInstances.set(key, {
+      guildId,
+      userId,
+      lastActivityAt: Date.now(),
       game: new SutomGame(wordRepository),
       threadId,
     });
@@ -39,11 +50,13 @@ class GameManager {
    * @returns true if the game was created successfully
    */
   createDailyGame(
+    guildId: string,
     userId: string,
     threadId: string,
     parentChannelId: string,
   ): boolean {
-    if (this.gameInstances.has(userId)) {
+    const key = buildGameKey(guildId, userId);
+    if (this.gameInstances.has(key)) {
       return false;
     }
 
@@ -53,7 +66,10 @@ class GameManager {
       isDailyGame: true,
     };
 
-    this.gameInstances.set(userId, {
+    this.gameInstances.set(key, {
+      guildId,
+      userId,
+      lastActivityAt: Date.now(),
       game: new SutomGame(wordRepository, gameOptions),
       threadId,
       parentChannelId,
@@ -61,33 +77,35 @@ class GameManager {
     return true;
   }
 
-  getGame(userId: string): SutomGame | undefined {
-    return this.gameInstances.get(userId)?.game;
+  getGame(guildId: string, userId: string): SutomGame | undefined {
+    return this.gameInstances.get(buildGameKey(guildId, userId))?.game;
   }
 
-  getGameThreadId(userId: string): string | undefined {
-    return this.gameInstances.get(userId)?.threadId;
+  getGameThreadId(guildId: string, userId: string): string | undefined {
+    return this.gameInstances.get(buildGameKey(guildId, userId))?.threadId;
   }
 
   /**
    * Gets the parent channel ID for daily games.
    */
-  getParentChannelId(userId: string): string | undefined {
-    return this.gameInstances.get(userId)?.parentChannelId;
+  getParentChannelId(guildId: string, userId: string): string | undefined {
+    return this.gameInstances.get(buildGameKey(guildId, userId))
+      ?.parentChannelId;
   }
 
   /**
    * Gets the parent message ID for editing the hidden board.
    */
-  getParentMessageId(userId: string): string | undefined {
-    return this.gameInstances.get(userId)?.parentMessageId;
+  getParentMessageId(guildId: string, userId: string): string | undefined {
+    return this.gameInstances.get(buildGameKey(guildId, userId))
+      ?.parentMessageId;
   }
 
   /**
    * Sets the parent message ID after posting the hidden board.
    */
-  setParentMessageId(userId: string, messageId: string): void {
-    const instance = this.gameInstances.get(userId);
+  setParentMessageId(guildId: string, userId: string, messageId: string): void {
+    const instance = this.gameInstances.get(buildGameKey(guildId, userId));
     if (instance) {
       instance.parentMessageId = messageId;
     }
@@ -95,17 +113,42 @@ class GameManager {
 
   getGameByThreadId(
     threadId: string,
-  ): { userId: string; game: SutomGame } | undefined {
-    for (const [userId, instance] of this.gameInstances.entries()) {
+  ): { guildId: string; userId: string; game: SutomGame } | undefined {
+    for (const instance of this.gameInstances.values()) {
       if (instance.threadId === threadId) {
-        return { userId, game: instance.game };
+        return {
+          guildId: instance.guildId,
+          userId: instance.userId,
+          game: instance.game,
+        };
       }
     }
     return undefined;
   }
 
-  deleteGame(id: string) {
-    this.gameInstances.delete(id);
+  deleteGame(guildId: string, userId: string): void {
+    this.gameInstances.delete(buildGameKey(guildId, userId));
+  }
+
+  touch(guildId: string, userId: string): void {
+    const instance = this.gameInstances.get(buildGameKey(guildId, userId));
+    if (instance) {
+      instance.lastActivityAt = Date.now();
+    }
+  }
+
+  /** Removes games idle longer than maxIdleMs and returns the number removed. */
+  sweepIdleGames(maxIdleMs: number, now: number = Date.now()): number {
+    let removed = 0;
+
+    for (const [key, instance] of this.gameInstances.entries()) {
+      if (now - instance.lastActivityAt > maxIdleMs) {
+        this.gameInstances.delete(key);
+        removed++;
+      }
+    }
+
+    return removed;
   }
 }
 

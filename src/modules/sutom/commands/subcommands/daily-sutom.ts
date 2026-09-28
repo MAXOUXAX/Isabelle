@@ -13,11 +13,20 @@ export default async function dailySutomSubcommand(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   const { user } = interaction;
+  const { guildId } = interaction;
+
+  if (!guildId) {
+    await interaction.reply({
+      content: 'Cette commande ne peut être utilisée que sur un serveur.',
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
 
   // Check if user already has a game
-  const existingGame = sutomGameManager.getGame(user.id);
+  const existingGame = sutomGameManager.getGame(guildId, user.id);
   if (existingGame) {
-    const threadId = sutomGameManager.getGameThreadId(user.id);
+    const threadId = sutomGameManager.getGameThreadId(guildId, user.id);
     const threadMention = threadId ? `<#${threadId}>` : 'ton thread de jeu';
     await interaction.reply({
       content: `Oups, on dirait que tu as déjà une partie en cours ! Propose un mot dans ${threadMention}.`,
@@ -51,6 +60,7 @@ export default async function dailySutomSubcommand(
 
     // Create the daily game with parent channel tracking
     const gameCreated = sutomGameManager.createDailyGame(
+      guildId,
       user.id,
       thread.id,
       channel.id,
@@ -63,7 +73,7 @@ export default async function dailySutomSubcommand(
       return;
     }
 
-    const game = sutomGameManager.getGame(user.id);
+    const game = sutomGameManager.getGame(guildId, user.id);
     if (game) {
       const { embed, attachment } = game.buildBoard();
 
@@ -86,7 +96,7 @@ export default async function dailySutomSubcommand(
       });
 
       // Store the message ID for later updates
-      sutomGameManager.setParentMessageId(user.id, replyMessage.id);
+      sutomGameManager.setParentMessageId(guildId, user.id, replyMessage.id);
     } else {
       await thread.delete();
       await interaction.editReply({
