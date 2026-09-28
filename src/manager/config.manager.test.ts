@@ -4,13 +4,25 @@ interface SavePayload {
   config: Record<string, string | number | undefined>;
 }
 
-const { onConflictDoUpdate, values } = vi.hoisted(() => ({
-  onConflictDoUpdate: vi.fn(),
+interface ConflictUpdatePayload {
+  target: unknown;
+  set: SavePayload;
+}
+
+const { limit, onConflictDoUpdate, values } = vi.hoisted(() => ({
+  limit: vi.fn(),
+  onConflictDoUpdate:
+    vi.fn<(payload: ConflictUpdatePayload) => Promise<void>>(),
   values: vi.fn<(payload: SavePayload) => void>(),
 }));
 
 vi.mock('@/db/index.js', () => ({
   db: {
+    select: () => ({
+      from: () => ({
+        where: () => ({ limit }),
+      }),
+    }),
     insert: () => ({
       values: (payload: SavePayload) => {
         values(payload);
@@ -34,6 +46,8 @@ describe('ConfigManager', () => {
   beforeEach(() => {
     onConflictDoUpdate.mockReset();
     values.mockReset();
+    limit.mockReset();
+    onConflictDoUpdate.mockResolvedValue();
   });
 
   it('preserves fields when partial saves for one guild overlap', async () => {
@@ -72,6 +86,76 @@ describe('ConfigManager', () => {
     expect(configManager.getGuild(guildId)).toEqual({
       HOT_POTATO_ROLE_ID: 'role-id',
       HOT_POTATO_TIMEOUT_DURATION: 60,
+    });
+    expect(onConflictDoUpdate.mock.calls.at(-1)?.[0].set.config).toEqual({
+      HOT_POTATO_ROLE_ID: 'role-id',
+      HOT_POTATO_TIMEOUT_DURATION: 60,
+    });
+  });
+
+  it('does not replace a saved config with an older pending database read', async () => {
+    let releaseRead!: (rows: { config: Record<string, string> }[]) => void;
+    limit.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          releaseRead = resolve;
+        }),
+    );
+
+    const guildId = `config-manager-load-race-${String(Date.now())}`;
+    const pendingLoad = configManager.loadGuild(guildId);
+
+    await vi.waitFor(() => {
+      expect(releaseRead).toBeTypeOf('function');
+    });
+    await configManager.saveGuild(guildId, { AGENDA_FORUM_CHANNEL_ID: 'new' });
+    releaseRead([{ config: { AGENDA_FORUM_CHANNEL_ID: 'old' } }]);
+
+    await expect(pendingLoad).resolves.toEqual({
+      AGENDA_FORUM_CHANNEL_ID: 'new',
+    });
+    expect(configManager.getGuild(guildId)).toEqual({
+      AGENDA_FORUM_CHANNEL_ID: 'new',
+    });
+  });
+
+  it('does not replace a save with a read started during its database write', async () => {
+    let releaseWrite!: () => void;
+    let releaseRead!: (rows: { config: Record<string, string> }[]) => void;
+    onConflictDoUpdate.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          releaseWrite = resolve;
+        }),
+    );
+    limit.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          releaseRead = resolve;
+        }),
+    );
+
+    const guildId = `config-manager-save-race-${String(Date.now())}`;
+    const pendingSave = configManager.saveGuild(guildId, {
+      AGENDA_FORUM_CHANNEL_ID: 'new',
+    });
+
+    await vi.waitFor(() => {
+      expect(releaseWrite).toBeTypeOf('function');
+    });
+    const loadDuringSave = configManager.loadGuild(guildId);
+    await vi.waitFor(() => {
+      expect(releaseRead).toBeTypeOf('function');
+    });
+    releaseWrite();
+
+    await pendingSave;
+    releaseRead([{ config: { AGENDA_FORUM_CHANNEL_ID: 'old' } }]);
+    await expect(loadDuringSave).resolves.toEqual({
+      AGENDA_FORUM_CHANNEL_ID: 'new',
+    });
+    expect(configManager.getGuild(guildId)).toEqual({
+      AGENDA_FORUM_CHANNEL_ID: 'new',
     });
   });
 });
