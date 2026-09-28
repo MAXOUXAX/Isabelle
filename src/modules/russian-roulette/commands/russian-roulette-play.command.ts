@@ -54,7 +54,7 @@ export const executePlayCommand = async (
 
   // No one got hit this round.
   if (targetId == null) {
-    increaseGamesSinceLastKill();
+    increaseGamesSinceLastKill(guild.id);
     await interaction.reply({
       content: randomSafeMessage,
       allowedMentions: mentionOnly(interaction.user.id),
@@ -72,7 +72,7 @@ export const executePlayCommand = async (
         `Failed to fetch member ${targetId} for timeout - skipping execution`,
       );
 
-      increaseGamesSinceLastKill();
+      increaseGamesSinceLastKill(guild.id);
       await interaction.reply({
         content: randomSafeMessage,
         allowedMentions: mentionOnly(interaction.user.id),
@@ -81,7 +81,7 @@ export const executePlayCommand = async (
     }
 
     if (!(member.moderatable || member.kickable)) {
-      increaseGamesSinceLastKill();
+      increaseGamesSinceLastKill(guild.id);
       await interaction.reply({
         content: `Bang...? ${mentionId(targetId)} était trop puissant(e) pour être affecté(e). Le canon a fondu et tout le monde s'en sort vivant cette fois-ci !`,
         allowedMentions: mentionOnly(targetId, interaction.user.id),
@@ -127,7 +127,7 @@ export const executePlayCommand = async (
     // Track the death and timeout duration for the target user
     voidAndTrackError(incrementDeaths(guild.id, targetId, timeoutMinutes));
 
-    resetNumberOfGamesSinceLastKill();
+    resetNumberOfGamesSinceLastKill(guild.id);
 
     // Replace {user} placeholder with actual mention
     const finalMessage = message.replace('{user}', mentionId(targetId));
@@ -152,7 +152,7 @@ export const executePlayCommand = async (
       { error: e },
       `Failed to timeout user ${targetId} in Russian Roulette:`,
     );
-    increaseGamesSinceLastKill();
+    increaseGamesSinceLastKill(guild.id);
     const errorMessage = `Le pistolet s'enraye... Personne n'est sanctionné cette fois-ci.`;
     if (interaction.deferred) {
       await interaction.editReply({
