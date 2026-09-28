@@ -14,7 +14,7 @@ const logger = createLogger('message-picker');
  * Hard ceiling on `messages.fetch` calls per search. Discord rate limits are
  * per-bot, so an unbounded search degrades every other module while it runs.
  */
-const MAX_FETCH_REQUESTS = 120;
+export const MAX_FETCH_REQUESTS = 120;
 const MAX_DEPTH = 8;
 const BATCH_SIZE = 100;
 const FRESHNESS_THRESHOLD_MONTHS = 3;
@@ -34,7 +34,7 @@ const isMessageFresh = (message: Message): boolean => {
 /**
  * Calculate the percentage of fresh messages in a collection
  */
-const calculateFreshPercentage = (messages: Message[]): number => {
+export const calculateFreshPercentage = (messages: Message[]): number => {
   if (messages.length === 0) return 0;
   const freshCount = messages.filter(isMessageFresh).length;
   return freshCount / messages.length;
