@@ -17,6 +17,15 @@ export default async function guessWordSubcommand(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   const { user, channel } = interaction;
+  const { guildId } = interaction;
+  if (!guildId) {
+    await interaction.reply({
+      content: 'Cette commande ne peut être utilisée que sur un serveur.',
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
   const guessedWord = interaction.options.getString('tentative');
   if (!guessedWord) {
     await interaction.reply('Tu dois fournir un mot à deviner !');
@@ -27,7 +36,7 @@ export default async function guessWordSubcommand(
     `User ${user.username} (${user.id}) guessed word: "${guessedWord}"`,
   );
 
-  const game = sutomGameManager.getGame(user.id);
+  const game = sutomGameManager.getGame(guildId, user.id);
   if (!game) {
     await interaction.reply({
       content:
@@ -44,7 +53,7 @@ export default async function guessWordSubcommand(
       allowedMentions: { parse: [] },
     });
 
-  const userThreadId = sutomGameManager.getGameThreadId(user.id);
+  const userThreadId = sutomGameManager.getGameThreadId(guildId, user.id);
 
   // Check if the command is being used in the correct thread
   if (!channel || !userThreadId || channel.id !== userThreadId) {
@@ -97,7 +106,7 @@ export default async function guessWordSubcommand(
   };
 
   const handled = await handleGuessAttempt(
-    { userId: user.id, game, thread: gameChannel, responder },
+    { guildId, userId: user.id, game, thread: gameChannel, responder },
     guessedWord,
   );
 

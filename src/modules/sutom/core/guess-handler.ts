@@ -21,6 +21,7 @@ export interface GuessResponder {
 }
 
 export interface GuessContext {
+  guildId: string;
   userId: string;
   game: SutomGame;
   thread: AnyThreadChannel;
@@ -44,13 +45,13 @@ async function updateParentChannelBoard(
   message: string,
   isGameOver: boolean,
 ): Promise<void> {
-  const { userId, game } = context;
+  const { guildId, userId, game } = context;
 
   // Only update for daily games
   if (!game.isDailyGame) return;
 
-  const parentChannelId = sutomGameManager.getParentChannelId(userId);
-  const parentMessageId = sutomGameManager.getParentMessageId(userId);
+  const parentChannelId = sutomGameManager.getParentChannelId(guildId, userId);
+  const parentMessageId = sutomGameManager.getParentMessageId(guildId, userId);
 
   if (!parentChannelId || !parentMessageId) {
     logger.warn({ userId }, 'Daily game missing parent channel or message ID');
@@ -99,7 +100,7 @@ async function concludeGame(
   await updateParentChannelBoard(context, publicMessage, true);
 
   await archiveThread(context.thread);
-  sutomGameManager.deleteGame(context.userId);
+  sutomGameManager.deleteGame(context.guildId, context.userId);
 }
 
 /**
@@ -111,6 +112,7 @@ export async function handleGuessAttempt(
   guessedWord: string,
 ): Promise<boolean> {
   const { game, responder } = context;
+  sutomGameManager.touch(context.guildId, context.userId);
 
   const wordOutcome = game.addWord(guessedWord);
 
