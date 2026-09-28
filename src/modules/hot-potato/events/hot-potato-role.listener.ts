@@ -19,42 +19,79 @@ export async function hotPotatoRoleListener(
   const firstChange = changes.at(0);
   const isTimeout = firstChange?.key === 'communication_disabled_until';
 
-  if (isTimeout) {
-    // Ensure the executor is cached.
-    const executor = await guild.members.fetch(executorId ?? '');
+  if (!isTimeout) {
+    return;
+  }
 
-    // Ensure the target guild member is cached.
-    const target = await guild.members.fetch(targetId ?? '');
+  if (!executorId || !targetId) {
+    logger.debug(
+      { guildId: guild.id, executorId, targetId },
+      'Timeout audit entry without an executor or target; ignoring',
+    );
+    return;
+  }
 
-    const wasCommunicationDisabled = 'old' in firstChange;
-    const isCommunicationDisabled = 'new' in firstChange;
+  const [executor, target] = await Promise.all([
+    guild.members.fetch(executorId).catch(() => null),
+    guild.members.fetch(targetId).catch(() => null),
+  ]);
 
-    const valueChanged = wasCommunicationDisabled !== isCommunicationDisabled;
+  if (!executor || !target) {
+    logger.info(
+      { guildId: guild.id, executorId, targetId },
+      'Executor or target is no longer a member; skipping potato transfer',
+    );
+    return;
+  }
 
-    if (valueChanged && isCommunicationDisabled) {
-      logger.info(
-        `Member ${mention(target)} has been timed-out by ${mention(executor)}.`,
-      );
+  const wasCommunicationDisabled = 'old' in firstChange;
+  const isCommunicationDisabled = 'new' in firstChange;
 
-      const hotPotatoRoleId = configManager.getGuild(
-        guild.id,
-      ).HOT_POTATO_ROLE_ID;
+  const valueChanged = wasCommunicationDisabled !== isCommunicationDisabled;
 
-      if (!hotPotatoRoleId) {
-        logger.info(
-          `No role configured for the guild ${guild.name} (${guild.id}).`,
-        );
-        return;
-      }
+  if (!valueChanged || !isCommunicationDisabled) {
+    return;
+  }
 
-      const hotPotatoTimeoutDuration =
-        configManager.getGuild(guild.id).HOT_POTATO_TIMEOUT_DURATION ?? null;
+  logger.info(
+    `Member ${mention(target)} has been timed-out by ${mention(executor)}.`,
+  );
 
-      await Promise.all([
-        executor.roles.remove(hotPotatoRoleId),
-        target.roles.add(hotPotatoRoleId),
-        target.timeout(hotPotatoTimeoutDuration, "Hot Potato'd"),
-      ]);
-    }
+  const guildConfig = configManager.getGuild(guild.id);
+  const hotPotatoRoleId = guildConfig.HOT_POTATO_ROLE_ID;
+
+  if (!hotPotatoRoleId) {
+    logger.info(
+      `No role configured for the guild ${guild.name} (${guild.id}).`,
+    );
+    return;
+  }
+
+  const executorHadPotato = executor.roles.cache.has(hotPotatoRoleId);
+
+  if (!executorHadPotato) {
+    logger.debug(
+      {
+        guildId: guild.id,
+        executorId: executor.id,
+        roleId: hotPotatoRoleId,
+      },
+      'Executor does not hold the hot potato role; not transferring',
+    );
+    return;
+  }
+
+  const configuredDuration = guildConfig.HOT_POTATO_TIMEOUT_DURATION;
+
+  await executor.roles.remove(hotPotatoRoleId);
+  await target.roles.add(hotPotatoRoleId);
+
+  if (configuredDuration && configuredDuration > 0) {
+    await target.timeout(configuredDuration, "Hot Potato'd");
+  } else {
+    logger.info(
+      { guildId: guild.id },
+      'No hot potato timeout duration configured; transferring the role only',
+    );
   }
 }
