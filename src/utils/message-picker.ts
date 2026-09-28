@@ -272,11 +272,7 @@ export const fetchLastUserMessages = async (
   const budget = { remaining: MAX_FETCH_REQUESTS };
 
   // Keep searching with increasing depth until we have enough messages
-  while (
-    uniqueMessages.size < minMessages &&
-    depth < MAX_DEPTH &&
-    budget.remaining > 0
-  ) {
+  while (depth < MAX_DEPTH && budget.remaining > 0) {
     const foundNewMessages = await searchChannelsAtDepth(
       accessibleChannels,
       userId,
@@ -289,19 +285,24 @@ export const fetchLastUserMessages = async (
 
     depth++;
 
-    if (!foundNewMessages) {
-      if (uniqueMessages.size < minMessages) {
-        logger.warn(
-          {
-            userId,
-            guildId: guild.id,
-            foundMessages: uniqueMessages.size,
-            minMessages,
-            depth,
-          },
-          'No more messages available - could not reach minimum message count',
-        );
-      }
+    if (!foundNewMessages && uniqueMessages.size < minMessages) {
+      logger.warn(
+        {
+          userId,
+          guildId: guild.id,
+          foundMessages: uniqueMessages.size,
+          minMessages,
+          depth,
+        },
+        'No more messages available - could not reach minimum message count',
+      );
+      break;
+    }
+
+    // Even when the minimum is zero, inspect one batch so an empty result is
+    // distinguishable from an unsearched guild. A stale first batch can then
+    // continue through the same bounded freshness recovery below.
+    if (!foundNewMessages && uniqueMessages.size === 0) {
       break;
     }
 

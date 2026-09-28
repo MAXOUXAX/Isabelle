@@ -28,7 +28,8 @@ class Cache<T> {
     const fetcher = this.fetcher;
     if (!fetcher) return Promise.resolve(null);
 
-    this.inFlight = fetcher()
+    this.inFlight = Promise.resolve()
+      .then(fetcher)
       .then((value) => {
         this.value = value;
         this.hasValue = true;
@@ -58,6 +59,10 @@ class Cache<T> {
   }
 
   public revalidate(): Promise<T | null> {
+    if (this.inFlight) {
+      const currentFetch = this.inFlight;
+      return currentFetch.catch(() => null).then(() => this.fetchValue());
+    }
     return this.fetchValue();
   }
 

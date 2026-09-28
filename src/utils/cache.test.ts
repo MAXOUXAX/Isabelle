@@ -26,6 +26,7 @@ describe('Cache', () => {
     const first = cache.get();
     const second = cache.get();
     const third = cache.get();
+    await Promise.resolve();
     resolveFetch('shared');
 
     await expect(Promise.all([first, second, third])).resolves.toEqual([
@@ -49,19 +50,19 @@ describe('Cache', () => {
     expect(calls).toBe(1);
   });
 
-  it('caches falsy values such as an empty array', async () => {
+  it('caches a falsy value', async () => {
     let calls = 0;
     const cache = cacheStore.useCache(
       createKey(),
       () => {
         calls += 1;
-        return Promise.resolve([]);
+        return Promise.resolve(false);
       },
       1000,
     );
 
-    await expect(cache.get()).resolves.toEqual([]);
-    await expect(cache.get()).resolves.toEqual([]);
+    await expect(cache.get()).resolves.toBe(false);
+    await expect(cache.get()).resolves.toBe(false);
     expect(calls).toBe(1);
   });
 
@@ -94,6 +95,51 @@ describe('Cache', () => {
     );
 
     await expect(cache.get()).rejects.toThrow('temporary failure');
+    await expect(cache.get()).resolves.toBe('recovered');
+    expect(calls).toBe(2);
+  });
+
+  it('revalidates after an in-flight get and keeps the revalidated value', async () => {
+    let resolveFirst!: (value: string) => void;
+    let calls = 0;
+    const cache = cacheStore.useCache(
+      createKey(),
+      () => {
+        calls += 1;
+        if (calls === 1) {
+          return new Promise<string>((resolve) => {
+            resolveFirst = resolve;
+          });
+        }
+        return Promise.resolve('revalidated');
+      },
+      1000,
+    );
+
+    const initialGet = cache.get();
+    const revalidation = cache.revalidate();
+    await Promise.resolve();
+    resolveFirst('in-flight');
+
+    await expect(initialGet).resolves.toBe('in-flight');
+    await expect(revalidation).resolves.toBe('revalidated');
+    await expect(cache.get()).resolves.toBe('revalidated');
+    expect(calls).toBe(2);
+  });
+
+  it('turns a synchronous fetcher throw into a rejected promise and allows retry', async () => {
+    let calls = 0;
+    const cache = cacheStore.useCache(
+      createKey(),
+      () => {
+        calls += 1;
+        if (calls === 1) throw new Error('synchronous failure');
+        return Promise.resolve('recovered');
+      },
+      1000,
+    );
+
+    await expect(cache.get()).rejects.toThrow('synchronous failure');
     await expect(cache.get()).resolves.toBe('recovered');
     expect(calls).toBe(2);
   });
