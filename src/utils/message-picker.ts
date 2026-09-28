@@ -10,7 +10,12 @@ import {
 
 const logger = createLogger('message-picker');
 
-const MAX_DEPTH = 50;
+/**
+ * Hard ceiling on `messages.fetch` calls per search. Discord rate limits are
+ * per-bot, so an unbounded search degrades every other module while it runs.
+ */
+const MAX_FETCH_REQUESTS = 120;
+const MAX_DEPTH = 8;
 const BATCH_SIZE = 100;
 const FRESHNESS_THRESHOLD_MONTHS = 3;
 const MIN_FRESH_PERCENTAGE = 0.8;
@@ -157,13 +162,17 @@ const searchChannelsAtDepth = async (
   userId: Snowflake,
   uniqueMessages: Map<Snowflake, Message>,
   channelLastIds: Map<Snowflake, Snowflake | undefined | null>,
-  maxMessages: number,
+  budget: { remaining: number },
   depth: number,
   guildId: Snowflake,
 ): Promise<boolean> => {
   let foundNewMessages = false;
 
   for (const channel of channels) {
+    if (budget.remaining <= 0) {
+      break;
+    }
+
     const lastId = channelLastIds.get(channel.id);
 
     // Skip exhausted channels
@@ -172,7 +181,9 @@ const searchChannelsAtDepth = async (
     }
 
     try {
-      const messages = await fetchChannelMessages(channel, lastId ?? undefined);
+      const fetchPromise = fetchChannelMessages(channel, lastId ?? undefined);
+      budget.remaining -= 1;
+      const messages = await fetchPromise;
 
       if (messages.length === 0) {
         channelLastIds.set(channel.id, null);
@@ -258,18 +269,20 @@ export const fetchLastUserMessages = async (
   }
 
   let depth = 0;
+  const budget = { remaining: MAX_FETCH_REQUESTS };
 
   // Keep searching with increasing depth until we have enough messages
   while (
-    uniqueMessages.size < Math.max(minMessages, maxMessages) &&
-    depth < MAX_DEPTH
+    uniqueMessages.size < minMessages &&
+    depth < MAX_DEPTH &&
+    budget.remaining > 0
   ) {
     const foundNewMessages = await searchChannelsAtDepth(
       accessibleChannels,
       userId,
       uniqueMessages,
       channelLastIds,
-      maxMessages,
+      budget,
       depth,
       guild.id,
     );
@@ -317,6 +330,18 @@ export const fetchLastUserMessages = async (
         );
       }
     }
+  }
+
+  if (budget.remaining <= 0) {
+    logger.warn(
+      {
+        userId,
+        guildId: guild.id,
+        foundMessages: uniqueMessages.size,
+        maxFetchRequests: MAX_FETCH_REQUESTS,
+      },
+      'Message search stopped: fetch budget exhausted',
+    );
   }
 
   if (depth >= MAX_DEPTH) {

@@ -91,14 +91,13 @@ export class RoastCommand implements IsabelleCommand {
       await interaction.deferReply();
       hasDeferred = true;
 
-      const lastUserMessagesPromise = fetchLastUserMessages(
+      const lastUserMessages = await fetchLastUserMessages(
         guild,
         user.id,
-        75,
+        40,
         100,
         interaction.user.id,
       );
-      const lastUserMessages = await lastUserMessagesPromise;
 
       logger.debug(
         { messageCount: lastUserMessages.length },
