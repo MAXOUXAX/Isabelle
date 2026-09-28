@@ -62,14 +62,20 @@ const MODULES: IsabelleModule[] = [
 moduleManager.registerModules(MODULES);
 
 let isShuttingDown = false;
+let shutdownExitCode = 0;
 
-const shutdown = (signal: NodeJS.Signals): void => {
+const shutdown = (
+  reason: NodeJS.Signals | 'unhandledRejection' | 'uncaughtException',
+  exitCode = 0,
+): void => {
   if (isShuttingDown) {
+    shutdownExitCode = Math.max(shutdownExitCode, exitCode);
     return;
   }
 
   isShuttingDown = true;
-  logger.info({ signal }, 'Graceful shutdown requested');
+  shutdownExitCode = exitCode;
+  logger.info({ reason }, 'Graceful shutdown requested');
 
   const shutdownHandler = async () => {
     await moduleManager.destroyModules();
@@ -79,10 +85,10 @@ const shutdown = (signal: NodeJS.Signals): void => {
   void shutdownHandler().then(
     () => {
       logger.info('Shutdown complete');
-      process.exit(0);
+      process.exit(shutdownExitCode);
     },
     (error: unknown) => {
-      logger.error({ error, signal }, 'Graceful shutdown failed');
+      logger.error({ error, reason }, 'Graceful shutdown failed');
       process.exit(1);
     },
   );
@@ -96,12 +102,16 @@ process.once('SIGTERM', () => {
 });
 
 process.on('unhandledRejection', (reason) => {
-  logger.error({ error: reason }, 'Unhandled promise rejection');
+  logger.fatal(
+    { error: reason },
+    'Unhandled promise rejection - shutting down',
+  );
+  shutdown('unhandledRejection', 1);
 });
 
 process.on('uncaughtException', (error) => {
   logger.fatal({ error }, 'Uncaught exception - shutting down');
-  shutdown('SIGTERM');
+  shutdown('uncaughtException', 1);
 });
 
 client.once(Events.ClientReady, () => {
