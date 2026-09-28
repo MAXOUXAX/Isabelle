@@ -12,12 +12,11 @@
     "strictNullChecks": true,
     "skipLibCheck": true,
     "types": ["node", "react"],
-    "baseUrl": ".",
     "jsx": "react-jsx",
     "jsxImportSource": "react",
     "paths": {
-      "@/*": ["src/*"],
-      "@modules/*": ["src/modules/*"]
+      "@/*": ["./src/*"],
+      "@modules/*": ["./src/modules/*"]
     }
   },
   "include": [

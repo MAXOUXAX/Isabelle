@@ -12,6 +12,6 @@ export default defineConfig({
   dts: false,
   target: false,
   deps: {
-    skipNodeModulesBundle: true,
+    neverBundle: true,
   },
 });
