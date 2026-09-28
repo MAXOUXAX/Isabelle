@@ -1,4 +1,4 @@
-import { GEMINI_2_5_FLASH } from '@/ai/models/gemini-models.wrapped.js';
+import { GEMINI_3_FLASH } from '@/ai/models/gemini-models.wrapped.js';
 import { createLogger } from '@/utils/logger.js';
 import { extractModelVersion } from '@/utils/model-version.js';
 import { generateText } from 'ai';
@@ -32,7 +32,7 @@ class AgendaAssistant implements AiAssistant<
   ): Promise<AgendaAssistantOutput | null> {
     try {
       const result = await generateText({
-        model: GEMINI_2_5_FLASH,
+        model: GEMINI_3_FLASH,
         messages: [
           { role: 'system', content: AGENDA_ASSISTANT_PROMPT },
           {
