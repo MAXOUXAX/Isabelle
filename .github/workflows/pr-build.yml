@@ -32,6 +32,9 @@ jobs:
       - name: Typecheck
         run: npm run ts-check
 
+      - name: Test
+        run: npm test
+
       - name: Lint
         run: npm run lint:dry
 
