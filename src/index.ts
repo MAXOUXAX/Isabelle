@@ -38,6 +38,14 @@ export const client = new Client({
   ],
 });
 
+client.on(Events.Error, (error) => {
+  logger.error({ error }, 'Discord client error');
+});
+
+client.on(Events.ShardError, (error, shardId) => {
+  logger.error({ error, shardId }, 'Discord shard error');
+});
+
 const MODULES: IsabelleModule[] = [
   new CoreModule(),
   new LegalModule(),
@@ -85,6 +93,15 @@ process.once('SIGINT', () => {
   shutdown('SIGINT');
 });
 process.once('SIGTERM', () => {
+  shutdown('SIGTERM');
+});
+
+process.on('unhandledRejection', (reason) => {
+  logger.error({ error: reason }, 'Unhandled promise rejection');
+});
+
+process.on('uncaughtException', (error) => {
+  logger.fatal({ error }, 'Uncaught exception - shutting down');
   shutdown('SIGTERM');
 });
 
