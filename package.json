@@ -100,7 +100,7 @@
     "tsx": "^4.23.1",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.65.0",
-    "vitest": "^3.2.4"
+    "vitest": "^5.0.3"
   },
   "overrides": {
     "satori@^0.33.4": {
