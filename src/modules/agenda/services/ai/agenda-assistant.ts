@@ -33,13 +33,8 @@ class AgendaAssistant implements AiAssistant<
     try {
       const result = await generateText({
         model: GEMINI_2_5_FLASH,
-        messages: [
-          { role: 'system', content: AGENDA_ASSISTANT_PROMPT },
-          {
-            role: 'user',
-            content: `Titre: ${input.title}\n\nDescription: ${input.description}`,
-          },
-        ],
+        instructions: AGENDA_ASSISTANT_PROMPT,
+        prompt: `Titre: ${input.title}\n\nDescription: ${input.description}`,
         temperature: 0.1,
         providerOptions: {
           google: {
