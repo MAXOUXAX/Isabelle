@@ -47,18 +47,10 @@ export async function generateRoast({
     tools: {
       google_search: google.tools.googleSearch({}),
     },
-    messages: [
-      {
-        role: 'system',
-        content: ROAST_PROMPT.trim(),
-      },
-      {
-        role: 'user',
-        content:
-          `La liste des messages récents de l'utilisateur cible, ${displayName} :\n` +
-          preparedMessages,
-      },
-    ],
+    instructions: ROAST_PROMPT.trim(),
+    prompt:
+      `La liste des messages récents de l'utilisateur cible, ${displayName} :\n` +
+      preparedMessages,
     providerOptions: {
       google: {
         thinkingBudget: MAX_THINKING_TOKENS,
