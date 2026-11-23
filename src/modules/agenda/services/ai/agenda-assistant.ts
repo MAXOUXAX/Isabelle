@@ -36,6 +36,8 @@ class AgendaAssistant implements AiAssistant<
         instructions: AGENDA_ASSISTANT_PROMPT,
         prompt: `Titre: ${input.title}\n\nDescription: ${input.description}`,
         temperature: 0.1,
+        // Kept for extractModelVersion: the AI SDK drops response bodies by default.
+        include: { responseBody: true },
         providerOptions: {
           google: {
             // A short rewrite into fixed JSON: 'low' is the lowest level Hydrogen accepts.

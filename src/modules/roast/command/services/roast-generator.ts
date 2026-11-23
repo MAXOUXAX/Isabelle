@@ -57,6 +57,8 @@ export async function generateRoast({
     prompt:
       `La liste des messages récents de l'utilisateur cible, ${displayName} :\n` +
       preparedMessages,
+    // Kept for extractModelVersion: the AI SDK drops response bodies by default.
+    include: { responseBody: true },
     providerOptions: {
       google: {
         // Enough reasoning to pick searches and sharpen punchlines, without the latency of 'high'.
