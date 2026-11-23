@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [24.x]
+        node-version: [26.x]
 
     permissions:
       contents: write # Required to create a tag and a GitHub release
