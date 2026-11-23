@@ -1,6 +1,7 @@
-import { GEMINI_2_5_FLASH } from '@/ai/models/gemini-models.wrapped.js';
+import { GEMINI_4_HYDROGEN } from '@/ai/models/gemini-models.wrapped.js';
 import { createLogger } from '@/utils/logger.js';
 import { extractModelVersion } from '@/utils/model-version.js';
+import type { GoogleLanguageModelOptions } from '@ai-sdk/google';
 import { generateText } from 'ai';
 import { AGENDA_ASSISTANT_PROMPT } from '../prompts/agenda-assistant.prompt.js';
 import type { AiAssistant } from './ai-assistant.interface.js';
@@ -8,7 +9,6 @@ import type { AiAssistant } from './ai-assistant.interface.js';
 const logger = createLogger('agenda-assistant');
 
 export const DEFAULT_AGENDA_EMOJI = '📅';
-const THINKING_BUDGET_TOKENS = 256;
 
 export interface AgendaAssistantInput {
   title: string;
@@ -32,14 +32,17 @@ class AgendaAssistant implements AiAssistant<
   ): Promise<AgendaAssistantOutput | null> {
     try {
       const result = await generateText({
-        model: GEMINI_2_5_FLASH,
+        model: GEMINI_4_HYDROGEN,
         instructions: AGENDA_ASSISTANT_PROMPT,
         prompt: `Titre: ${input.title}\n\nDescription: ${input.description}`,
         temperature: 0.1,
+        // Kept for extractModelVersion: the AI SDK drops response bodies by default.
+        include: { responseBody: true },
         providerOptions: {
           google: {
-            thinkingBudget: THINKING_BUDGET_TOKENS,
-          },
+            // A short rewrite into fixed JSON: 'low' is the lowest level Hydrogen accepts.
+            thinkingConfig: { thinkingLevel: 'low' },
+          } satisfies GoogleLanguageModelOptions,
         },
       });
 
