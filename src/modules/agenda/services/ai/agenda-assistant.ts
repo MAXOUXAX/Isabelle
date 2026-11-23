@@ -38,8 +38,8 @@ class AgendaAssistant implements AiAssistant<
         temperature: 0.1,
         providerOptions: {
           google: {
-            // A short rewrite into fixed JSON: more reasoning adds latency, not quality.
-            thinkingConfig: { thinkingLevel: 'minimal' },
+            // A short rewrite into fixed JSON: 'low' is the lowest level Hydrogen accepts.
+            thinkingConfig: { thinkingLevel: 'low' },
           } satisfies GoogleLanguageModelOptions,
         },
       });
