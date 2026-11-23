@@ -1,6 +1,7 @@
 import { GEMINI_4_HYDROGEN } from '@/ai/models/gemini-models.wrapped.js';
 import { createLogger } from '@/utils/logger.js';
 import { extractModelVersion } from '@/utils/model-version.js';
+import type { GoogleLanguageModelOptions } from '@ai-sdk/google';
 import { generateText } from 'ai';
 import { AGENDA_ASSISTANT_PROMPT } from '../prompts/agenda-assistant.prompt.js';
 import type { AiAssistant } from './ai-assistant.interface.js';
@@ -8,7 +9,6 @@ import type { AiAssistant } from './ai-assistant.interface.js';
 const logger = createLogger('agenda-assistant');
 
 export const DEFAULT_AGENDA_EMOJI = '📅';
-const THINKING_BUDGET_TOKENS = 256;
 
 export interface AgendaAssistantInput {
   title: string;
@@ -38,8 +38,9 @@ class AgendaAssistant implements AiAssistant<
         temperature: 0.1,
         providerOptions: {
           google: {
-            thinkingBudget: THINKING_BUDGET_TOKENS,
-          },
+            // A short rewrite into fixed JSON: more reasoning adds latency, not quality.
+            thinkingConfig: { thinkingLevel: 'minimal' },
+          } satisfies GoogleLanguageModelOptions,
         },
       });
 
