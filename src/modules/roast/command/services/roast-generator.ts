@@ -1,9 +1,11 @@
 import { GEMINI_4_HYDROGEN } from '@/ai/models/gemini-models.wrapped.js';
+import { createWebSearchTool } from '@/ai/tools/web-search.tool.js';
+import { config } from '@/config.js';
 import { ROAST_PROMPT } from '@/modules/roast/command/templates/roast-prompt.js';
 import { createLogger } from '@/utils/logger.js';
 import { extractModelVersion } from '@/utils/model-version.js';
-import { google } from '@ai-sdk/google';
-import { generateText } from 'ai';
+import type { GoogleLanguageModelOptions } from '@ai-sdk/google';
+import { generateText, isStepCount } from 'ai';
 import type { Message } from 'discord.js';
 
 const logger = createLogger('roast-generator');
@@ -13,7 +15,10 @@ const dateFormatter = new Intl.DateTimeFormat('fr-FR', {
   timeStyle: 'short',
 });
 
-const MAX_THINKING_TOKENS = 8192;
+// Up to three rounds of web search, then a final step that must write the roast.
+const MAX_STEPS = 4;
+
+const webSearch = createWebSearchTool(config.EXA_API_KEY);
 
 interface GenerateRoastOptions {
   displayName: string;
@@ -44,17 +49,19 @@ export async function generateRoast({
 
   const result = await generateText({
     model: GEMINI_4_HYDROGEN,
-    tools: {
-      google_search: google.tools.googleSearch({}),
-    },
+    tools: webSearch ? { web_search: webSearch } : {},
+    stopWhen: isStepCount(MAX_STEPS),
+    prepareStep: ({ stepNumber }) =>
+      stepNumber === MAX_STEPS - 1 ? { toolChoice: 'none' } : undefined,
     instructions: ROAST_PROMPT.trim(),
     prompt:
       `La liste des messages récents de l'utilisateur cible, ${displayName} :\n` +
       preparedMessages,
     providerOptions: {
       google: {
-        thinkingBudget: MAX_THINKING_TOKENS,
-      },
+        // Enough reasoning to pick searches and sharpen punchlines, without the latency of 'high'.
+        thinkingConfig: { thinkingLevel: 'medium' },
+      } satisfies GoogleLanguageModelOptions,
     },
   });
 
