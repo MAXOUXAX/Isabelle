@@ -2,7 +2,7 @@ import { DEFAULT_COMMIT_TYPES } from 'conventional-changelog-conventionalcommits
 
 const types = DEFAULT_COMMIT_TYPES.map((t) => {
   if (t.type === 'chore') {
-    return { ...t, hidden: false, section: 'Chores' };
+    return { ...t, effect: 'changelog', section: 'Chores' };
   }
   return t;
 });

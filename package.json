@@ -5,7 +5,7 @@
   "description": "Isabelle est un BOT Discord à destination des élèves de TELECOM Nancy, et plus particulièrement aux étudiants de la promotion 2027 des FISA",
   "author": "MAXOUXAX",
   "engines": {
-    "node": ">=22"
+    "node": ">=26.13"
   },
   "packageManager": "npm@11.11.1",
   "license": "AGPL-3.0-or-later",
@@ -87,7 +87,7 @@
     "@semantic-release/github": "^12.0.11",
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
-    "conventional-changelog-conventionalcommits": "^9.3.1",
+    "conventional-changelog-conventionalcommits": "^10.4.1",
     "cross-env": "^10.1.0",
     "drizzle-kit": "^0.31.11",
     "eslint": "^10.15.0",
@@ -95,7 +95,7 @@
     "lint-staged": "^17.6.1",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.10.1",
-    "semantic-release": "^25.0.9",
+    "semantic-release": "^26.0.1",
     "semantic-release-discord": "^1.2.0",
     "tsdown": "^0.23.7",
     "tsx": "^4.23.1",
