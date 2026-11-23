@@ -9,3 +9,8 @@ updates:
         dependency-type: development
       deps:
         dependency-type: production
+    ignore:
+      # typescript-eslint supports TypeScript < 6.1 only; TypeScript 7 support is tracked in
+      # https://github.com/typescript-eslint/typescript-eslint/issues/10940
+      - dependency-name: 'typescript'
+        versions: ['>= 7']
