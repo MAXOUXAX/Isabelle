@@ -1,6 +1,13 @@
 import { GuildConfig } from '@/manager/config.manager.js';
 import { sql } from 'drizzle-orm';
-import { index, int, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
+import {
+  check,
+  index,
+  int,
+  sqliteTable,
+  text,
+  unique,
+} from 'drizzle-orm/sqlite-core';
 
 const base = () => {
   return {
@@ -111,5 +118,52 @@ export const agendaEvents = sqliteTable(
     unique().on(t.guildId, t.discordEventId),
     index('agenda_events_idx').on(t.guildId, t.eventStartTime, t.eventEndTime),
     index('agenda_events_thread_close_idx').on(t.threadClosed, t.eventEndTime),
+  ],
+);
+
+export const reminders = sqliteTable(
+  'reminders',
+  {
+    id: int('id').primaryKey({ autoIncrement: true }),
+    userId: text('user_id').notNull(),
+    guildId: text('guild_id').notNull(),
+    channelId: text('channel_id').notNull(),
+    message: text('message').notNull(),
+    dueAt: int('due_at', { mode: 'timestamp' }).notNull(),
+    status: text('status', { enum: ['queued', 'processing'] })
+      .default('queued')
+      .notNull(),
+    attempts: int('attempts').default(0).notNull(),
+    claimedAt: int('claimed_at', { mode: 'timestamp' }),
+    claimedBy: text('claimed_by'),
+    ...base(),
+  },
+  (t) => [
+    index('reminders_due_at_id_idx').on(t.dueAt, t.id),
+    index('reminders_guild_user_due_at_id_idx').on(
+      t.guildId,
+      t.userId,
+      t.dueAt,
+      t.id,
+    ),
+  ],
+);
+
+export const birthdays = sqliteTable(
+  'birthdays',
+  {
+    id: int('id').primaryKey({ autoIncrement: true }),
+    guildId: text('guild_id').notNull(),
+    userId: text('user_id').notNull(),
+    month: int('month').notNull(),
+    day: int('day').notNull(),
+    lastNotified: int('last_notified', { mode: 'timestamp' }),
+    ...base(),
+  },
+  (t) => [
+    unique().on(t.guildId, t.userId),
+    index('birthdays_month_day_idx').on(t.month, t.day),
+    check('birthdays_month_check', sql`${t.month} between 1 and 12`),
+    check('birthdays_day_check', sql`${t.day} between 1 and 31`),
   ],
 );

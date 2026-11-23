@@ -16,9 +16,19 @@ import {
 import { createLogger } from '@/utils/logger.js';
 import { mentionId } from '@/utils/mention.js';
 import { voidAndTrackError } from '@/utils/promises.js';
-import { ChatInputCommandInteraction, MessageFlags } from 'discord.js';
+import {
+  ChatInputCommandInteraction,
+  MessageFlags,
+  MessageMentionOptions,
+} from 'discord.js';
 
 const logger = createLogger('russian-roulette-play-command');
+
+// Restrict mentions to an explicit allow-list of user IDs, never roles/@everyone.
+const mentionOnly = (...userIds: string[]): MessageMentionOptions => ({
+  parse: [],
+  users: userIds,
+});
 
 export const executePlayCommand = async (
   interaction: ChatInputCommandInteraction,
@@ -28,6 +38,7 @@ export const executePlayCommand = async (
   if (!guild) {
     await interaction.reply({
       content: 'Vous ne pouvez pas jouer en DM.',
+      allowedMentions: mentionOnly(),
       flags: MessageFlags.Ephemeral,
     });
     return;
@@ -43,8 +54,11 @@ export const executePlayCommand = async (
 
   // No one got hit this round.
   if (targetId == null) {
-    increaseGamesSinceLastKill();
-    await interaction.reply(randomSafeMessage);
+    increaseGamesSinceLastKill(guild.id);
+    await interaction.reply({
+      content: randomSafeMessage,
+      allowedMentions: mentionOnly(interaction.user.id),
+    });
     return;
   }
 
@@ -58,16 +72,20 @@ export const executePlayCommand = async (
         `Failed to fetch member ${targetId} for timeout - skipping execution`,
       );
 
-      increaseGamesSinceLastKill();
-      await interaction.reply(randomSafeMessage);
+      increaseGamesSinceLastKill(guild.id);
+      await interaction.reply({
+        content: randomSafeMessage,
+        allowedMentions: mentionOnly(interaction.user.id),
+      });
       return;
     }
 
     if (!(member.moderatable || member.kickable)) {
-      increaseGamesSinceLastKill();
-      await interaction.reply(
-        `Bang...? ${mentionId(targetId)} était trop puissant(e) pour être affecté(e). Le canon a fondu et tout le monde s'en sort vivant cette fois-ci !`,
-      );
+      increaseGamesSinceLastKill(guild.id);
+      await interaction.reply({
+        content: `Bang...? ${mentionId(targetId)} était trop puissant(e) pour être affecté(e). Le canon a fondu et tout le monde s'en sort vivant cette fois-ci !`,
+        allowedMentions: mentionOnly(targetId, interaction.user.id),
+      });
       logger.debug(
         `Target ${targetId} (${member.displayName}) is not moderatable - cannot timeout`,
       );
@@ -82,7 +100,14 @@ export const executePlayCommand = async (
         .replace('{shooter}', mentionId(interaction.user.id))
         .replace('{target}', mentionId(targetId));
 
-      await interaction.reply(preTargetMessage);
+      await interaction.reply({
+        content: preTargetMessage,
+        allowedMentions: mentionOnly(targetId, interaction.user.id),
+      });
+    } else {
+      // Self-target: acknowledge the interaction before the timeout (a network
+      // call) so we stay within Discord's 3s window, then edit with the result.
+      await interaction.deferReply();
     }
 
     // Get random timeout duration and message
@@ -102,15 +127,21 @@ export const executePlayCommand = async (
     // Track the death and timeout duration for the target user
     voidAndTrackError(incrementDeaths(guild.id, targetId, timeoutMinutes));
 
-    resetNumberOfGamesSinceLastKill();
+    resetNumberOfGamesSinceLastKill(guild.id);
 
     // Replace {user} placeholder with actual mention
     const finalMessage = message.replace('{user}', mentionId(targetId));
     // If we already replied with the pre-target message (when target != shooter), followUp with the final timeout message
     if (targetId !== interaction.user.id) {
-      await interaction.followUp(finalMessage);
+      await interaction.followUp({
+        content: finalMessage,
+        allowedMentions: mentionOnly(targetId, interaction.user.id),
+      });
     } else {
-      await interaction.reply(finalMessage);
+      await interaction.editReply({
+        content: finalMessage,
+        allowedMentions: mentionOnly(targetId, interaction.user.id),
+      });
     }
     logger.debug(
       { reason: 'Russian Roulette', duration: label },
@@ -121,12 +152,25 @@ export const executePlayCommand = async (
       { error: e },
       `Failed to timeout user ${targetId} in Russian Roulette:`,
     );
-    increaseGamesSinceLastKill();
-    const errorMessage = `Le pistolet s'enraye... Personne n'est sanctionné cette fois-ci (erreur : ${(e as Error).name}).`;
-    if (interaction.replied) {
-      await interaction.followUp(errorMessage);
+    increaseGamesSinceLastKill(guild.id);
+    const errorMessage = `Le pistolet s'enraye... Personne n'est sanctionné cette fois-ci.`;
+    if (interaction.deferred) {
+      await interaction.editReply({
+        content: errorMessage,
+        allowedMentions: mentionOnly(targetId, interaction.user.id),
+      });
+    } else if (interaction.replied) {
+      await interaction.followUp({
+        content: errorMessage,
+        allowedMentions: mentionOnly(targetId, interaction.user.id),
+        flags: MessageFlags.Ephemeral,
+      });
     } else {
-      await interaction.reply(errorMessage);
+      await interaction.reply({
+        content: errorMessage,
+        allowedMentions: mentionOnly(targetId, interaction.user.id),
+        flags: MessageFlags.Ephemeral,
+      });
     }
   }
 };

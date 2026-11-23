@@ -33,13 +33,8 @@ class AgendaAssistant implements AiAssistant<
     try {
       const result = await generateText({
         model: GEMINI_3_FLASH,
-        messages: [
-          { role: 'system', content: AGENDA_ASSISTANT_PROMPT },
-          {
-            role: 'user',
-            content: `Titre: ${input.title}\n\nDescription: ${input.description}`,
-          },
-        ],
+        instructions: AGENDA_ASSISTANT_PROMPT,
+        prompt: `Titre: ${input.title}\n\nDescription: ${input.description}`,
         temperature: 0.1,
         providerOptions: {
           google: {
@@ -68,7 +63,9 @@ class AgendaAssistant implements AiAssistant<
         parsed.description.trim().length > 0 &&
         parsed.emoji.length > 0
       ) {
-        const modelVersion = extractModelVersion(result.response.body);
+        const modelVersion = extractModelVersion(
+          result.finalStep.response.body,
+        );
 
         logger.debug({ original: input, enhanced: parsed }, 'Enhanced event');
         return {

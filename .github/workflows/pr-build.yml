@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - 'release/v*'
 
 permissions:
   contents: read
@@ -27,6 +28,18 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Typecheck
+        run: npm run ts-check
+
+      - name: Test
+        run: npm test
+
+      - name: Lint
+        run: npm run lint:dry
+
+      - name: Format check
+        run: npm run prettier:dry
 
       - name: Build
         run: npm run build

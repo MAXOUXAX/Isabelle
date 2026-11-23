@@ -10,7 +10,12 @@ import {
 
 const logger = createLogger('message-picker');
 
-const MAX_DEPTH = 50;
+/**
+ * Hard ceiling on `messages.fetch` calls per search. Discord rate limits are
+ * per-bot, so an unbounded search degrades every other module while it runs.
+ */
+export const MAX_FETCH_REQUESTS = 120;
+const MAX_DEPTH = 8;
 const BATCH_SIZE = 100;
 const FRESHNESS_THRESHOLD_MONTHS = 3;
 const MIN_FRESH_PERCENTAGE = 0.8;
@@ -29,7 +34,7 @@ const isMessageFresh = (message: Message): boolean => {
 /**
  * Calculate the percentage of fresh messages in a collection
  */
-const calculateFreshPercentage = (messages: Message[]): number => {
+export const calculateFreshPercentage = (messages: Message[]): number => {
   if (messages.length === 0) return 0;
   const freshCount = messages.filter(isMessageFresh).length;
   return freshCount / messages.length;
@@ -131,14 +136,12 @@ const processChannelMessages = (
   messages: Message[],
   userId: Snowflake,
   uniqueMessages: Map<Snowflake, Message>,
-): { foundNew: boolean; lastMessageId: Snowflake | undefined } => {
-  let foundNew = false;
+): { lastMessageId: Snowflake | undefined } => {
   let lastMessageId: Snowflake | undefined;
 
   for (const message of messages) {
     if (message.author.id === userId && !uniqueMessages.has(message.id)) {
       uniqueMessages.set(message.id, message);
-      foundNew = true;
     }
   }
 
@@ -146,7 +149,7 @@ const processChannelMessages = (
     lastMessageId = messages[messages.length - 1]?.id;
   }
 
-  return { foundNew, lastMessageId };
+  return { lastMessageId };
 };
 
 /**
@@ -157,13 +160,15 @@ const searchChannelsAtDepth = async (
   userId: Snowflake,
   uniqueMessages: Map<Snowflake, Message>,
   channelLastIds: Map<Snowflake, Snowflake | undefined | null>,
-  maxMessages: number,
+  budget: { remaining: number },
   depth: number,
   guildId: Snowflake,
-): Promise<boolean> => {
-  let foundNewMessages = false;
-
+): Promise<void> => {
   for (const channel of channels) {
+    if (budget.remaining <= 0) {
+      break;
+    }
+
     const lastId = channelLastIds.get(channel.id);
 
     // Skip exhausted channels
@@ -172,24 +177,25 @@ const searchChannelsAtDepth = async (
     }
 
     try {
-      const messages = await fetchChannelMessages(channel, lastId ?? undefined);
+      const fetchPromise = fetchChannelMessages(channel, lastId ?? undefined);
+      budget.remaining -= 1;
+      const messages = await fetchPromise;
 
       if (messages.length === 0) {
         channelLastIds.set(channel.id, null);
         continue;
       }
 
-      const { foundNew, lastMessageId } = processChannelMessages(
+      const { lastMessageId } = processChannelMessages(
         messages,
         userId,
         uniqueMessages,
       );
 
-      if (foundNew) {
-        foundNewMessages = true;
-      }
-
-      if (lastMessageId) {
+      if (messages.length < BATCH_SIZE) {
+        // A short page means the channel has no older messages to fetch.
+        channelLastIds.set(channel.id, null);
+      } else if (lastMessageId) {
         channelLastIds.set(channel.id, lastMessageId);
       }
     } catch (error) {
@@ -200,8 +206,6 @@ const searchChannelsAtDepth = async (
       channelLastIds.set(channel.id, null);
     }
   }
-
-  return foundNewMessages;
 };
 
 /**
@@ -258,25 +262,28 @@ export const fetchLastUserMessages = async (
   }
 
   let depth = 0;
+  const budget = { remaining: MAX_FETCH_REQUESTS };
 
   // Keep searching with increasing depth until we have enough messages
-  while (
-    uniqueMessages.size < Math.max(minMessages, maxMessages) &&
-    depth < MAX_DEPTH
-  ) {
-    const foundNewMessages = await searchChannelsAtDepth(
+  while (depth < MAX_DEPTH && budget.remaining > 0) {
+    await searchChannelsAtDepth(
       accessibleChannels,
       userId,
       uniqueMessages,
       channelLastIds,
-      maxMessages,
+      budget,
       depth,
       guild.id,
     );
 
     depth++;
 
-    if (!foundNewMessages) {
+    // A page without target-user messages can still have older pages that do.
+    // Stop only when every channel is exhausted; depth and request limits bound
+    // searches through long or inactive histories.
+    if (
+      Array.from(channelLastIds.values()).every((lastId) => lastId === null)
+    ) {
       if (uniqueMessages.size < minMessages) {
         logger.warn(
           {
@@ -317,6 +324,18 @@ export const fetchLastUserMessages = async (
         );
       }
     }
+  }
+
+  if (budget.remaining <= 0) {
+    logger.warn(
+      {
+        userId,
+        guildId: guild.id,
+        foundMessages: uniqueMessages.size,
+        maxFetchRequests: MAX_FETCH_REQUESTS,
+      },
+      'Message search stopped: fetch budget exhausted',
+    );
   }
 
   if (depth >= MAX_DEPTH) {

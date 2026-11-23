@@ -73,22 +73,22 @@ async function queryAutomaticResponses(
     );
 }
 
+const GLOBAL_RESPONSES_CACHE_KEY = 'automatic-responses-global';
+
+const globalResponsesCache = cacheStore.useCache<
+  (typeof automaticResponses.$inferSelect)[]
+>(
+  GLOBAL_RESPONSES_CACHE_KEY,
+  () => queryAutomaticResponses(null),
+  AUTOMATIC_RESPONSES_CACHE_TTL_MS,
+);
+
 /**
  * Returns cached responses for a guild (or global if guildId is null).
  */
 async function getCachedResponses(guildId: string | null) {
-  const globalCacheKey = `automatic-responses-global`;
-  // Cache global responses for 24 hours
-  const globalCacheEntry = cacheStore.useCache<
-    (typeof automaticResponses.$inferSelect)[]
-  >(
-    globalCacheKey,
-    () => queryAutomaticResponses(null),
-    AUTOMATIC_RESPONSES_CACHE_TTL_MS,
-  );
-
   if (guildId == null) {
-    const globalResponses = await globalCacheEntry.get();
+    const globalResponses = await globalResponsesCache.get();
     return globalResponses ?? [];
   }
 
@@ -105,7 +105,7 @@ async function getCachedResponses(guildId: string | null) {
 
   const [guildResponses, globalResponses] = await Promise.all([
     guildCacheEntry.get(),
-    globalCacheEntry.get(),
+    globalResponsesCache.get(),
   ]);
 
   const guildArr = guildResponses ?? [];
@@ -125,7 +125,7 @@ export async function invalidateResponseCache(guildId: string | null) {
   invalidateRegexCacheForScope(guildId);
 
   if (guildId == null) {
-    const globalEntry = cacheStore.useCache('automatic-responses-global');
+    const globalEntry = cacheStore.useCache(GLOBAL_RESPONSES_CACHE_KEY);
     await globalEntry.revalidate();
     return;
   }

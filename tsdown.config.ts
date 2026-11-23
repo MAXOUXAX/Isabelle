@@ -12,6 +12,6 @@ export default defineConfig({
   dts: false,
   target: false,
   deps: {
-    onlyBundle: [],
+    neverBundle: true,
   },
 });

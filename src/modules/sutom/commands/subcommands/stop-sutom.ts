@@ -8,8 +8,17 @@ export default async function stopSutomSubcommand(
   interaction: CommandInteraction,
 ): Promise<void> {
   const { user } = interaction;
+  const { guildId } = interaction;
 
-  const game = sutomGameManager.getGame(user.id);
+  if (!guildId) {
+    await interaction.reply({
+      content: 'Cette commande ne peut être utilisée que sur un serveur.',
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  const game = sutomGameManager.getGame(guildId, user.id);
   if (!game) {
     await interaction.reply({
       content: `Tu n'as pas de partie en cours ! Utilise la commande /sutom start pour en commencer une.`,
@@ -18,7 +27,7 @@ export default async function stopSutomSubcommand(
     return;
   }
 
-  const threadId = sutomGameManager.getGameThreadId(user.id);
+  const threadId = sutomGameManager.getGameThreadId(guildId, user.id);
 
   // Check if we're in the correct thread or main channel
   const { channel } = interaction;
@@ -47,7 +56,7 @@ export default async function stopSutomSubcommand(
       });
     }
 
-    sutomGameManager.deleteGame(user.id);
+    sutomGameManager.deleteGame(guildId, user.id);
   } catch (error) {
     logger.error({ error }, 'Error stopping game');
     await interaction.reply({

@@ -1,11 +1,13 @@
 import { commandManager } from '@/manager/commands/command.manager.js';
 import { AgendaModule } from '@/modules/agenda/agenda.module.js';
 import { AutomaticResponsesModule } from '@/modules/automatic-responses/automatic-responses.module.js';
+import { BirthdayModule } from '@/modules/birthdays/birthday.module.js';
 import { CoreModule } from '@/modules/core/core.module.js';
 import { legalManager } from '@/modules/legal/legal.manager.js';
 import { LegalModule } from '@/modules/legal/legal.module.js';
 import { generativeAi } from '@/modules/legal/prompts/generative-ai.prompt.js';
 import { moduleManager } from '@/modules/module-manager.js';
+import { RemindersModule } from '@/modules/reminders/reminders.module.js';
 import { RoastModule } from '@/modules/roast/roast.module.js';
 import { RussianRoulette } from '@/modules/russian-roulette/russian-roulette.module.js';
 import { Schedule } from '@/modules/schedule/schedule.module.js';
@@ -30,10 +32,17 @@ export const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.DirectMessages,
     GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildPresences,
     GatewayIntentBits.GuildModeration,
     GatewayIntentBits.MessageContent,
   ],
+});
+
+client.on(Events.Error, (error) => {
+  logger.error({ error }, 'Discord client error');
+});
+
+client.on(Events.ShardError, (error, shardId) => {
+  logger.error({ error, shardId }, 'Discord shard error');
 });
 
 const MODULES: IsabelleModule[] = [
@@ -46,9 +55,64 @@ const MODULES: IsabelleModule[] = [
   new SutomModule(),
   new Schedule(),
   new RoastModule(),
+  new RemindersModule(),
+  new BirthdayModule(),
 ];
 
 moduleManager.registerModules(MODULES);
+
+let isShuttingDown = false;
+let shutdownExitCode = 0;
+
+const shutdown = (
+  reason: NodeJS.Signals | 'unhandledRejection' | 'uncaughtException',
+  exitCode = 0,
+): void => {
+  if (isShuttingDown) {
+    shutdownExitCode = Math.max(shutdownExitCode, exitCode);
+    return;
+  }
+
+  isShuttingDown = true;
+  shutdownExitCode = exitCode;
+  logger.info({ reason }, 'Graceful shutdown requested');
+
+  const shutdownHandler = async () => {
+    await moduleManager.destroyModules();
+    await client.destroy();
+  };
+
+  void shutdownHandler().then(
+    () => {
+      logger.info('Shutdown complete');
+      process.exit(shutdownExitCode);
+    },
+    (error: unknown) => {
+      logger.error({ error, reason }, 'Graceful shutdown failed');
+      process.exit(1);
+    },
+  );
+};
+
+process.once('SIGINT', () => {
+  shutdown('SIGINT');
+});
+process.once('SIGTERM', () => {
+  shutdown('SIGTERM');
+});
+
+process.on('unhandledRejection', (reason) => {
+  logger.fatal(
+    { error: reason },
+    'Unhandled promise rejection - shutting down',
+  );
+  shutdown('unhandledRejection', 1);
+});
+
+process.on('uncaughtException', (error) => {
+  logger.fatal({ error }, 'Uncaught exception - shutting down');
+  shutdown('uncaughtException', 1);
+});
 
 client.once(Events.ClientReady, () => {
   async function handler() {
@@ -230,6 +294,15 @@ function registerLegalScopes() {
 }
 
 client.on(Events.GuildCreate, (guild) => {
+  voidAndTrackError(
+    configManager.loadGuild(guild.id).then(() => {
+      logger.info(
+        { guildId: guild.id },
+        'Loaded config for newly joined guild',
+      );
+    }),
+  );
+
   if (environment === 'development') {
     if (client.guilds.cache.size > 1) {
       logger.error(

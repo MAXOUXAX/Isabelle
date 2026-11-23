@@ -44,8 +44,7 @@ export abstract class IsabelleAutocompleteCommandBase implements IsabelleAutocom
   >;
 
   private autocompleteRegistry:
-    | ReturnType<typeof createAutocompleteRegistry>
-    | undefined;
+    ReturnType<typeof createAutocompleteRegistry> | undefined;
 
   get autocompleteOptions(): readonly string[] {
     return this.getAutocompleteRegistry().keys;

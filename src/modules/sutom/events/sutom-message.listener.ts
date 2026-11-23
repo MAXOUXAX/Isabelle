@@ -16,7 +16,7 @@ export async function sutomMessageListener(message: Message): Promise<void> {
   const threadGame = sutomGameManager.getGameByThreadId(message.channel.id);
   if (!threadGame) return;
 
-  const { userId, game } = threadGame;
+  const { guildId, userId, game } = threadGame;
 
   if (message.author.id !== userId) {
     return;
@@ -34,15 +34,19 @@ export async function sutomMessageListener(message: Message): Promise<void> {
 
   const responder: GuessResponder = {
     sendError: async (content: string) => {
-      await message.reply(content);
+      await message.reply({ content, allowedMentions: { parse: [] } });
     },
     sendBoard: async (embed: EmbedBuilder, attachment: AttachmentBuilder) => {
-      await message.reply({ embeds: [embed], files: [attachment] });
+      await message.reply({
+        embeds: [embed],
+        files: [attachment],
+        allowedMentions: { parse: [] },
+      });
     },
   };
 
   await handleGuessAttempt(
-    { userId, game, thread: message.channel, responder },
+    { guildId, userId, game, thread: message.channel, responder },
     guessedWord,
   );
 }

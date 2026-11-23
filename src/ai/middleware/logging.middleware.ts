@@ -6,6 +6,7 @@ const logger = createLogger('ai');
 const MAX_CONTENT_LOG_LENGTH = 200;
 
 export const loggingMiddleware: LanguageModelMiddleware = {
+  specificationVersion: 'v3',
   wrapGenerate: async ({ doGenerate, params }) => {
     const usefulParams = {
       providerOptions: params.providerOptions,

@@ -145,6 +145,27 @@ export class ModuleManager {
     );
   }
 
+  async destroyModules(): Promise<void> {
+    logger.info('Destroying modules...');
+
+    for (const module of this.moduleLoadResults.keys()) {
+      if (!module.destroy) {
+        continue;
+      }
+
+      try {
+        await module.destroy();
+      } catch (error) {
+        logger.warn(
+          { error, moduleName: module.name },
+          `Failed to destroy module "${module.name}"`,
+        );
+      }
+    }
+
+    logger.info('Module destruction complete');
+  }
+
   getModuleDescriptors(): { slug: string; name: string }[] {
     return this.modules.map((module) => ({
       slug: this.generateSlug(module.name),

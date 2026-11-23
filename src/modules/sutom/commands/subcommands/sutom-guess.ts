@@ -5,7 +5,6 @@ import {
 } from '@/modules/sutom/core/guess-handler.js';
 import { createLogger } from '@/utils/logger.js';
 import {
-  AnyThreadChannel,
   AttachmentBuilder,
   ChatInputCommandInteraction,
   EmbedBuilder,
@@ -18,6 +17,15 @@ export default async function guessWordSubcommand(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   const { user, channel } = interaction;
+  const { guildId } = interaction;
+  if (!guildId) {
+    await interaction.reply({
+      content: 'Cette commande ne peut être utilisée que sur un serveur.',
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
   const guessedWord = interaction.options.getString('tentative');
   if (!guessedWord) {
     await interaction.reply('Tu dois fournir un mot à deviner !');
@@ -28,7 +36,7 @@ export default async function guessWordSubcommand(
     `User ${user.username} (${user.id}) guessed word: "${guessedWord}"`,
   );
 
-  const game = sutomGameManager.getGame(user.id);
+  const game = sutomGameManager.getGame(guildId, user.id);
   if (!game) {
     await interaction.reply({
       content:
@@ -39,9 +47,13 @@ export default async function guessWordSubcommand(
   }
 
   const sendEphemeral = (content: string) =>
-    interaction.reply({ content, flags: MessageFlags.Ephemeral });
+    interaction.reply({
+      content,
+      flags: MessageFlags.Ephemeral,
+      allowedMentions: { parse: [] },
+    });
 
-  const userThreadId = sutomGameManager.getGameThreadId(user.id);
+  const userThreadId = sutomGameManager.getGameThreadId(guildId, user.id);
 
   // Check if the command is being used in the correct thread
   if (!channel || !userThreadId || channel.id !== userThreadId) {
@@ -60,7 +72,7 @@ export default async function guessWordSubcommand(
     return;
   }
 
-  const gameChannel = channel as AnyThreadChannel;
+  const gameChannel = channel;
 
   // Additional validation: check if there's a game associated with this thread
   const threadGame = sutomGameManager.getGameByThreadId(gameChannel.id);
@@ -78,15 +90,23 @@ export default async function guessWordSubcommand(
 
   const responder: GuessResponder = {
     sendError: async (content: string) => {
-      await interaction.reply({ content, flags: MessageFlags.Ephemeral });
+      await interaction.reply({
+        content,
+        flags: MessageFlags.Ephemeral,
+        allowedMentions: { parse: [] },
+      });
     },
     sendBoard: async (embed: EmbedBuilder, attachment: AttachmentBuilder) => {
-      await interaction.reply({ embeds: [embed], files: [attachment] });
+      await interaction.reply({
+        embeds: [embed],
+        files: [attachment],
+        allowedMentions: { parse: [] },
+      });
     },
   };
 
   const handled = await handleGuessAttempt(
-    { userId: user.id, game, thread: gameChannel, responder },
+    { guildId, userId: user.id, game, thread: gameChannel, responder },
     guessedWord,
   );
 

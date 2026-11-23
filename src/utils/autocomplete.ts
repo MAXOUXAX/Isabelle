@@ -8,8 +8,7 @@ export const MAX_AUTOCOMPLETE_CHOICES = 25;
 export const SEARCH_TERM_SEPARATOR = /\s+/;
 
 export type AutocompleteChoice =
-  | string
-  | ApplicationCommandOptionChoiceData<string>;
+  string | ApplicationCommandOptionChoiceData<string>;
 
 export type AutocompleteOptionHandler = (context: {
   interaction: AutocompleteInteraction;

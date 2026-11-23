@@ -10,39 +10,59 @@ type Fetcher<T> = () => Promise<T>;
  */
 
 class Cache<T> {
-  private key: string;
   private fetcher: Fetcher<T> | null = null;
   private revalidationPeriod: number | null = null;
   private value: T | null = null;
   private lastFetched: number | null = null;
+  private inFlight: Promise<T | null> | null = null;
+  private hasValue = false;
 
-  constructor(key: string, fetcher?: Fetcher<T>, revalidationPeriod?: number) {
-    this.key = key;
+  constructor(fetcher?: Fetcher<T>, revalidationPeriod?: number) {
     if (fetcher) this.fetcher = fetcher;
     if (revalidationPeriod) this.revalidationPeriod = revalidationPeriod;
   }
 
-  private async fetchValue(): Promise<T | null> {
-    if (!this.fetcher) return null;
-    this.value = await this.fetcher();
-    this.lastFetched = Date.now();
-    return this.value;
+  private fetchValue(): Promise<T | null> {
+    if (this.inFlight) return this.inFlight;
+
+    const fetcher = this.fetcher;
+    if (!fetcher) return Promise.resolve(null);
+
+    this.inFlight = Promise.resolve()
+      .then(fetcher)
+      .then((value) => {
+        this.value = value;
+        this.hasValue = true;
+        this.lastFetched = Date.now();
+        return value;
+      })
+      .finally(() => {
+        this.inFlight = null;
+      });
+
+    return this.inFlight;
   }
 
-  public async get(): Promise<T | null> {
-    const now = Date.now();
-    if (
-      !this.value ||
-      !this.lastFetched ||
-      !this.revalidationPeriod ||
-      now - this.lastFetched > this.revalidationPeriod
-    ) {
+  public get(): Promise<T | null> {
+    if (!this.hasValue || this.isStale()) {
       return this.fetchValue();
     }
     return Promise.resolve(this.value);
   }
 
-  public async revalidate(): Promise<T | null> {
+  private isStale(): boolean {
+    if (this.lastFetched === null || this.revalidationPeriod === null) {
+      return true;
+    }
+
+    return Date.now() - this.lastFetched > this.revalidationPeriod;
+  }
+
+  public revalidate(): Promise<T | null> {
+    if (this.inFlight) {
+      const currentFetch = this.inFlight;
+      return currentFetch.catch(() => null).then(() => this.fetchValue());
+    }
     return this.fetchValue();
   }
 
@@ -69,7 +89,7 @@ class CacheStore {
     revalidationPeriod?: number,
   ): Cache<T> {
     if (!this.caches.has(key)) {
-      this.caches.set(key, new Cache<T>(key, fetcher, revalidationPeriod));
+      this.caches.set(key, new Cache<T>(fetcher, revalidationPeriod));
     } else if (fetcher || revalidationPeriod) {
       const cache = this.caches.get(key);
       if (cache) cache.updateConfig(fetcher, revalidationPeriod);

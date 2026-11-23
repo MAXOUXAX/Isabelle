@@ -217,8 +217,7 @@ interface SubcommandInfo {
 
 function extractSubcommands(
   options:
-    | RESTPostAPIChatInputApplicationCommandsJSONBody['options']
-    | undefined,
+    RESTPostAPIChatInputApplicationCommandsJSONBody['options'] | undefined,
   parentPath: string[] = [],
 ): SubcommandInfo[] {
   if (!options) {

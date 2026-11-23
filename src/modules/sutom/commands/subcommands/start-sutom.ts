@@ -13,11 +13,20 @@ export default async function startSutomSubcommand(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   const { user } = interaction;
+  const { guildId } = interaction;
+
+  if (!guildId) {
+    await interaction.reply({
+      content: 'Cette commande ne peut être utilisée que sur un serveur.',
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
 
   // Check if user already has a game
-  const existingGame = sutomGameManager.getGame(user.id);
+  const existingGame = sutomGameManager.getGame(guildId, user.id);
   if (existingGame) {
-    const threadId = sutomGameManager.getGameThreadId(user.id);
+    const threadId = sutomGameManager.getGameThreadId(guildId, user.id);
     const threadMention = threadId ? `<#${threadId}>` : 'ton thread de jeu';
     await interaction.reply({
       content: `Oups, on dirait que tu as déjà une partie en cours ! Propose un mot dans ${threadMention}.`,
@@ -50,7 +59,11 @@ export default async function startSutomSubcommand(
     });
 
     // Create the game with the thread ID
-    const gameCreated = sutomGameManager.createGame(user.id, thread.id);
+    const gameCreated = sutomGameManager.createGame(
+      guildId,
+      user.id,
+      thread.id,
+    );
     if (!gameCreated) {
       // Should never happen, but handle it gracefully
       await thread.delete();
@@ -60,7 +73,7 @@ export default async function startSutomSubcommand(
       return;
     }
 
-    const game = sutomGameManager.getGame(user.id);
+    const game = sutomGameManager.getGame(guildId, user.id);
     if (game) {
       const { embed, attachment } = game.buildBoard();
 
