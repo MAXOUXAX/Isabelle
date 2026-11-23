@@ -13,7 +13,7 @@ import {
 } from './message-picker.js';
 
 const messageWithTimestamp = (createdTimestamp: number): Message =>
-  ({ createdTimestamp }) as Message;
+  ({ createdTimestamp }) as unknown as Message;
 
 describe('calculateFreshPercentage', () => {
   it('returns zero for an empty collection', () => {
@@ -89,7 +89,7 @@ const createGuild = (pages: Message[][]): { guild: Guild; calls: number } => {
 };
 
 const userMessage = (id: string, createdTimestamp: number): Message =>
-  ({ id, author: { id: 'user-1' }, createdTimestamp }) as Message;
+  ({ id, author: { id: 'user-1' }, createdTimestamp }) as unknown as Message;
 
 const fullPage = (...userMessages: Message[]): Message[] => [
   ...userMessages,
@@ -100,7 +100,7 @@ const fullPage = (...userMessages: Message[]): Message[] => [
         id: `other-${String(index)}-${userMessages.map((message) => message.id).join('-')}`,
         author: { id: 'other-user' },
         createdTimestamp: Date.now(),
-      }) as Message,
+      }) as unknown as Message,
   ),
 ];
 
