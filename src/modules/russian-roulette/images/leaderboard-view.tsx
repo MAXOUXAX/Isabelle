@@ -16,6 +16,7 @@ const styles = {
   container: {
     display: 'flex',
     flexDirection: 'column',
+    boxSizing: 'border-box',
     width: 1000,
     background: 'linear-gradient(180deg, #1a1c20 0%, #0f1012 100%)',
     padding: 32,
@@ -42,6 +43,7 @@ const styles = {
     background: 'rgba(55, 65, 81, 0.3)',
     borderRadius: 12,
     marginBottom: 12,
+    boxSizing: 'border-box',
     padding: `8px ${ROW_PADDING.toString()}px`,
     height: 56,
   },
