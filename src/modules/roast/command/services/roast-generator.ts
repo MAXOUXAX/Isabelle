@@ -1,4 +1,4 @@
-import { GEMINI_3_FLASH } from '@/ai/models/gemini-models.wrapped.js';
+import { GEMINI_4_HYDROGEN } from '@/ai/models/gemini-models.wrapped.js';
 import { ROAST_PROMPT } from '@/modules/roast/command/templates/roast-prompt.js';
 import { createLogger } from '@/utils/logger.js';
 import { extractModelVersion } from '@/utils/model-version.js';
@@ -43,7 +43,7 @@ export async function generateRoast({
     .join('\n');
 
   const result = await generateText({
-    model: GEMINI_3_FLASH,
+    model: GEMINI_4_HYDROGEN,
     tools: {
       google_search: google.tools.googleSearch({}),
     },
