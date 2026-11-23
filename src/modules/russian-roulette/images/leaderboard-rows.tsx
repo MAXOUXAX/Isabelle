@@ -15,6 +15,7 @@ const placeholderStyles = {
     display: 'flex',
     width: 48,
     height: 48,
+    boxSizing: 'border-box',
     borderRadius: '50%',
     marginRight: AVATAR_MARGIN,
     background: '#374151',
@@ -72,6 +73,7 @@ export function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
       style={{
         display: 'flex',
         alignItems: 'center',
+        boxSizing: 'border-box',
         width: '100%',
         height: rankStyle.rowHeight,
         marginBottom: 8,
@@ -100,6 +102,7 @@ export function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
           width={rankStyle.avatarSize}
           height={rankStyle.avatarSize}
           style={{
+            boxSizing: 'border-box',
             borderRadius: '50%',
             marginRight: AVATAR_MARGIN,
             border: rankStyle.avatarBorder,
@@ -112,6 +115,7 @@ export function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
             display: 'flex',
             width: rankStyle.avatarSize,
             height: rankStyle.avatarSize,
+            boxSizing: 'border-box',
             borderRadius: '50%',
             marginRight: AVATAR_MARGIN,
             background: '#4b5563',
@@ -148,6 +152,7 @@ export function PlaceholderRow({ rank }: { rank: number }) {
       style={{
         display: 'flex',
         alignItems: 'center',
+        boxSizing: 'border-box',
         width: '100%',
         height: 72,
         marginBottom: 8,
