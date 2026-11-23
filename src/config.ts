@@ -7,6 +7,7 @@ const {
   DISCORD_CLIENT_ID,
   SCHEDULE_URL,
   GOOGLE_GENERATIVE_AI_API_KEY,
+  EXA_API_KEY,
   LOG_LEVEL,
 } = process.env;
 
@@ -35,5 +36,6 @@ export const config = {
   DISCORD_CLIENT_ID,
   SCHEDULE_URL,
   GOOGLE_GENERATIVE_AI_API_KEY,
+  EXA_API_KEY,
   LOG_LEVEL,
 };
