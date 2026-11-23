@@ -78,8 +78,30 @@ describe('createWebSearchTool', () => {
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe('https://api.exa.ai/search');
     expect(init.headers).toMatchObject({ 'x-api-key': 'exa-key' });
+    expect(init.signal).toBeInstanceOf(AbortSignal);
     expect(JSON.parse(init.body as string)).toMatchObject({
       query: 'TELECOM Nancy',
+    });
+  });
+
+  it('reports a timed out search to the model instead of throwing', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockRejectedValue(
+          new DOMException('The operation timed out.', 'TimeoutError'),
+        ),
+    );
+
+    const output = await createWebSearchTool('exa-key')?.execute(
+      { query: 'x' },
+      toolCallOptions,
+    );
+
+    expect(output).toEqual({
+      status: 'error',
+      message: 'La recherche a échoué.',
     });
   });
 

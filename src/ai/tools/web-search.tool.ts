@@ -7,6 +7,8 @@ const logger = createLogger('web-search-tool');
 const EXA_SEARCH_URL = 'https://api.exa.ai/search';
 const MAX_RESULTS = 5;
 const MAX_HIGHLIGHT_CHARACTERS = 500;
+// Covers the request and the body read, so a stalled search can't hold up a roast.
+const SEARCH_TIMEOUT_MS = 10_000;
 
 interface ExaSearchResult {
   title?: string | null;
@@ -59,6 +61,7 @@ export function createWebSearchTool(apiKey: string | undefined) {
       try {
         const response = await fetch(EXA_SEARCH_URL, {
           method: 'POST',
+          signal: AbortSignal.timeout(SEARCH_TIMEOUT_MS),
           headers: {
             'Content-Type': 'application/json',
             'x-api-key': apiKey,
