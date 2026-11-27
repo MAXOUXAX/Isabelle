@@ -59,12 +59,12 @@
     ]
   },
   "dependencies": {
-    "@ai-sdk/google": "^4.0.124",
+    "@ai-sdk/google": "^4.0.125",
     "@discordjs/builders": "^1.15.0",
     "@libsql/client": "^0.18.0",
     "@napi-rs/canvas": "^1.1.0",
     "@resvg/resvg-js": "^2.6.2",
-    "ai": "^7.0.179",
+    "ai": "^7.0.181",
     "chrono-node": "^2.10.3",
     "date-fns": "^4.4.0",
     "date-fns-tz": "^3.2.0",
